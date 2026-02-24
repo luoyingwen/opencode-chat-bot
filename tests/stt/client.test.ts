@@ -33,6 +33,7 @@ vi.mock("../../src/config.js", () => ({
     server: { logLevel: "error" },
     bot: {
       sessionsListLimit: 10,
+      projectsListLimit: 10,
       locale: "en",
       serviceMessagesIntervalSec: 5,
       hideThinkingMessages: false,
