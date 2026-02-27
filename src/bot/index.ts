@@ -19,8 +19,6 @@ import { projectsCommand, handleProjectSelect } from "./commands/projects.js";
 import { stopCommand } from "./commands/stop.js";
 import { opencodeStartCommand } from "./commands/opencode-start.js";
 import { opencodeStopCommand } from "./commands/opencode-stop.js";
-import { handleAgentCommand } from "./commands/agent.js";
-import { handleModelCommand } from "./commands/model.js";
 import { renameCommand, handleRenameCancel, handleRenameTextAnswer } from "./commands/rename.js";
 import {
   handleQuestionCallback,
@@ -533,8 +531,6 @@ export function createBot(): Bot<Context> {
   bot.command("projects", projectsCommand);
   bot.command("sessions", sessionsCommand);
   bot.command("new", newCommand);
-  bot.command("agent", handleAgentCommand);
-  bot.command("model", handleModelCommand);
   bot.command("stop", stopCommand);
   bot.command("rename", renameCommand);
 

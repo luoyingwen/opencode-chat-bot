@@ -100,8 +100,6 @@ opencode-telegram config
 | `/stop`           | Abort the current task                                  |
 | `/sessions`       | Browse and switch between recent sessions               |
 | `/projects`       | Switch between OpenCode projects                        |
-| `/model`          | Choose a model from your favorites                      |
-| `/agent`          | Switch agent mode (Plan / Build)                        |
 | `/rename`         | Rename the current session                              |
 | `/opencode_start` | Start the OpenCode server remotely                      |
 | `/opencode_stop`  | Stop the OpenCode server remotely                       |
@@ -184,7 +182,7 @@ The bot picks up your **favorite models** from OpenCode. To add a model to favor
 2. Go to model selection
 3. Hover over the model you want and press **Ctrl+F** to add it to favorites
 
-These favorites will appear in the `/model` command menu in Telegram.
+These favorites will appear in the model picker opened from the bottom Telegram keyboard.
 
 A free model (`opencode/big-pickle`) is configured as the default fallback — if you haven't set up any favorites yet, the bot will use it automatically.
 
@@ -239,7 +237,7 @@ npm run dev
 - Ensure `opencode serve` is running in your project directory
 - Check that `OPENCODE_API_URL` points to the correct address (default: `http://localhost:4096`)
 
-**No models in `/model` menu**
+**No models in model picker**
 
 - Add models to your OpenCode favorites: open OpenCode TUI, go to model selection, press **Ctrl+F** on desired models
 

@@ -6,8 +6,6 @@ export const ru: I18nDictionary = {
   "cmd.description.stop": "Прервать текущее действие",
   "cmd.description.sessions": "Список сессий",
   "cmd.description.projects": "Список проектов",
-  "cmd.description.model": "Выбрать модель",
-  "cmd.description.agent": "Выбрать режим работы",
   "cmd.description.opencode_start": "Запустить OpenCode сервер",
   "cmd.description.opencode_stop": "Остановить OpenCode сервер",
   "cmd.description.help": "Справка",
@@ -46,7 +44,9 @@ export const ru: I18nDictionary = {
   "common.unknown_error": "неизвестная ошибка",
 
   "start.welcome":
-    "👋 Добро пожаловать в OpenCode Telegram Bot!\n\nИспользуйте команды:\n/projects — выбрать проект\n/sessions — список сессий\n/new — новая сессия\n/agent — сменить режим\n/model — выбрать модель\n/status — статус\n/help — справка",
+    "👋 Добро пожаловать в OpenCode Telegram Bot!\n\nИспользуйте команды:\n/projects — выбрать проект\n/sessions — список сессий\n/new — новая сессия\n/status — статус\n/help — справка\n\nРежим, модель и вариант выбираются кнопками внизу.",
+  "help.keyboard_hint":
+    "💡 Режим, модель, вариант и действия с контекстом доступны через нижние кнопки клавиатуры.",
   "help.text":
     "📖 **Справка**\n\n/status - Проверить статус сервера\n/sessions - Список сессий\n/new - Создать новую сессию\n/help - Справка",
 
@@ -175,12 +175,12 @@ export const ru: I18nDictionary = {
   "model.menu.error": "🔴 Не удалось получить список моделей",
 
   "variant.model_not_selected_callback": "Ошибка: модель не выбрана",
-  "variant.changed_callback": "Variant изменен: {name}",
-  "variant.changed_message": "✅ Variant изменен на: {name}",
-  "variant.change_error_callback": "Ошибка при смене variant",
+  "variant.changed_callback": "Вариант изменен: {name}",
+  "variant.changed_message": "✅ Вариант изменен на: {name}",
+  "variant.change_error_callback": "Ошибка при смене варианта",
   "variant.select_model_first": "⚠️ Сначала выберите модель",
   "variant.menu.empty": "⚠️ Нет доступных вариантов",
-  "variant.menu.current": "Текущий variant: {name}\n\nВыберите variant:",
+  "variant.menu.current": "Текущий вариант: {name}\n\nВыберите вариант:",
   "variant.menu.error": "🔴 Не удалось получить список вариантов",
 
   "context.button.confirm": "✅ Да, сжать контекст",

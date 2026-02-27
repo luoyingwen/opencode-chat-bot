@@ -94,12 +94,12 @@ Current command set:
 - [x] `/stop` - stop the current task
 - [x] `/sessions` - show and switch recent sessions
 - [x] `/projects` - show and switch projects
-- [x] `/model` - select model
-- [x] `/agent` - select agent mode
 - [x] `/rename` - rename current session
 - [x] `/opencode_start` - start local OpenCode server
 - [x] `/opencode_stop` - stop local OpenCode server
 - [x] `/help` - show command help
+
+Model, agent, variant, and context actions are available from the persistent bottom keyboard.
 
 Text messages (non-commands) are treated as prompts for OpenCode only when no blocking interaction is active. Voice/audio messages are transcribed and then sent as prompts when STT is configured.
 
