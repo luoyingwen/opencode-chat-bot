@@ -9,6 +9,7 @@ import { formatModelForDisplay } from "../../model/types.js";
 import { processManager } from "../../process/manager.js";
 import { logger } from "../../utils/logger.js";
 import { t } from "../../i18n/index.js";
+import { sendMessageWithMarkdownFallback } from "../utils/send-with-markdown-fallback.js";
 
 export async function statusCommand(ctx: CommandContext<Context>) {
   try {
@@ -65,7 +66,16 @@ export async function statusCommand(ctx: CommandContext<Context>) {
       message += t("status.session_hint");
     }
 
-    await ctx.reply(message, { parse_mode: "Markdown" });
+    if (ctx.chat) {
+      await sendMessageWithMarkdownFallback({
+        api: ctx.api,
+        chatId: ctx.chat.id,
+        text: message,
+        parseMode: "Markdown",
+      });
+    } else {
+      await ctx.reply(message);
+    }
   } catch (error) {
     logger.error("[Bot] Error checking server status:", error);
     await ctx.reply(t("status.server_unavailable"));

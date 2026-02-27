@@ -73,4 +73,26 @@ describe("bot/utils/send-with-markdown-fallback", () => {
     expect(isTelegramMarkdownParseError(error)).toBe(true);
     expect(isTelegramMarkdownParseError(new Error("network timeout"))).toBe(false);
   });
+
+  it("supports Markdown parse mode with fallback", async () => {
+    const sendMessage = vi
+      .fn()
+      .mockRejectedValueOnce(
+        new Error("Bad Request: can't parse entities: Character '_' is reserved"),
+      )
+      .mockResolvedValueOnce(undefined);
+
+    await sendMessageWithMarkdownFallback({
+      api: { sendMessage },
+      chatId: 321,
+      text: "*status* project_name",
+      parseMode: "Markdown",
+    });
+
+    expect(sendMessage).toHaveBeenCalledTimes(2);
+    expect(sendMessage).toHaveBeenNthCalledWith(1, 321, "*status* project_name", {
+      parse_mode: "Markdown",
+    });
+    expect(sendMessage).toHaveBeenNthCalledWith(2, 321, "*status* project_name", undefined);
+  });
 });

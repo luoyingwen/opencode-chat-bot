@@ -9,7 +9,7 @@ interface SendMessageWithMarkdownFallbackParams {
   chatId: Parameters<SendMessageApi["sendMessage"]>[0];
   text: string;
   options?: TelegramSendMessageOptions;
-  parseMode?: "MarkdownV2";
+  parseMode?: "Markdown" | "MarkdownV2";
 }
 
 const MARKDOWN_PARSE_ERROR_MARKERS = [
@@ -83,7 +83,7 @@ export async function sendMessageWithMarkdownFallback({
       throw error;
     }
 
-    logger.warn("[Bot] MarkdownV2 parse failed, retrying assistant message in raw mode", error);
+    logger.warn("[Bot] Markdown parse failed, retrying assistant message in raw mode", error);
     await api.sendMessage(chatId, text, options);
   }
 }
