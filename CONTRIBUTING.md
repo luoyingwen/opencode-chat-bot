@@ -87,6 +87,30 @@ Quick decision rule:
 
 ## Pull Requests
 
+### What can go directly to PR
+
+You can pick up and submit a PR without prior approval when the change is low-risk and aligned with the current direction, for example:
+
+- Bug fixes (`fix`)
+- Improvements to existing features that do not fundamentally change how they work
+- Small UX polish and technical cleanup
+
+### When to open an issue first
+
+If you want to add a **new feature**, open an issue first and describe:
+
+- The problem and the proposed solution
+- User impact and expected behavior
+- Any alternatives considered
+
+Please wait for maintainer confirmation before implementation. We use this step to ensure:
+
+- The idea fits the project concept
+- The same feature is not already in progress
+- The implementation direction is agreed in advance
+
+When in doubt whether a change is an "improvement" or a "new feature", open an issue first.
+
 ### One change per PR
 
 Each PR must contain exactly one logically complete change: one feature, one fix, one refactor, etc.
