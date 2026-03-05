@@ -1,13 +1,14 @@
 import { readFile } from "node:fs/promises";
 
 import { createBot } from "../bot/index.js";
-import { loadSettings } from "../settings/manager.js";
+import { getCurrentProject, loadSettings, setCurrentProject } from "../settings/manager.js";
 import { processManager } from "../process/manager.js";
 import { warmupSessionDirectoryCache } from "../session/cache-manager.js";
 import { getRuntimeMode } from "../runtime/mode.js";
 import { logger } from "../utils/logger.js";
 import { config } from "../config.js";
 import { opencodeClient } from "../opencode/client.js";
+import { getProjects } from "../project/manager.js";
 
 async function getBotVersion(): Promise<string> {
   try {
@@ -55,6 +56,28 @@ export async function startBotApp(): Promise<void> {
   }
 
   await warmupSessionDirectoryCache();
+
+  // ─── Auto-select project if none is set ──────────────────────────
+  if (!getCurrentProject()) {
+    try {
+      const projects = await getProjects();
+      if (projects.length === 0) {
+        logger.warn("[App] No projects found. Use /projects to select one after creating a project.");
+      } else {
+        const selected = projects[0];
+        setCurrentProject(selected);
+        logger.info(
+          `[App] Auto-selected project: ${selected.name ?? selected.worktree} (${selected.id})` +
+            (projects.length > 1 ? ` — ${projects.length} projects available, picked most recent` : ""),
+        );
+      }
+    } catch (error) {
+      logger.warn("[App] Failed to auto-select project", error);
+    }
+  } else {
+    const current = getCurrentProject();
+    logger.debug(`[App] Project already set: ${current?.name ?? current?.worktree}`);
+  }
 
   // ─── Start Telegram bot (if configured) ────────────────────────────
   if (hasTelegram) {
