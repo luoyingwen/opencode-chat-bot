@@ -4,8 +4,6 @@ fork from <https://github.com/grinev/opencode-telegram-bot>
 
 新增：支援 Slack, proxy, zh-TW
 
-[![npm version](https://img.shields.io/npm/v/@grinev/opencode-telegram-bot)](https://www.npmjs.com/package/@grinev/opencode-telegram-bot)
-[![CI](https://github.com/grinev/opencode-telegram-bot/actions/workflows/ci.yml/badge.svg)](https://github.com/grinev/opencode-telegram-bot/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 [![Node.js](https://img.shields.io/badge/node-%3E%3D20-brightgreen)](https://nodejs.org)
 
@@ -72,8 +70,8 @@ opencode serve
 ### Running from Source
 
 ```bash
-git clone https://github.com/grinev/opencode-telegram-bot.git
-cd opencode-telegram-bot
+git clone https://github.com/bigheadfjuee/opencode-telegram-slack-bot.git
+cd opencode-telegram-slack-bot
 npm install
 cp .env.example .env
 # Edit .env with your bot token, user ID, and model settings
@@ -238,7 +236,7 @@ Please follow commit and release note conventions in [CONTRIBUTING.md](CONTRIBUT
 
 ## Community
 
-Have questions, want to share your experience using the bot, or have an idea for a feature? Join the conversation in [GitHub Discussions](https://github.com/grinev/opencode-telegram-bot/discussions).
+Have questions, want to share your experience using the bot, or have an idea for a feature? Join the conversation in [GitHub Discussions](https://github.com/bigheadfjuee/opencode-telegram-slack-bot/discussions).
 
 ## License
 

@@ -1,6 +1,5 @@
 import { createHash } from "node:crypto";
 import path from "node:path";
-import Database from "better-sqlite3";
 import { opencodeClient } from "../opencode/client.js";
 import { getSessionDirectoryCache, setSessionDirectoryCache } from "../settings/manager.js";
 import { logger } from "../utils/logger.js";
@@ -368,6 +367,7 @@ async function querySessionDirectoriesFromSqlite(
   dbPath: string,
 ): Promise<CachedSessionDirectory[] | null> {
   try {
+    const { default: Database } = await import("better-sqlite3");
     const db = new Database(dbPath, {
       readonly: true,
       fileMustExist: true,
