@@ -133,6 +133,11 @@ let callbacksInstalled = false;
  * (i.e. after ensureEventSubscription has run at least once).
  *
  * This function is idempotent — calling it multiple times is safe.
+ *
+ * In Slack-only mode (no Telegram bot), the Telegram setters are never called,
+ * so after patching we also directly install the Slack handlers on the aggregator.
+ * If Telegram later registers its callbacks via the patched setters, the combined
+ * routing wrapper will replace our direct handlers automatically.
  */
 export function installSlackEventRouting(): void {
   if (callbacksInstalled) return;
@@ -159,6 +164,19 @@ export function installSlackEventRouting(): void {
   patchAggregatorCallback("setOnTokens", "onTokens", handleSlackTokens);
   patchAggregatorCallback("setOnSessionError", "onSessionError", handleSlackSessionError);
   patchAggregatorCallback("setOnSessionRetry", "onSessionRetry", handleSlackSessionRetry);
+
+  // In Slack-only mode, no Telegram bot exists so the patched setters are never
+  // called — the aggregator would have no callbacks at all.  Trigger each patched
+  // setter with `null` (no Telegram callback) so the combined routing wrapper is
+  // installed immediately with Slack handlers as the sole target.
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const aggregator = summaryAggregator as any;
+  aggregator.setOnComplete(null);
+  aggregator.setOnTool(null);
+  aggregator.setOnThinking(null);
+  aggregator.setOnTokens(null);
+  aggregator.setOnSessionError(null);
+  aggregator.setOnSessionRetry(null);
 
   logger.info("[Slack] Event routing callbacks installed");
 }
