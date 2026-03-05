@@ -25,40 +25,58 @@ export async function startBotApp(): Promise<void> {
   const mode = getRuntimeMode();
   const version = await getBotVersion();
 
+  const hasTelegram = !!config.telegram.token;
+  const hasSlack = !!(config.slack.botToken && config.slack.appToken);
+
+  if (!hasTelegram && !hasSlack) {
+    throw new Error(
+      "No bot platform configured. Set TELEGRAM_BOT_TOKEN or SLACK_BOT_TOKEN + SLACK_APP_TOKEN.",
+    );
+  }
+
   logger.info(`Starting OpenCode Bot v${version}...`);
-  logger.info(`Allowed Telegram User ID: ${config.telegram.allowedUserId}`);
   logger.debug(`[Runtime] Application start mode: ${mode}`);
+  logger.info(`[App] Platforms: Telegram=${hasTelegram ? "enabled" : "disabled"}, Slack=${hasSlack ? "enabled" : "disabled"}`);
 
   await loadSettings();
   await processManager.initialize();
   await warmupSessionDirectoryCache();
 
-  const bot = createBot();
+  // ─── Start Telegram bot (if configured) ────────────────────────────
+  if (hasTelegram) {
+    logger.info(`Allowed Telegram User ID: ${config.telegram.allowedUserId}`);
 
-  const webhookInfo = await bot.api.getWebhookInfo();
-  if (webhookInfo.url) {
-    logger.info(`[Bot] Webhook detected: ${webhookInfo.url}, removing...`);
-    await bot.api.deleteWebhook();
-    logger.info("[Bot] Webhook removed, switching to long polling");
+    const bot = createBot();
+
+    const webhookInfo = await bot.api.getWebhookInfo();
+    if (webhookInfo.url) {
+      logger.info(`[Bot] Webhook detected: ${webhookInfo.url}, removing...`);
+      await bot.api.deleteWebhook();
+      logger.info("[Bot] Webhook removed, switching to long polling");
+    }
+
+    await bot.start({
+      onStart: (botInfo) => {
+        logger.info(`Bot @${botInfo.username} started!`);
+      },
+    });
+  } else {
+    logger.info("[App] Telegram not configured, skipping");
   }
 
-  await bot.start({
-    onStart: (botInfo) => {
-      logger.info(`Bot @${botInfo.username} started!`);
-    },
-  });
-
-  // ─── Conditionally start Slack bot ───────────────────────────────────
-  if (config.slack.botToken && config.slack.appToken) {
+  // ─── Start Slack bot (if configured) ───────────────────────────────
+  if (hasSlack) {
     try {
       const { initializeSlackHandler, sendSlackStartupMessage } = await import(
         "../slack/handler.js"
       );
       const slackApp = await initializeSlackHandler();
       await sendSlackStartupMessage(slackApp);
-      logger.info("[App] Slack bot started alongside Telegram");
+      logger.info("[App] Slack bot started");
     } catch (err) {
       logger.error("[App] Failed to start Slack bot:", err);
+      // If Slack is the only platform and it failed, re-throw
+      if (!hasTelegram) throw err;
     }
   } else {
     logger.debug("[App] Slack not configured, skipping");
