@@ -7,6 +7,7 @@ import { warmupSessionDirectoryCache } from "../session/cache-manager.js";
 import { getRuntimeMode } from "../runtime/mode.js";
 import { logger } from "../utils/logger.js";
 import { config } from "../config.js";
+import { opencodeClient } from "../opencode/client.js";
 
 async function getBotVersion(): Promise<string> {
   try {
@@ -36,10 +37,23 @@ export async function startBotApp(): Promise<void> {
 
   logger.info(`Starting OpenCode Bot v${version}...`);
   logger.debug(`[Runtime] Application start mode: ${mode}`);
+  logger.info(`[App] OpenCode API: ${config.opencode.apiUrl}`);
   logger.info(`[App] Platforms: Telegram=${hasTelegram ? "enabled" : "disabled"}, Slack=${hasSlack ? "enabled" : "disabled"}`);
 
   await loadSettings();
   await processManager.initialize();
+
+  try {
+    const { data, error } = await opencodeClient.global.health();
+    if (error) {
+      logger.warn(`[App] OpenCode API health check failed: ${String(error)}`);
+    } else {
+      logger.info(`[App] OpenCode API connection OK (${config.opencode.apiUrl})`, data);
+    }
+  } catch (error) {
+    logger.warn(`[App] OpenCode API unreachable at ${config.opencode.apiUrl}`, error);
+  }
+
   await warmupSessionDirectoryCache();
 
   // ─── Start Telegram bot (if configured) ────────────────────────────
