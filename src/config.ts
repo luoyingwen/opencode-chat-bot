@@ -95,8 +95,8 @@ function getOptionalMessageFormatModeEnvVar(
 
 export const config = {
   telegram: {
-    token: getEnvVar("TELEGRAM_BOT_TOKEN"),
-    allowedUserId: parseInt(getEnvVar("TELEGRAM_ALLOWED_USER_ID"), 10),
+    token: getEnvVar("TELEGRAM_BOT_TOKEN", false),
+    allowedUserId: parseInt(getEnvVar("TELEGRAM_ALLOWED_USER_ID", false) || "0", 10),
     proxyUrl: getEnvVar("TELEGRAM_PROXY_URL", false),
   },
   opencode: {
@@ -137,5 +137,6 @@ export const config = {
     appToken: getEnvVar("SLACK_APP_TOKEN", false),
     signingSecret: getEnvVar("SLACK_SIGNING_SECRET", false),
     allowedChannelId: getEnvVar("SLACK_ALLOWED_CHANNEL_ID", false),
+    proxyUrl: getEnvVar("SLACK_PROXY_URL", false),
   },
 };

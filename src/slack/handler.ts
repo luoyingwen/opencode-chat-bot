@@ -9,6 +9,9 @@
 import pkg from "@slack/bolt";
 const { App, LogLevel } = pkg;
 
+import { HttpsProxyAgent } from "https-proxy-agent";
+import { SocksProxyAgent } from "socks-proxy-agent";
+
 import { config } from "../config.js";
 import { opencodeClient } from "../opencode/client.js";
 import { getCurrentSession, setCurrentSession } from "../session/manager.js";
@@ -82,7 +85,7 @@ async function ensureEventSubscription(directory: string): Promise<void> {
 // ─── Slack bot initialization ───────────────────────────────────────────
 
 export async function initializeSlackHandler(): Promise<SlackApp> {
-  const { botToken, appToken, signingSecret } = config.slack;
+  const { botToken, appToken, signingSecret, proxyUrl } = config.slack;
 
   if (!botToken || !appToken) {
     throw new Error(
@@ -90,11 +93,22 @@ export async function initializeSlackHandler(): Promise<SlackApp> {
     );
   }
 
+  // Build clientOptions with optional proxy agent (same pattern as Telegram)
+  let clientOptions: { agent: InstanceType<typeof HttpsProxyAgent> | InstanceType<typeof SocksProxyAgent> } | undefined;
+  if (proxyUrl) {
+    const agent = proxyUrl.startsWith("socks")
+      ? new SocksProxyAgent(proxyUrl)
+      : new HttpsProxyAgent(proxyUrl);
+    clientOptions = { agent };
+    logger.info(`[Slack] Using proxy: ${proxyUrl.replace(/\/\/.*@/, "//***@")}`);
+  }
+
   const app = new App({
     token: botToken,
     appToken: appToken,
     signingSecret: signingSecret || undefined,
     socketMode: true,
+    ...(clientOptions && { clientOptions }),
     logLevel: LogLevel.INFO,
     logger: {
       debug: (...msgs: unknown[]) => logger.debug("[Slack]", ...msgs),
