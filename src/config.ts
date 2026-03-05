@@ -132,4 +132,10 @@ export const config = {
     model: getEnvVar("STT_MODEL", false) || "whisper-large-v3-turbo",
     language: getEnvVar("STT_LANGUAGE", false),
   },
+  slack: {
+    botToken: getEnvVar("SLACK_BOT_TOKEN", false),
+    appToken: getEnvVar("SLACK_APP_TOKEN", false),
+    signingSecret: getEnvVar("SLACK_SIGNING_SECRET", false),
+    allowedChannelId: getEnvVar("SLACK_ALLOWED_CHANNEL_ID", false),
+  },
 };
