@@ -3,6 +3,7 @@ import { de } from "./de.js";
 import { es } from "./es.js";
 import { ru } from "./ru.js";
 import { zh } from "./zh.js";
+import { zhTW } from "./zh-TW.js";
 
 interface LocaleDefinition {
   code: string;
@@ -42,6 +43,12 @@ const LOCALE_DEFINITIONS = [
     dateLocale: "zh-CN",
     dictionary: zh,
   },
+  {
+    code: "zh-TW",
+    label: "繁體中文",
+    dateLocale: "zh-TW",
+    dictionary: zhTW,
+  },
 ] as const satisfies readonly LocaleDefinition[];
 
 export type Locale = (typeof LOCALE_DEFINITIONS)[number]["code"];
@@ -63,6 +70,10 @@ const localeDefinitionByCode = Object.fromEntries(
   LOCALE_DEFINITIONS.map((definition) => [definition.code, definition]),
 ) as Record<Locale, (typeof LOCALE_DEFINITIONS)[number]>;
 
+const localeCodeByLowerCase = Object.fromEntries(
+  LOCALE_DEFINITIONS.map((definition) => [definition.code.toLowerCase(), definition.code]),
+) as Record<string, Locale>;
+
 let runtimeLocaleOverride: Locale | null = null;
 
 export function resolveSupportedLocale(locale: string | null | undefined): Locale | null {
@@ -71,13 +82,15 @@ export function resolveSupportedLocale(locale: string | null | undefined): Local
     return null;
   }
 
-  if (Object.hasOwn(localeDefinitionByCode, normalized)) {
-    return normalized as Locale;
+  const exactMatch = localeCodeByLowerCase[normalized];
+  if (exactMatch) {
+    return exactMatch;
   }
 
   const baseLocale = normalized.split("-")[0];
-  if (Object.hasOwn(localeDefinitionByCode, baseLocale)) {
-    return baseLocale as Locale;
+  const baseMatch = localeCodeByLowerCase[baseLocale];
+  if (baseMatch) {
+    return baseMatch;
   }
 
   return null;

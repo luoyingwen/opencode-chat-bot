@@ -101,4 +101,28 @@ describe("config boolean env parsing", () => {
 
     expect(config.bot.locale).toBe("en");
   });
+
+  it("parses zh-TW locale from BOT_LOCALE", async () => {
+    vi.stubEnv("BOT_LOCALE", "zh-TW");
+
+    const config = await loadConfig();
+
+    expect(config.bot.locale).toBe("zh-TW");
+  });
+
+  it("parses zh-TW locale case-insensitively", async () => {
+    vi.stubEnv("BOT_LOCALE", "zh-tw");
+
+    const config = await loadConfig();
+
+    expect(config.bot.locale).toBe("zh-TW");
+  });
+
+  it("resolves zh to Simplified Chinese, not Traditional", async () => {
+    vi.stubEnv("BOT_LOCALE", "zh");
+
+    const config = await loadConfig();
+
+    expect(config.bot.locale).toBe("zh");
+  });
 });
