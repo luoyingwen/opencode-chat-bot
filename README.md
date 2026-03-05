@@ -2,6 +2,8 @@
 
 fork from <https://github.com/grinev/opencode-telegram-bot>
 
+新增：支援 Slack, proxy, zh-TW
+
 [![npm version](https://img.shields.io/npm/v/@grinev/opencode-telegram-bot)](https://www.npmjs.com/package/@grinev/opencode-telegram-bot)
 [![CI](https://github.com/grinev/opencode-telegram-bot/actions/workflows/ci.yml/badge.svg)](https://github.com/grinev/opencode-telegram-bot/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
@@ -17,9 +19,7 @@ Platforms: macOS, Windows, Linux
 
 Languages: English (`en`), Deutsch (`de`), Español (`es`), Русский (`ru`), 简体中文 (`zh`), 繁體中文 (`zh-TW`)
 
-<p align="center">
-  <img src="assets/screencast.gif" width="45%" alt="OpenCode Telegram Bot screencast" />
-</p>
+[Demo gif](assets/screencast.gif)
 
 ## Features
 
