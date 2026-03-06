@@ -29,17 +29,20 @@ export async function startBotApp(): Promise<void> {
 
   const hasTelegram = !!config.telegram.token;
   const hasSlack = !!(config.slack.botToken && config.slack.appToken);
+  const hasDingTalk = !!(config.dingtalk.appKey && config.dingtalk.appSecret);
 
-  if (!hasTelegram && !hasSlack) {
+  if (!hasTelegram && !hasSlack && !hasDingTalk) {
     throw new Error(
-      "No bot platform configured. Set TELEGRAM_BOT_TOKEN or SLACK_BOT_TOKEN + SLACK_APP_TOKEN.",
+      "No bot platform configured. Set TELEGRAM_BOT_TOKEN, SLACK_BOT_TOKEN + SLACK_APP_TOKEN, or DINGTALK_APP_KEY + DINGTALK_APP_SECRET.",
     );
   }
 
   logger.info(`Starting OpenCode Bot v${version}...`);
   logger.debug(`[Runtime] Application start mode: ${mode}`);
   logger.info(`[App] OpenCode API: ${config.opencode.apiUrl}`);
-  logger.info(`[App] Platforms: Telegram=${hasTelegram ? "enabled" : "disabled"}, Slack=${hasSlack ? "enabled" : "disabled"}`);
+  logger.info(
+    `[App] Platforms: Telegram=${hasTelegram ? "enabled" : "disabled"}, Slack=${hasSlack ? "enabled" : "disabled"}, DingTalk=${hasDingTalk ? "enabled" : "disabled"}`,
+  );
 
   await loadSettings();
   await processManager.initialize();
@@ -62,13 +65,17 @@ export async function startBotApp(): Promise<void> {
     try {
       const projects = await getProjects();
       if (projects.length === 0) {
-        logger.warn("[App] No projects found. Use /projects to select one after creating a project.");
+        logger.warn(
+          "[App] No projects found. Use /projects to select one after creating a project.",
+        );
       } else {
         const selected = projects[0];
         setCurrentProject(selected);
         logger.info(
           `[App] Auto-selected project: ${selected.name ?? selected.worktree} (${selected.id})` +
-            (projects.length > 1 ? ` — ${projects.length} projects available, picked most recent` : ""),
+            (projects.length > 1
+              ? ` — ${projects.length} projects available, picked most recent`
+              : ""),
         );
       }
     } catch (error) {
@@ -104,9 +111,8 @@ export async function startBotApp(): Promise<void> {
   // ─── Start Slack bot (if configured) ───────────────────────────────
   if (hasSlack) {
     try {
-      const { initializeSlackHandler, sendSlackStartupMessage } = await import(
-        "../slack/handler.js"
-      );
+      const { initializeSlackHandler, sendSlackStartupMessage } =
+        await import("../slack/handler.js");
       const slackApp = await initializeSlackHandler();
       await sendSlackStartupMessage(slackApp);
       logger.info("[App] Slack bot started");
@@ -117,5 +123,21 @@ export async function startBotApp(): Promise<void> {
     }
   } else {
     logger.debug("[App] Slack not configured, skipping");
+  }
+
+  // ─── Start DingTalk bot (if configured) ─────────────────────────────
+  if (hasDingTalk) {
+    try {
+      const { initializeDingTalkHandler, sendDingTalkStartupMessage } =
+        await import("../dingtalk/handler.js");
+      await initializeDingTalkHandler();
+      await sendDingTalkStartupMessage();
+      logger.info("[App] DingTalk bot started");
+    } catch (err) {
+      logger.error("[App] Failed to start DingTalk bot:", err);
+      if (!hasTelegram && !hasSlack) throw err;
+    }
+  } else {
+    logger.debug("[App] DingTalk not configured, skipping");
   }
 }

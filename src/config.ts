@@ -139,4 +139,10 @@ export const config = {
     allowedChannelId: getEnvVar("SLACK_ALLOWED_CHANNEL_ID", false),
     proxyUrl: getEnvVar("SLACK_PROXY_URL", false),
   },
+  dingtalk: {
+    appKey: getEnvVar("DINGTALK_APP_KEY", false),
+    appSecret: getEnvVar("DINGTALK_APP_SECRET", false),
+    agentId: getEnvVar("DINGTALK_AGENT_ID", false),
+    allowedUserId: getEnvVar("DINGTALK_ALLOWED_USER_ID", false),
+  },
 };
