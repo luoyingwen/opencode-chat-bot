@@ -22,6 +22,7 @@ import { summaryAggregator } from "../summary/aggregator.js";
 import { getCurrentSession } from "../session/manager.js";
 import { logger } from "../utils/logger.js";
 import { t } from "../i18n/index.js";
+import { isDingTalkActive } from "../dingtalk/events.js";
 
 /** The Slack channel + message ts for the current "processing" indicator. */
 interface SlackResponseTarget {
@@ -201,6 +202,10 @@ function patchAggregatorCallback<K extends keyof OriginalCallbacks>(
     // Install combined wrapper
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     originalSetter((...args: any[]) => {
+      if (isDingTalkActive()) {
+        // DingTalk handles its own routing
+        return;
+      }
       if (isSlackActive()) {
         // Route to Slack
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -291,9 +296,7 @@ function handleSlackSessionError(sessionId: string, message: string): void {
 
   const normalizedMessage = message.trim() || t("common.unknown_error");
   const truncatedMessage =
-    normalizedMessage.length > 3500
-      ? `${normalizedMessage.slice(0, 3497)}...`
-      : normalizedMessage;
+    normalizedMessage.length > 3500 ? `${normalizedMessage.slice(0, 3497)}...` : normalizedMessage;
 
   void postMessage(target.channel, t("bot.session_error", { message: truncatedMessage }));
 
@@ -310,9 +313,7 @@ function handleSlackSessionRetry(retryInfo: SessionRetryInfo): void {
 
   const normalizedMessage = retryInfo.message.trim() || t("common.unknown_error");
   const truncatedMessage =
-    normalizedMessage.length > 3500
-      ? `${normalizedMessage.slice(0, 3497)}...`
-      : normalizedMessage;
+    normalizedMessage.length > 3500 ? `${normalizedMessage.slice(0, 3497)}...` : normalizedMessage;
 
   void postMessage(target.channel, t("bot.session_retry", { message: truncatedMessage }));
 }
