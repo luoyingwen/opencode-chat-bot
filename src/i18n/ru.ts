@@ -272,14 +272,14 @@ export const ru: I18nDictionary = {
   "keyboard.variant_default": "💡 Default",
   "keyboard.updated": "⌨️ Клавиатура обновлена",
 
-  "pinned.default_session_title": "new session",
-  "pinned.unknown": "Unknown",
-  "pinned.line.project": "Project: {project}",
-  "pinned.line.model": "Model: {model}",
-  "pinned.line.context": "Context: {used} / {limit} ({percent}%)",
-  "pinned.files.title": "Files ({count}):",
+  "pinned.default_session_title": "новая сессия",
+  "pinned.unknown": "Неизвестно",
+  "pinned.line.project": "Проект: {project}",
+  "pinned.line.model": "Модель: {model}",
+  "pinned.line.context": "Контекст: {used} / {limit} ({percent}%)",
+  "pinned.files.title": "Файлы ({count}):",
   "pinned.files.item": "  {path}{diff}",
-  "pinned.files.more": "  ... and {count} more",
+  "pinned.files.more": "  ... и еще {count}",
 
   "tool.todo.overflow": "*(ещё {count} задач)*",
   "tool.file_header.write":
