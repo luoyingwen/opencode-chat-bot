@@ -139,19 +139,15 @@ export class DingTalkClient {
     let lastConnected = false;
     let lastRegistered = false;
     let lastReconnecting = false;
-    let lastLogTime = 0;
 
     this.connectionCheckInterval = setInterval(() => {
       const { connected, registered, reconnecting } = this.client;
       const now = Date.now();
 
-      // Log current state every 10 seconds for debugging
-      if (now - lastLogTime > 10000) {
-        logger.debug(
-          `[DingTalk] Connection state: connected=${connected}, registered=${registered}, reconnecting=${reconnecting}, lastMessage=${now - this.lastMessageTime}ms ago`,
-        );
-        lastLogTime = now;
-      }
+      // Log current state every 30 seconds
+      logger.debug(
+        `[DingTalk] Connection state: connected=${connected}, registered=${registered}, reconnecting=${reconnecting}, lastMessage=${this.lastMessageTime > 0 ? `${now - this.lastMessageTime}ms ago` : "n/a"}`,
+      );
 
       // Detect and log state changes
       if (connected !== lastConnected) {
@@ -194,7 +190,7 @@ export class DingTalkClient {
         !this.isReconnecting
       ) {
         logger.warn(
-          `[DingTalk] No message received for ${timeSinceLastMessage}ms, connection may be stale`,
+          `[DingTalk] No message received for ${Math.floor(timeSinceLastMessage / 1000)}s, connection may be stale`,
         );
       }
 
@@ -210,9 +206,9 @@ export class DingTalkClient {
       lastConnected = connected;
       lastRegistered = registered;
       lastReconnecting = reconnecting;
-    }, 100);
+    }, 30000);
 
-    logger.debug("[DingTalk] Connection monitor started (checking every 100ms)");
+    logger.debug("[DingTalk] Connection monitor started (checking every 30s)");
   }
 
   private getReconnectDelayMs(attempt: number): number {
