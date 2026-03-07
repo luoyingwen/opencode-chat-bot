@@ -30,6 +30,7 @@ import { safeBackgroundTask } from "../utils/safe-background-task.js";
 import { formatErrorDetails } from "../utils/error-format.js";
 import { clearAllInteractionState } from "../interaction/cleanup.js";
 import { processManager } from "../process/manager.js";
+import { getLocalizedBotCommands } from "../bot/commands/definitions.js";
 import { logger } from "../utils/logger.js";
 import { t } from "../i18n/index.js";
 import {
@@ -82,19 +83,38 @@ async function ensureEventSubscription(directory: string): Promise<void> {
   });
 }
 
+async function waitForServerReady(maxWaitMs: number = 10000): Promise<boolean> {
+  const startTime = Date.now();
+  const pollInterval = 500;
+
+  while (Date.now() - startTime < maxWaitMs) {
+    try {
+      const { data, error } = await opencodeClient.global.health();
+      if (!error && data?.healthy) {
+        return true;
+      }
+    } catch {
+      // Server not ready yet
+    }
+    await new Promise((resolve) => setTimeout(resolve, pollInterval));
+  }
+
+  return false;
+}
+
 // ─── Slack bot initialization ───────────────────────────────────────────
 
 export async function initializeSlackHandler(): Promise<SlackApp> {
   const { botToken, appToken, signingSecret, proxyUrl } = config.slack;
 
   if (!botToken || !appToken) {
-    throw new Error(
-      "SLACK_BOT_TOKEN and SLACK_APP_TOKEN are required for Slack integration",
-    );
+    throw new Error("SLACK_BOT_TOKEN and SLACK_APP_TOKEN are required for Slack integration");
   }
 
   // Build clientOptions with optional proxy agent (same pattern as Telegram)
-  let clientOptions: { agent: InstanceType<typeof HttpsProxyAgent> | InstanceType<typeof SocksProxyAgent> } | undefined;
+  let clientOptions:
+    | { agent: InstanceType<typeof HttpsProxyAgent> | InstanceType<typeof SocksProxyAgent> }
+    | undefined;
   if (proxyUrl) {
     const agent = proxyUrl.startsWith("socks")
       ? new SocksProxyAgent(proxyUrl)
@@ -210,9 +230,7 @@ export async function initializeSlackHandler(): Promise<SlackApp> {
         return;
       }
 
-      logger.info(
-        `[Slack] Created new session: id=${session.id}, title="${session.title}"`,
-      );
+      logger.info(`[Slack] Created new session: id=${session.id}, title="${session.title}"`);
 
       setCurrentSession({
         id: session.id,
@@ -442,6 +460,206 @@ export async function initializeSlackHandler(): Promise<SlackApp> {
     }
   });
 
+  // ─── Command: /rename ───────────────────────────────────────────────
+
+  app.command("/rename", async ({ command, ack, say }) => {
+    await ack();
+
+    if (!isChannelAllowed(command.channel_id)) {
+      await say("⛔ This channel is not authorized.");
+      return;
+    }
+
+    try {
+      const currentSession = getCurrentSession();
+      if (!currentSession) {
+        await say(t("rename.no_session"));
+        return;
+      }
+
+      await say(t("rename.prompt", { title: currentSession.title }));
+    } catch (err) {
+      logger.error("[Slack] Error in /rename:", err);
+      await say(t("rename.error"));
+    }
+  });
+
+  // ─── Command: /commands ─────────────────────────────────────────────
+
+  app.command("/commands", async ({ command, ack, say }) => {
+    await ack();
+
+    if (!isChannelAllowed(command.channel_id)) {
+      await say("⛔ This channel is not authorized.");
+      return;
+    }
+
+    try {
+      const currentProject = getCurrentProject();
+      if (!currentProject) {
+        await say(t("bot.project_not_selected"));
+        return;
+      }
+
+      const { data, error } = await opencodeClient.command.list({
+        directory: currentProject.worktree.replace(/\\/g, "/"),
+      });
+
+      if (error || !data || data.length === 0) {
+        await say(t("commands.empty"));
+        return;
+      }
+
+      const filtered = data.filter(
+        (cmd) => typeof cmd.name === "string" && cmd.name.trim().length > 0,
+      );
+      if (filtered.length === 0) {
+        await say(t("commands.empty"));
+        return;
+      }
+
+      const lines = filtered.map((cmd) => {
+        const desc = cmd.description?.trim() || t("commands.no_description");
+        return `• /\`${cmd.name}\` — ${desc}`;
+      });
+
+      await say({
+        text: `📋 *OpenCode Commands* (${filtered.length} available)\n\n${lines.join("\n")}`,
+        mrkdwn: true,
+      });
+    } catch (err) {
+      logger.error("[Slack] Error in /commands:", err);
+      await say(t("commands.fetch_error"));
+    }
+  });
+
+  // ─── Command: /opencode_start ─────────────────────────────────────────
+
+  app.command("/opencode_start", async ({ command, ack, say }) => {
+    await ack();
+
+    if (!isChannelAllowed(command.channel_id)) {
+      await say("⛔ This channel is not authorized.");
+      return;
+    }
+
+    try {
+      if (processManager.isRunning()) {
+        const uptime = processManager.getUptime();
+        const uptimeStr = uptime ? Math.floor(uptime / 1000) : 0;
+        await say(
+          t("opencode_start.already_running_managed", {
+            pid: processManager.getPID() ?? "-",
+            seconds: uptimeStr,
+          }),
+        );
+        return;
+      }
+
+      try {
+        const { data, error } = await opencodeClient.global.health();
+        if (!error && data?.healthy) {
+          await say(
+            t("opencode_start.already_running_external", {
+              version: data.version || t("common.unknown"),
+            }),
+          );
+          return;
+        }
+      } catch {
+        // Continue with start
+      }
+
+      await say(t("opencode_start.starting"));
+
+      const { success, error } = await processManager.start();
+
+      if (!success) {
+        await say(t("opencode_start.start_error", { error: error || t("common.unknown_error") }));
+        return;
+      }
+
+      const ready = await waitForServerReady(10000);
+      if (!ready) {
+        await say(t("opencode_start.started_not_ready", { pid: processManager.getPID() ?? "-" }));
+        return;
+      }
+
+      const { data: health } = await opencodeClient.global.health();
+      await say(
+        t("opencode_start.success", {
+          pid: processManager.getPID() ?? "-",
+          version: health?.version || t("common.unknown"),
+        }),
+      );
+
+      logger.info(`[Slack] OpenCode server started, PID=${processManager.getPID()}`);
+    } catch (err) {
+      logger.error("[Slack] Error in /opencode_start:", err);
+      await say(t("opencode_start.error"));
+    }
+  });
+
+  // ─── Command: /opencode_stop ─────────────────────────────────────────
+
+  app.command("/opencode_stop", async ({ command, ack, say }) => {
+    await ack();
+
+    if (!isChannelAllowed(command.channel_id)) {
+      await say("⛔ This channel is not authorized.");
+      return;
+    }
+
+    try {
+      if (!processManager.isRunning()) {
+        try {
+          const { data, error } = await opencodeClient.global.health();
+          if (!error && data?.healthy) {
+            await say(t("opencode_stop.external_running"));
+            return;
+          }
+        } catch {
+          // Server not accessible
+        }
+        await say(t("opencode_stop.not_running"));
+        return;
+      }
+
+      const pid = processManager.getPID();
+      await say(t("opencode_stop.stopping", { pid: pid ?? "-" }));
+
+      const { success, error } = await processManager.stop(5000);
+
+      if (!success) {
+        await say(t("opencode_stop.stop_error", { error: error || t("common.unknown_error") }));
+        return;
+      }
+
+      await say(t("opencode_stop.success"));
+      logger.info("[Slack] OpenCode server stopped");
+    } catch (err) {
+      logger.error("[Slack] Error in /opencode_stop:", err);
+      await say(t("opencode_stop.error"));
+    }
+  });
+
+  // ─── Command: /help ─────────────────────────────────────────────────
+
+  app.command("/help", async ({ command, ack, say }) => {
+    await ack();
+
+    if (!isChannelAllowed(command.channel_id)) {
+      await say("⛔ This channel is not authorized.");
+      return;
+    }
+
+    const commands = getLocalizedBotCommands();
+    const lines = commands.map((item) => `/${item.command} - ${item.description}`);
+    const message = `📖 *Commands*\n\n${lines.join("\n")}\n\n_Tip: Select a project with \`/projects\` and \`/project <number>\`_`;
+
+    await say({ text: message, mrkdwn: true });
+  });
+
   // ─── Regular messages (prompts) ─────────────────────────────────────
 
   app.message(async ({ message, say }) => {
@@ -468,9 +686,7 @@ export async function initializeSlackHandler(): Promise<SlackApp> {
       // Create session if none exists, or if it's for a different project
       if (!currentSession || currentSession.directory !== currentProject.worktree) {
         if (currentSession && currentSession.directory !== currentProject.worktree) {
-          logger.warn(
-            `[Slack] Session/project mismatch. Clearing session context.`,
-          );
+          logger.warn(`[Slack] Session/project mismatch. Clearing session context.`);
           stopEventListening();
           summaryAggregator.clear();
           clearAllInteractionState("slack_session_mismatch");
@@ -485,9 +701,7 @@ export async function initializeSlackHandler(): Promise<SlackApp> {
           return;
         }
 
-        logger.info(
-          `[Slack] Auto-created session: id=${session.id}, title="${session.title}"`,
-        );
+        logger.info(`[Slack] Auto-created session: id=${session.id}, title="${session.title}"`);
 
         currentSession = {
           id: session.id,
@@ -514,7 +728,9 @@ export async function initializeSlackHandler(): Promise<SlackApp> {
             currentSession.id
           ];
           if (sessionStatus?.type === "busy") {
-            await say("⏳ Session is busy. Please wait for the current task to finish, or use `/stop`.");
+            await say(
+              "⏳ Session is busy. Please wait for the current task to finish, or use `/stop`.",
+            );
             return;
           }
         }
@@ -538,9 +754,7 @@ export async function initializeSlackHandler(): Promise<SlackApp> {
       });
 
       const processingTs =
-        processingResult && "ts" in processingResult
-          ? (processingResult.ts as string)
-          : undefined;
+        processingResult && "ts" in processingResult ? (processingResult.ts as string) : undefined;
 
       // Mark Slack as active target BEFORE sending prompt
       setSlackActive(channelId, processingTs);
@@ -602,10 +816,7 @@ export async function initializeSlackHandler(): Promise<SlackApp> {
           const details = formatErrorDetails(error, 6000);
           logger.error("[Slack] session.prompt background failure:", details);
 
-          void postMessageToChannel(
-            channelId,
-            "❌ Prompt failed. Check logs for details.",
-          );
+          void postMessageToChannel(channelId, "❌ Prompt failed. Check logs for details.");
 
           clearSlackActive();
         },

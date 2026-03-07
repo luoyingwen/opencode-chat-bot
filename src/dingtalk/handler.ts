@@ -333,6 +333,205 @@ async function handleSessionsCommand(userId: string): Promise<void> {
   }
 }
 
+async function handleRenameCommand(userId: string): Promise<void> {
+  try {
+    const currentSession = getCurrentSession();
+    if (!currentSession) {
+      await sendDingTalkMessage(userId, t("rename.no_session"));
+      return;
+    }
+    await sendDingTalkMessage(userId, t("rename.prompt", { title: currentSession.title }));
+  } catch (err) {
+    logger.error("[DingTalk] Error in rename command:", err);
+    await sendDingTalkMessage(userId, t("rename.error"));
+  }
+}
+
+async function handleCommandsCommand(userId: string): Promise<void> {
+  try {
+    const currentProject = getCurrentProject();
+    if (!currentProject) {
+      await sendDingTalkMessage(userId, t("bot.project_not_selected"));
+      return;
+    }
+
+    const { data, error } = await opencodeClient.command.list({
+      directory: currentProject.worktree.replace(/\\/g, "/"),
+    });
+
+    if (error || !data || data.length === 0) {
+      await sendDingTalkMessage(userId, t("commands.empty"));
+      return;
+    }
+
+    const filtered = data.filter(
+      (cmd) => typeof cmd.name === "string" && cmd.name.trim().length > 0,
+    );
+    if (filtered.length === 0) {
+      await sendDingTalkMessage(userId, t("commands.empty"));
+      return;
+    }
+
+    const lines = filtered.map((cmd) => {
+      const desc = cmd.description?.trim() || t("commands.no_description");
+      return `• /${cmd.name} — ${desc}`;
+    });
+
+    await sendDingTalkMessage(
+      userId,
+      `📋 **OpenCode Commands** (${filtered.length} available)\n\n${lines.join("\n")}`,
+    );
+  } catch (err) {
+    logger.error("[DingTalk] Error in commands command:", err);
+    await sendDingTalkMessage(userId, t("commands.fetch_error"));
+  }
+}
+
+async function handleOpencodeStartCommand(userId: string): Promise<void> {
+  try {
+    if (processManager.isRunning()) {
+      const uptime = processManager.getUptime();
+      const uptimeStr = uptime ? Math.floor(uptime / 1000) : 0;
+      await sendDingTalkMessage(
+        userId,
+        t("opencode_start.already_running_managed", {
+          pid: processManager.getPID() ?? "-",
+          seconds: uptimeStr,
+        }),
+      );
+      return;
+    }
+
+    try {
+      const { data, error } = await opencodeClient.global.health();
+      if (!error && data?.healthy) {
+        await sendDingTalkMessage(
+          userId,
+          t("opencode_start.already_running_external", {
+            version: data.version || t("common.unknown"),
+          }),
+        );
+        return;
+      }
+    } catch {
+      // Continue with start
+    }
+
+    await sendDingTalkMessage(userId, t("opencode_start.starting"));
+
+    const { success, error } = await processManager.start();
+
+    if (!success) {
+      await sendDingTalkMessage(
+        userId,
+        t("opencode_start.start_error", { error: error || t("common.unknown_error") }),
+      );
+      return;
+    }
+
+    const ready = await waitForServerReadyDingTalk(10000);
+    if (!ready) {
+      await sendDingTalkMessage(
+        userId,
+        t("opencode_start.started_not_ready", { pid: processManager.getPID() ?? "-" }),
+      );
+      return;
+    }
+
+    const { data: health } = await opencodeClient.global.health();
+    await sendDingTalkMessage(
+      userId,
+      t("opencode_start.success", {
+        pid: processManager.getPID() ?? "-",
+        version: health?.version || t("common.unknown"),
+      }),
+    );
+
+    logger.info(`[DingTalk] OpenCode server started, PID=${processManager.getPID()}`);
+  } catch (err) {
+    logger.error("[DingTalk] Error in opencode_start command:", err);
+    await sendDingTalkMessage(userId, t("opencode_start.error"));
+  }
+}
+
+async function handleOpencodeStopCommand(userId: string): Promise<void> {
+  try {
+    if (!processManager.isRunning()) {
+      try {
+        const { data, error } = await opencodeClient.global.health();
+        if (!error && data?.healthy) {
+          await sendDingTalkMessage(userId, t("opencode_stop.external_running"));
+          return;
+        }
+      } catch {
+        // Server not accessible
+      }
+      await sendDingTalkMessage(userId, t("opencode_stop.not_running"));
+      return;
+    }
+
+    const pid = processManager.getPID();
+    await sendDingTalkMessage(userId, t("opencode_stop.stopping", { pid: pid ?? "-" }));
+
+    const { success, error } = await processManager.stop(5000);
+
+    if (!success) {
+      await sendDingTalkMessage(
+        userId,
+        t("opencode_stop.stop_error", { error: error || t("common.unknown_error") }),
+      );
+      return;
+    }
+
+    await sendDingTalkMessage(userId, t("opencode_stop.success"));
+    logger.info("[DingTalk] OpenCode server stopped");
+  } catch (err) {
+    logger.error("[DingTalk] Error in opencode_stop command:", err);
+    await sendDingTalkMessage(userId, t("opencode_stop.error"));
+  }
+}
+
+async function handleHelpCommand(userId: string): Promise<void> {
+  const commands = getLocalizedBotCommandsDingTalk();
+  const lines = commands.map((item) => `/${item.command} - ${item.description}`);
+  const message = `📖 **Commands**\n\n${lines.join("\n")}\n\n_Tip: Select a project with \`/projects\` and \`/project <number>\`_`;
+  await sendDingTalkMessage(userId, message);
+}
+
+async function waitForServerReadyDingTalk(maxWaitMs: number = 10000): Promise<boolean> {
+  const startTime = Date.now();
+  const pollInterval = 500;
+
+  while (Date.now() - startTime < maxWaitMs) {
+    try {
+      const { data, error } = await opencodeClient.global.health();
+      if (!error && data?.healthy) {
+        return true;
+      }
+    } catch {
+      // Server not ready yet
+    }
+    await new Promise((resolve) => setTimeout(resolve, pollInterval));
+  }
+
+  return false;
+}
+
+function getLocalizedBotCommandsDingTalk(): { command: string; description: string }[] {
+  return [
+    { command: "status", description: t("cmd.description.status") },
+    { command: "new", description: t("cmd.description.new") },
+    { command: "stop", description: t("cmd.description.stop") },
+    { command: "sessions", description: t("cmd.description.sessions") },
+    { command: "projects", description: t("cmd.description.projects") },
+    { command: "rename", description: t("cmd.description.rename") },
+    { command: "commands", description: t("cmd.description.commands") },
+    { command: "opencode_start", description: t("cmd.description.opencode_start") },
+    { command: "opencode_stop", description: t("cmd.description.opencode_stop") },
+    { command: "help", description: t("cmd.description.help") },
+  ];
+}
+
 async function handleTextMessage(userId: string, text: string): Promise<void> {
   try {
     const currentProject = getCurrentProject();
@@ -483,6 +682,16 @@ function processMessage(userId: string, text: string, sessionWebhook: string): v
     void handleProjectCommand(userId, arg);
   } else if (text.startsWith("/sessions")) {
     void handleSessionsCommand(userId);
+  } else if (text.startsWith("/rename")) {
+    void handleRenameCommand(userId);
+  } else if (text.startsWith("/commands")) {
+    void handleCommandsCommand(userId);
+  } else if (text.startsWith("/opencode_start")) {
+    void handleOpencodeStartCommand(userId);
+  } else if (text.startsWith("/opencode_stop")) {
+    void handleOpencodeStopCommand(userId);
+  } else if (text.startsWith("/help")) {
+    void handleHelpCommand(userId);
   } else {
     void handleTextMessage(userId, text);
   }
