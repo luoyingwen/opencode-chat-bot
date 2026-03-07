@@ -534,9 +534,18 @@ function getLocalizedBotCommandsDingTalk(): { command: string; description: stri
 }
 
 async function handleTextMessage(userId: string, text: string): Promise<void> {
+  logger.info(
+    `[DingTalk] handleTextMessage called: userId=${userId}, text="${text.substring(0, 50)}..."`,
+  );
+
   try {
     const currentProject = getCurrentProject();
+    logger.debug(
+      `[DingTalk] Current project: ${currentProject ? currentProject.worktree : "null"}`,
+    );
+
     if (!currentProject) {
+      logger.warn(`[DingTalk] No project selected for user ${userId}`);
       await sendDingTalkMessage(
         userId,
         "❌ No project selected. Use `/projects` and `/project <number>` first.",
@@ -559,6 +568,7 @@ async function handleTextMessage(userId: string, text: string): Promise<void> {
       });
 
       if (error || !session) {
+        logger.error(`[DingTalk] Failed to create session: ${error || "no session data"}`);
         await sendDingTalkMessage(userId, "❌ Failed to create session.");
         return;
       }
@@ -596,9 +606,12 @@ async function handleTextMessage(userId: string, text: string): Promise<void> {
     }
 
     await ensureEventSubscription(currentSession.directory);
+    logger.debug(`[DingTalk] Event subscription completed for ${currentSession.directory}`);
+
     installDingTalkEventRouting();
     summaryAggregator.setSession(currentSession.id);
 
+    logger.info(`[DingTalk] Sending "Processing..." message to user ${userId}`);
     await sendDingTalkMessage(userId, "⚙️ Processing…");
 
     setDingTalkActive(userId);
@@ -632,13 +645,17 @@ async function handleTextMessage(userId: string, text: string): Promise<void> {
     }
 
     logger.info(
-      `[DingTalk] Sending prompt (fire-and-forget): agent=${currentAgent}, session=${currentSession.id}`,
+      `[DingTalk] Sending prompt (fire-and-forget): agent=${currentAgent}, session=${currentSession.id}, text="${text.substring(0, 50)}..."`,
     );
 
     safeBackgroundTask({
       taskName: "dingtalk.session.prompt",
-      task: () => opencodeClient.session.prompt(promptOptions),
+      task: () => {
+        logger.debug(`[DingTalk] Executing session.prompt in background task`);
+        return opencodeClient.session.prompt(promptOptions);
+      },
       onSuccess: ({ error }) => {
+        logger.debug(`[DingTalk] session.prompt onSuccess called, error=${error ? "yes" : "no"}`);
         if (error) {
           const details = formatErrorDetails(error, 6000);
           logger.error("[DingTalk] session.prompt API error:", details);
@@ -646,7 +663,7 @@ async function handleTextMessage(userId: string, text: string): Promise<void> {
           clearDingTalkActive();
           return;
         }
-        logger.info("[DingTalk] session.prompt completed");
+        logger.info("[DingTalk] session.prompt completed successfully");
       },
       onError: (error) => {
         const details = formatErrorDetails(error, 6000);
@@ -655,6 +672,7 @@ async function handleTextMessage(userId: string, text: string): Promise<void> {
         clearDingTalkActive();
       },
     });
+    logger.debug(`[DingTalk] safeBackgroundTask for session.prompt dispatched`);
   } catch (err) {
     logger.error("[DingTalk] Error processing message:", err);
     await sendDingTalkMessage(userId, "❌ An error occurred. Please try again.");
@@ -694,6 +712,13 @@ function processMessage(userId: string, text: string, sessionWebhook: string): v
   } else if (text.startsWith("/help")) {
     void handleHelpCommand(userId);
   } else {
+    logger.info(
+      `[DingTalk] Routing to handleTextMessage: userId=${userId}, text="${text.substring(0, 30)}..."`,
+    );
+    const webhook = getUserSessionWebhook(userId);
+    logger.debug(
+      `[DingTalk] Session webhook for user ${userId}: ${webhook ? "exists" : "missing"}`,
+    );
     void handleTextMessage(userId, text);
   }
 }
