@@ -500,6 +500,16 @@ export async function initializeDingTalkHandler(): Promise<void> {
   const client = initDingTalkClient({ appKey, appSecret });
   setDingTalkClient(client);
 
+  client.onConnectionStatus(({ connected, registered, reconnecting }) => {
+    if (connected && registered && !reconnecting) {
+      logger.info("[DingTalk] Connection status: healthy (connected and registered)");
+    } else if (reconnecting) {
+      logger.warn("[DingTalk] Connection status: reconnecting");
+    } else if (!connected) {
+      logger.error("[DingTalk] Connection status: disconnected");
+    }
+  });
+
   client.onMessage((data) => {
     processMessage(data.userId, data.text, data.sessionWebhook);
   });
