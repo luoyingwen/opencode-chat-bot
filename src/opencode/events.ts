@@ -86,6 +86,11 @@ export async function subscribeToEvents(directory: string, callback: EventCallba
             break;
           }
 
+          // Log received SSE event
+          logger.info(
+            `[SSE] Received event: type=${event.type}, sessionID=${(event.properties as { sessionID?: string }).sessionID || "n/a"}`,
+          );
+
           // CRITICAL: Explicitly yield to the event loop BEFORE processing the event
           // This allows grammY to handle getUpdates between SSE events
           await new Promise<void>((resolve) => setImmediate(resolve));

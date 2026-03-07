@@ -684,6 +684,12 @@ class SummaryAggregator {
       return;
     }
 
+    // Log busy status changes
+    if (status?.type === "busy") {
+      logger.info(`[Aggregator] Session became busy: ${sessionID}`);
+      return;
+    }
+
     if (status?.type !== "retry" || !this.onSessionRetryCallback) {
       return;
     }
@@ -716,7 +722,8 @@ class SummaryAggregator {
       return;
     }
 
-    logger.info(`[Aggregator] Session became idle: ${sessionID}`);
+    const timestamp = new Date().toISOString();
+    logger.info(`[Aggregator] Session became idle: ${sessionID} at ${timestamp}`);
 
     // Stop typing indicator when session goes idle
     this.stopTypingIndicator();
