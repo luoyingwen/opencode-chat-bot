@@ -41,7 +41,9 @@ async function ensureEventSubscription(directory: string): Promise<void> {
   }
 
   logger.info(`[DingTalk] Subscribing to OpenCode events for project: ${directory}`);
-  await subscribeToEvents(directory, (event) => {
+  // subscribeToEvents runs indefinitely in a loop, so we don't await it
+  // It will keep listening for SSE events in the background
+  void subscribeToEvents(directory, (event) => {
     if (event.type === "session.created" || event.type === "session.updated") {
       const info = (
         event.properties as { info?: { directory?: string; time?: { updated?: number } } }
@@ -57,6 +59,8 @@ async function ensureEventSubscription(directory: string): Promise<void> {
 
     summaryAggregator.processEvent(event);
   });
+
+  logger.debug("[DingTalk] Event subscription initiated (running in background)");
 }
 
 async function sendDingTalkMessage(userId: string, text: string): Promise<void> {
