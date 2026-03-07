@@ -494,7 +494,8 @@ async function handleOpencodeStopCommand(userId: string): Promise<void> {
 async function handleHelpCommand(userId: string): Promise<void> {
   const commands = getLocalizedBotCommandsDingTalk();
   const lines = commands.map((item) => `/${item.command} - ${item.description}`);
-  const message = `📖 **Commands**\n\n${lines.join("\n")}\n\n_Tip: Select a project with \`/projects\` and \`/project <number>\`_`;
+  // DingTalk markdown needs double newlines for line breaks
+  const message = `📖 **Commands**\n\n${lines.join("\n\n")}\n\n_Tip: Select a project with \`/projects\` and \`/project <number>\`_`;
   await sendDingTalkMessage(userId, message);
 }
 
