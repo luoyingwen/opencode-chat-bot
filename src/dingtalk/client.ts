@@ -24,6 +24,8 @@ export class DingTalkClient {
   private connectionStatusHandler: ConnectionStatusHandler | null = null;
   private reconnectAttempts = 0;
   private connectionCheckInterval: ReturnType<typeof setInterval> | null = null;
+  private lastMessageTime = 0;
+  private isReconnecting = false;
 
   constructor(config: { appKey: string; appSecret: string }) {
     this.client = new DWClient({
@@ -117,6 +119,7 @@ export class DingTalkClient {
     });
 
     this.startConnectionMonitor();
+    this.lastMessageTime = Date.now();
 
     try {
       await this.client.connect();
@@ -136,15 +139,26 @@ export class DingTalkClient {
     let lastConnected = false;
     let lastRegistered = false;
     let lastReconnecting = false;
+    let lastLogTime = 0;
 
     this.connectionCheckInterval = setInterval(() => {
       const { connected, registered, reconnecting } = this.client;
+      const now = Date.now();
+
+      // Log current state every 10 seconds for debugging
+      if (now - lastLogTime > 10000) {
+        logger.debug(
+          `[DingTalk] Connection state: connected=${connected}, registered=${registered}, reconnecting=${reconnecting}, lastMessage=${now - this.lastMessageTime}ms ago`,
+        );
+        lastLogTime = now;
+      }
 
       // Detect and log state changes
       if (connected !== lastConnected) {
         if (connected) {
           logger.info("[DingTalk] Connection established");
           this.reconnectAttempts = 0;
+          this.isReconnecting = false;
         } else {
           logger.warn("[DingTalk] Connection lost");
         }
@@ -157,16 +171,31 @@ export class DingTalkClient {
       if (reconnecting !== lastReconnecting) {
         if (reconnecting) {
           this.reconnectAttempts++;
+          this.isReconnecting = true;
           const delay = this.getReconnectDelayMs(this.reconnectAttempts);
           logger.warn(
             `[DingTalk] Reconnecting... (attempt #${this.reconnectAttempts}, next in ${delay}ms)`,
           );
-        } else if (connected && registered) {
+        } else if (connected && registered && this.isReconnecting) {
           logger.info(
             `[DingTalk] Reconnected successfully after ${this.reconnectAttempts} attempts`,
           );
           this.reconnectAttempts = 0;
+          this.isReconnecting = false;
         }
+      }
+
+      // Heartbeat timeout detection - if no message for 60 seconds, connection may be dead
+      const timeSinceLastMessage = now - this.lastMessageTime;
+      if (
+        this.lastMessageTime > 0 &&
+        timeSinceLastMessage > 60000 &&
+        connected &&
+        !this.isReconnecting
+      ) {
+        logger.warn(
+          `[DingTalk] No message received for ${timeSinceLastMessage}ms, connection may be stale`,
+        );
       }
 
       // Notify handler of status changes
@@ -181,9 +210,9 @@ export class DingTalkClient {
       lastConnected = connected;
       lastRegistered = registered;
       lastReconnecting = reconnecting;
-    }, 500);
+    }, 100);
 
-    logger.debug("[DingTalk] Connection monitor started");
+    logger.debug("[DingTalk] Connection monitor started (checking every 100ms)");
   }
 
   private getReconnectDelayMs(attempt: number): number {
@@ -201,6 +230,9 @@ export class DingTalkClient {
 
   private handleRobotMessage(res: DWClientDownStream): void {
     try {
+      // Update last message time for heartbeat detection
+      this.lastMessageTime = Date.now();
+
       const { messageId, topic } = res.headers;
 
       if (topic !== TOPIC_ROBOT) {
