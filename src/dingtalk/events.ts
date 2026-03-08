@@ -178,8 +178,6 @@ function handleDingTalkComplete(sessionId: string, messageText: string): void {
       }
     } catch (err) {
       logger.error("[DingTalk] Error sending completion message:", err);
-    } finally {
-      activeTarget = null;
     }
   };
 
@@ -252,4 +250,5 @@ function handleDingTalkIdle(sessionId: string): void {
   if (!currentSession || currentSession.id !== sessionId) return;
 
   void sendMessage(target.userId, "✅ Done");
+  activeTarget = null;
 }

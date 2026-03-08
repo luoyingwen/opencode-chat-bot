@@ -237,14 +237,6 @@ class SummaryAggregator {
       );
     }
 
-    // Log all session-related events for debugging
-    if (event.type.startsWith("session.")) {
-      logger.debug(
-        `[Aggregator] Session event: ${event.type}`,
-        JSON.stringify(event.properties, null, 2),
-      );
-    }
-
     switch (event.type) {
       case "message.updated":
         this.handleMessageUpdated(event);
