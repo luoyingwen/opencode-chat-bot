@@ -757,8 +757,9 @@ export async function initializeDingTalkHandler(): Promise<void> {
     await client.connectStream();
     logger.info("[DingTalk] Stream mode connected successfully");
   } catch (err) {
-    logger.error("[DingTalk] Failed to connect stream:", err);
-    throw err;
+    logger.error("[DingTalk] Failed to connect stream (will retry automatically):", err);
+    // Don't throw - the underlying library will retry automatically
+    // and the connection monitor will track the status
   }
 }
 

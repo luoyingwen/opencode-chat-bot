@@ -124,7 +124,33 @@ async function sendMessage(userId: string, text: string): Promise<void> {
   try {
     await dingTalkClient.sendMarkdownMessage(sessionWebhook, userId, "OpenCode", text);
   } catch (err) {
-    logger.error("[DingTalk] Failed to send message:", err);
+    const errorMessage = err instanceof Error ? err.message : String(err);
+
+    // Check if webhook expired (common error codes: 400502, 400014, or contains "session" or "webhook")
+    if (
+      errorMessage.includes("400502") ||
+      errorMessage.includes("400014") ||
+      errorMessage.includes("session") ||
+      errorMessage.includes("webhook") ||
+      errorMessage.includes("expired") ||
+      errorMessage.includes("invalid")
+    ) {
+      logger.warn(`[DingTalk] Webhook expired for user ${userId}, clearing...`);
+      userSessionWebhooks.delete(userId);
+
+      // Try to notify user they need to send a new message
+      try {
+        await dingTalkClient.sendTextMessage(
+          sessionWebhook,
+          userId,
+          "⚠️ 连接已过期，请发送任意消息重新激活机器人。",
+        );
+      } catch {
+        // Ignore secondary failure
+      }
+    } else {
+      logger.error("[DingTalk] Failed to send message:", err);
+    }
   }
 }
 

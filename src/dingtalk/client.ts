@@ -1,5 +1,8 @@
 import { DWClient, type DWClientDownStream, TOPIC_ROBOT, type RobotMessage } from "dingtalk-stream";
 import { logger } from "../utils/logger.js";
+import { config } from "../config.js";
+import { opencodeClient } from "../opencode/client.js";
+import { getCurrentSession } from "../session/manager.js";
 
 type MessageHandler = (data: {
   userId: string;
@@ -15,25 +18,24 @@ type ConnectionStatusHandler = (status: {
   reconnecting: boolean;
 }) => void;
 
-const RECONNECT_BASE_DELAY_MS = 1000;
-const RECONNECT_MAX_DELAY_MS = 30000;
+// Force reconnect if no message for 2 minutes
+const STALE_CONNECTION_THRESHOLD_MS = 120000;
 
 export class DingTalkClient {
   private client: DWClient;
   private messageHandler: MessageHandler | null = null;
   private connectionStatusHandler: ConnectionStatusHandler | null = null;
-  private reconnectAttempts = 0;
   private connectionCheckInterval: ReturnType<typeof setInterval> | null = null;
   private lastMessageTime = 0;
-  private isReconnecting = false;
+  private isForceReconnecting = false;
 
-  constructor(config: { appKey: string; appSecret: string }) {
+  constructor(clientConfig: { appKey: string; appSecret: string }) {
     this.client = new DWClient({
-      clientId: config.appKey,
-      clientSecret: config.appSecret,
-      debug: false,
+      clientId: clientConfig.appKey,
+      clientSecret: clientConfig.appSecret,
+      debug: config.dingtalk.debug,
     });
-    logger.info("[DingTalk] Client instance created");
+    logger.info(`[DingTalk] Client instance created (debug=${config.dingtalk.debug})`);
   }
 
   onConnectionStatus(handler: ConnectionStatusHandler): void {
@@ -41,21 +43,14 @@ export class DingTalkClient {
   }
 
   async getAccessToken(): Promise<string> {
-    const token = await this.client.getAccessToken();
-    return token;
+    return await this.client.getAccessToken();
   }
 
   async sendTextMessage(sessionWebhook: string, userId: string, text: string): Promise<void> {
     const accessToken = await this.getAccessToken();
-
     const body = {
-      at: {
-        atUserIds: [userId],
-        isAtAll: false,
-      },
-      text: {
-        content: text,
-      },
+      at: { atUserIds: [userId], isAtAll: false },
+      text: { content: text },
       msgtype: "text",
     };
 
@@ -81,16 +76,9 @@ export class DingTalkClient {
     markdown: string,
   ): Promise<void> {
     const accessToken = await this.getAccessToken();
-
     const body = {
-      at: {
-        atUserIds: [userId],
-        isAtAll: false,
-      },
-      markdown: {
-        title,
-        text: markdown,
-      },
+      at: { atUserIds: [userId], isAtAll: false },
+      markdown: { title, text: markdown },
       msgtype: "markdown",
     };
 
@@ -124,10 +112,9 @@ export class DingTalkClient {
     try {
       await this.client.connect();
       logger.info("[DingTalk] Stream mode connected successfully");
-      this.reconnectAttempts = 0;
     } catch (err) {
       logger.error("[DingTalk] Failed to connect stream:", err);
-      throw err;
+      // Don't throw - let the connection monitor handle reconnection
     }
   }
 
@@ -138,23 +125,21 @@ export class DingTalkClient {
 
     let lastConnected = false;
     let lastRegistered = false;
-    let lastReconnecting = false;
 
     this.connectionCheckInterval = setInterval(() => {
-      const { connected, registered, reconnecting } = this.client;
+      const { connected, registered } = this.client;
       const now = Date.now();
+      const timeSinceLastMessage = now - this.lastMessageTime;
 
       // Log current state every 30 seconds
       logger.debug(
-        `[DingTalk] Connection state: connected=${connected}, registered=${registered}, reconnecting=${reconnecting}, lastMessage=${this.lastMessageTime > 0 ? `${now - this.lastMessageTime}ms ago` : "n/a"}`,
+        `[DingTalk] Connection state: connected=${connected}, registered=${registered}, lastMessage=${timeSinceLastMessage > 0 ? `${Math.floor(timeSinceLastMessage / 1000)}s ago` : "n/a"}`,
       );
 
-      // Detect and log state changes
+      // Detect connection state changes
       if (connected !== lastConnected) {
         if (connected) {
           logger.info("[DingTalk] Connection established");
-          this.reconnectAttempts = 0;
-          this.isReconnecting = false;
         } else {
           logger.warn("[DingTalk] Connection lost");
         }
@@ -164,56 +149,74 @@ export class DingTalkClient {
         logger.info("[DingTalk] Client registered with DingTalk server");
       }
 
-      if (reconnecting !== lastReconnecting) {
-        if (reconnecting) {
-          this.reconnectAttempts++;
-          this.isReconnecting = true;
-          const delay = this.getReconnectDelayMs(this.reconnectAttempts);
-          logger.warn(
-            `[DingTalk] Reconnecting... (attempt #${this.reconnectAttempts}, next in ${delay}ms)`,
-          );
-        } else if (connected && registered && this.isReconnecting) {
-          logger.info(
-            `[DingTalk] Reconnected successfully after ${this.reconnectAttempts} attempts`,
-          );
-          this.reconnectAttempts = 0;
-          this.isReconnecting = false;
-        }
-      }
-
-      // Heartbeat timeout detection - if no message for 60 seconds, connection may be dead
-      const timeSinceLastMessage = now - this.lastMessageTime;
+      // Core logic: Force reconnect if no message for 2 minutes
       if (
-        this.lastMessageTime > 0 &&
-        timeSinceLastMessage > 60000 &&
+        timeSinceLastMessage > STALE_CONNECTION_THRESHOLD_MS &&
         connected &&
-        !this.isReconnecting
+        !this.isForceReconnecting
       ) {
-        logger.warn(
-          `[DingTalk] No message received for ${Math.floor(timeSinceLastMessage / 1000)}s, connection may be stale`,
+        logger.error(
+          `[DingTalk] Connection stale (no message for ${Math.floor(timeSinceLastMessage / 1000)}s), forcing reconnect...`,
         );
+        void this.forceReconnect();
       }
 
       // Notify handler of status changes
-      if (
-        connected !== lastConnected ||
-        registered !== lastRegistered ||
-        reconnecting !== lastReconnecting
-      ) {
-        this.connectionStatusHandler?.({ connected, registered, reconnecting });
+      if (connected !== lastConnected || registered !== lastRegistered) {
+        this.connectionStatusHandler?.({
+          connected,
+          registered,
+          reconnecting: this.client.reconnecting,
+        });
       }
 
       lastConnected = connected;
       lastRegistered = registered;
-      lastReconnecting = reconnecting;
     }, 30000);
 
     logger.debug("[DingTalk] Connection monitor started (checking every 30s)");
   }
 
-  private getReconnectDelayMs(attempt: number): number {
-    const exponentialDelay = RECONNECT_BASE_DELAY_MS * Math.pow(2, Math.max(0, attempt - 1));
-    return Math.min(exponentialDelay, RECONNECT_MAX_DELAY_MS);
+  private async forceReconnect(): Promise<void> {
+    if (this.isForceReconnecting) return;
+
+    // Check if OpenCode session is busy
+    const currentSession = getCurrentSession();
+    if (currentSession) {
+      try {
+        const { data, error } = await opencodeClient.session.status({
+          directory: currentSession.directory,
+        });
+
+        if (!error && data) {
+          const sessionStatus = (data as Record<string, { type?: string }>)[currentSession.id];
+          if (sessionStatus?.type === "busy") {
+            logger.warn(
+              `[DingTalk] OpenCode session ${currentSession.id} is busy, delaying reconnect...`,
+            );
+            return; // Skip reconnect, will try again in next interval
+          }
+        }
+      } catch (err) {
+        logger.warn("[DingTalk] Failed to check session status before reconnect:", err);
+        // Continue with reconnect if we can't check status
+      }
+    }
+
+    this.isForceReconnecting = true;
+
+    try {
+      logger.warn("[DingTalk] Force reconnect initiated");
+      this.client.disconnect();
+      await new Promise((resolve) => setTimeout(resolve, 2000));
+      this.lastMessageTime = Date.now();
+      await this.client.connect();
+      logger.info("[DingTalk] Force reconnect completed successfully");
+    } catch (err) {
+      logger.error("[DingTalk] Force reconnect failed:", err);
+    } finally {
+      this.isForceReconnecting = false;
+    }
   }
 
   private stopConnectionMonitor(): void {
@@ -226,22 +229,14 @@ export class DingTalkClient {
 
   private handleRobotMessage(res: DWClientDownStream): void {
     try {
-      // Update last message time for heartbeat detection
       this.lastMessageTime = Date.now();
-
       const { messageId, topic } = res.headers;
 
-      if (topic !== TOPIC_ROBOT) {
-        return;
-      }
+      if (topic !== TOPIC_ROBOT) return;
 
       const msgData = JSON.parse(res.data) as RobotMessage;
       const { senderStaffId, sessionWebhook, conversationId } = msgData;
-
-      let text = "";
-      if (msgData.msgtype === "text" && msgData.text?.content) {
-        text = msgData.text.content;
-      }
+      const text = msgData.msgtype === "text" ? msgData.text?.content || "" : "";
 
       if (senderStaffId && text && sessionWebhook) {
         logger.debug(`[DingTalk] Received message from ${senderStaffId}: ${text}`);
