@@ -67,6 +67,8 @@ export interface SessionRetryInfo {
 
 type SessionRetryCallback = (retryInfo: SessionRetryInfo) => void;
 
+type IdleCallback = (sessionId: string) => void;
+
 type PermissionCallback = (request: PermissionRequest) => void;
 
 type SessionDiffCallback = (sessionId: string, diffs: FileChange[]) => void;
@@ -125,6 +127,7 @@ class SummaryAggregator {
   private onSessionCompactedCallback: SessionCompactedCallback | null = null;
   private onSessionErrorCallback: SessionErrorCallback | null = null;
   private onSessionRetryCallback: SessionRetryCallback | null = null;
+  private onIdleCallback: IdleCallback | null = null;
   private onPermissionCallback: PermissionCallback | null = null;
   private onSessionDiffCallback: SessionDiffCallback | null = null;
   private onFileChangeCallback: FileChangeCallback | null = null;
@@ -179,6 +182,10 @@ class SummaryAggregator {
 
   setOnSessionRetry(callback: SessionRetryCallback): void {
     this.onSessionRetryCallback = callback;
+  }
+
+  setOnIdle(callback: IdleCallback): void {
+    this.onIdleCallback = callback;
   }
 
   setOnPermission(callback: PermissionCallback): void {
@@ -727,6 +734,11 @@ class SummaryAggregator {
 
     // Stop typing indicator when session goes idle
     this.stopTypingIndicator();
+
+    // Notify callback that session is idle
+    if (this.onIdleCallback) {
+      this.onIdleCallback(sessionID);
+    }
   }
 
   private handleSessionCompacted(

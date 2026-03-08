@@ -236,7 +236,49 @@ export class DingTalkClient {
 
       const msgData = JSON.parse(res.data) as RobotMessage;
       const { senderStaffId, sessionWebhook, conversationId } = msgData;
-      const text = msgData.msgtype === "text" ? msgData.text?.content || "" : "";
+
+      logger.info(`[DingTalk] Received message: type=${msgData.msgtype}, from=${senderStaffId}`);
+
+      let text = "";
+      const msgType = msgData.msgtype;
+
+      if (msgType === "text") {
+        text = msgData.text?.content || "";
+      } else if (msgType === "markdown") {
+        text = (msgData as { markdown?: { text?: string } }).markdown?.text || "";
+      } else if (msgType === "richText") {
+        // 富文本消息，尝试提取文本内容
+        // 结构: content: { richText: [{ text: "xxx" }, { text: "yyy" }] }
+        const content = (msgData as { content?: { richText?: Array<{ text?: string }> } }).content;
+        if (content?.richText && Array.isArray(content.richText)) {
+          text = content.richText
+            .map((item) => item.text)
+            .filter(Boolean)
+            .join("\n");
+          logger.debug(`[DingTalk] richText extracted: ${text}`);
+        } else {
+          logger.warn(
+            `[DingTalk] richText content structure unexpected: ${JSON.stringify(content)}`,
+          );
+        }
+      } else if (msgType === "image" || msgType === "voice" || msgType === "file") {
+        // 图片、语音、文件消息，记录日志并提示用户
+        logger.info(
+          `[DingTalk] Received ${msgType} message from ${senderStaffId}, not supported yet`,
+        );
+        this.messageHandler?.({
+          userId: senderStaffId,
+          text: `⚠️ 暂不支持的 ${msgType} 消息类型，请发送文本消息`,
+          conversationId,
+          sessionWebhook,
+          messageId,
+        });
+        this.client.socketCallBackResponse(messageId, { success: true });
+        return;
+      } else {
+        // 其他未知消息类型
+        logger.warn(`[DingTalk] Received unknown message type: ${msgType}`);
+      }
 
       if (senderStaffId && text && sessionWebhook) {
         logger.debug(`[DingTalk] Received message from ${senderStaffId}: ${text}`);
