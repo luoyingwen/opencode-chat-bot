@@ -20,6 +20,7 @@ type ConnectionStatusHandler = (status: {
 
 // Force reconnect if no message for 2 minutes
 const STALE_CONNECTION_THRESHOLD_MS = 120000;
+const DISCONNECTED_RETRY_INTERVAL_MS = 30000;
 
 export class DingTalkClient {
   private client: DWClient;
@@ -149,16 +150,24 @@ export class DingTalkClient {
         logger.info("[DingTalk] Client registered with DingTalk server");
       }
 
-      // Core logic: Force reconnect if no message for 2 minutes
-      if (
-        timeSinceLastMessage > STALE_CONNECTION_THRESHOLD_MS &&
-        connected &&
-        !this.isForceReconnecting
-      ) {
-        logger.error(
-          `[DingTalk] Connection stale (no message for ${Math.floor(timeSinceLastMessage / 1000)}s), forcing reconnect...`,
-        );
-        void this.forceReconnect();
+      // Core logic: Force reconnect when needed
+      if (!this.isForceReconnecting) {
+        if (!connected && timeSinceLastMessage > DISCONNECTED_RETRY_INTERVAL_MS) {
+          // Connection is down — retry reconnect
+          logger.warn(
+            `[DingTalk] Connection is down (${Math.floor(timeSinceLastMessage / 1000)}s), attempting reconnect...`,
+          );
+          void this.forceReconnect();
+        } else if (
+          connected &&
+          timeSinceLastMessage > STALE_CONNECTION_THRESHOLD_MS
+        ) {
+          // Connected but stale — force reconnect
+          logger.error(
+            `[DingTalk] Connection stale (no message for ${Math.floor(timeSinceLastMessage / 1000)}s), forcing reconnect...`,
+          );
+          void this.forceReconnect();
+        }
       }
 
       // Notify handler of status changes
@@ -209,8 +218,8 @@ export class DingTalkClient {
       logger.warn("[DingTalk] Force reconnect initiated");
       this.client.disconnect();
       await new Promise((resolve) => setTimeout(resolve, 2000));
-      this.lastMessageTime = Date.now();
       await this.client.connect();
+      this.lastMessageTime = Date.now();
       logger.info("[DingTalk] Force reconnect completed successfully");
     } catch (err) {
       logger.error("[DingTalk] Force reconnect failed:", err);
