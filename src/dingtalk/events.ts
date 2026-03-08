@@ -127,6 +127,9 @@ async function sendMessage(userId: string, text: string): Promise<void> {
 
   try {
     await dingTalkClient.sendMarkdownMessage(sessionWebhook, userId, "OpenCode", text);
+    logger.info(
+      `[DingTalk] Message sent to user ${userId}: ${text.slice(0, 100)}${text.length > 100 ? "..." : ""}`,
+    );
   } catch (err) {
     const errorMessage = err instanceof Error ? err.message : String(err);
 
