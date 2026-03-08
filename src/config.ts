@@ -144,5 +144,6 @@ export const config = {
     appSecret: getEnvVar("DINGTALK_APP_SECRET", false),
     agentId: getEnvVar("DINGTALK_AGENT_ID", false),
     allowedUserId: getEnvVar("DINGTALK_ALLOWED_USER_ID", false),
+    debug: getOptionalBooleanEnvVar("DINGTALK_DEBUG", false),
   },
 };
