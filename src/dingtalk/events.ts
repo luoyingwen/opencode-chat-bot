@@ -47,6 +47,7 @@ interface OriginalCallbacks {
   onTokens: ((tokens: TokensInfo) => void) | null;
   onSessionError: ((sessionId: string, message: string) => void) | null;
   onSessionRetry: ((retryInfo: SessionRetryInfo) => void) | null;
+  onIdle: ((sessionId: string) => void) | null;
 }
 
 const originalCallbacks: OriginalCallbacks = {
@@ -56,6 +57,7 @@ const originalCallbacks: OriginalCallbacks = {
   onTokens: null,
   onSessionError: null,
   onSessionRetry: null,
+  onIdle: null,
 };
 
 let callbacksInstalled = false;
@@ -70,6 +72,7 @@ export function installDingTalkEventRouting(): void {
   patchAggregatorCallback("setOnTokens", "onTokens", handleDingTalkTokens);
   patchAggregatorCallback("setOnSessionError", "onSessionError", handleDingTalkSessionError);
   patchAggregatorCallback("setOnSessionRetry", "onSessionRetry", handleDingTalkSessionRetry);
+  patchAggregatorCallback("setOnIdle", "onIdle", handleDingTalkIdle);
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const aggregator = summaryAggregator as any;
@@ -79,6 +82,7 @@ export function installDingTalkEventRouting(): void {
   aggregator.setOnTokens(null);
   aggregator.setOnSessionError(null);
   aggregator.setOnSessionRetry(null);
+  aggregator.setOnIdle(null);
 
   logger.info("[DingTalk] Event routing callbacks installed");
 }
@@ -235,4 +239,14 @@ function handleDingTalkSessionRetry(retryInfo: SessionRetryInfo): void {
       : normalizedMessage;
 
   void sendMessage(target.userId, t("bot.session_retry", { message: truncatedMessage }));
+}
+
+function handleDingTalkIdle(sessionId: string): void {
+  const target = activeTarget;
+  if (!target) return;
+
+  const currentSession = getCurrentSession();
+  if (!currentSession || currentSession.id !== sessionId) return;
+
+  void sendMessage(target.userId, "✅ Done");
 }
