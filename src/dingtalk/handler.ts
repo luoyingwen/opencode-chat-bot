@@ -667,7 +667,7 @@ async function handleTextMessage(userId: string, text: string): Promise<void> {
             userId,
             `❌ Failed to send prompt.\n\nError details:\n\`\`\`\n${details}\n\`\`\``,
           );
-          clearDingTalkActive();
+          // 不清除 activeTarget，以便可能接收后续事件
           return;
         }
         logger.info("[DingTalk] session.prompt completed successfully");
