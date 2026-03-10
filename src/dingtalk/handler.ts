@@ -661,18 +661,24 @@ async function handleTextMessage(userId: string, text: string): Promise<void> {
       onSuccess: ({ error }) => {
         logger.debug(`[DingTalk] session.prompt onSuccess called, error=${error ? "yes" : "no"}`);
         if (error) {
-          const details = formatErrorDetails(error, 6000);
+          const details = formatErrorDetails(error, 1500);
           logger.error("[DingTalk] session.prompt API error:", details);
-          void sendDingTalkMessage(userId, "❌ Failed to send prompt. Check logs for details.");
+          void sendDingTalkMessage(
+            userId,
+            `❌ Failed to send prompt.\n\nError details:\n\`\`\`\n${details}\n\`\`\``,
+          );
           clearDingTalkActive();
           return;
         }
         logger.info("[DingTalk] session.prompt completed successfully");
       },
       onError: (error) => {
-        const details = formatErrorDetails(error, 6000);
+        const details = formatErrorDetails(error, 1500);
         logger.error("[DingTalk] session.prompt background failure:", details);
-        void sendDingTalkMessage(userId, "❌ Prompt failed. Check logs for details.");
+        void sendDingTalkMessage(
+          userId,
+          `❌ Prompt failed.\n\nError details:\n\`\`\`\n${details}\n\`\`\``,
+        );
         clearDingTalkActive();
       },
     });
