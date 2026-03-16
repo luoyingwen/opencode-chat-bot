@@ -81,6 +81,7 @@ No public inbound ports are required for normal usage.
 - Default model provider and model ID
 - Selected project persisted in `settings.json`
 - Configurable sessions list size (default: 10)
+- Configurable scheduled task limit (default: 10)
 - Configurable bot locale
 - Configurable visibility for service messages (thinking/tool calls)
 - Configurable max code file size in KB (default: 100)
@@ -97,6 +98,8 @@ Current command set:
 - `/abort` - stop the current task
 - `/sessions` - show and switch recent sessions
 - `/projects` - show and switch projects
+- `/task` - create a scheduled task
+- `/tasklist` - browse and delete scheduled tasks
 - `/rename` - rename current session
 - `/commands` - browse and run custom commands (plus built-ins like `init` and `review`)
 - `/opencode_start` - start local OpenCode server
@@ -133,6 +136,9 @@ Model picker behavior:
 - [x] Live pinned session status in chat (project, model, context usage, changed files)
 - [x] In-chat controls for model, agent, variant, and context
 - [x] Built-in and custom command catalog access (`/commands`)
+- [x] Scheduled task creation flow (`/task`)
+- [x] Scheduled task runtime execution with deferred Telegram delivery
+- [x] Scheduled task list and deletion flow (`/tasklist`)
 - [x] Persistent settings between restarts (`settings.json`)
 - [x] UI localization support via i18n files
 - [x] Service message visibility controls (thinking/tool updates)

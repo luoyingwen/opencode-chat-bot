@@ -4,6 +4,8 @@ export const en = {
   "cmd.description.stop": "Stop current action",
   "cmd.description.sessions": "List sessions",
   "cmd.description.projects": "List projects",
+  "cmd.description.task": "Create a scheduled task",
+  "cmd.description.tasklist": "List scheduled tasks",
   "cmd.description.commands": "Custom commands",
   "cmd.description.opencode_start": "Start OpenCode server",
   "cmd.description.opencode_stop": "Stop OpenCode server",
@@ -45,7 +47,7 @@ export const en = {
   "common.unknown_error": "unknown error",
 
   "start.welcome":
-    "👋 Welcome to OpenCode Telegram Bot!\n\nUse commands:\n/projects — select project\n/sessions — session list\n/new — new session\n/status — status\n/help — help\n\nUse the bottom buttons to select agent mode, model, and variant.",
+    "👋 Welcome to OpenCode Telegram Bot!\n\nUse commands:\n/projects — select project\n/sessions — session list\n/new — new session\n/task — scheduled task\n/tasklist — scheduled tasks\n/status — status\n/help — help\n\nUse the bottom buttons to select agent mode, model, and variant.",
   "help.keyboard_hint":
     "💡 Use the bottom keyboard buttons for agent mode, model, variant, and context actions.",
   "help.text":
@@ -326,6 +328,51 @@ export const en = {
   "rename.blocked.command_not_allowed":
     "⚠️ This command is not available while rename is waiting for a new name.",
   "rename.button.cancel": "❌ Cancel",
+
+  "task.prompt.schedule":
+    "⏰ Send the task schedule in natural language.\n\nExamples:\n- every 5 minutes\n- every day at 17:00\n- tomorrow at 12:00",
+  "task.schedule_empty": "⚠️ Schedule cannot be empty.",
+  "task.parse.in_progress": "⏳ Parsing schedule...",
+  "task.parse_error":
+    "🔴 Failed to parse schedule.\n\n{message}\n\nSend the schedule again in a clearer form.",
+  "task.schedule_preview":
+    "✅ Schedule parsed\n\nHow I understood it: {summary}\n{cronLine}Timezone: {timezone}\nType: {kind}\nNext run: {nextRunAt}",
+  "task.schedule_preview.cron": "Cron: {cron}",
+  "task.prompt.body": "📝 Now send what the bot should do on schedule.",
+  "task.prompt_empty": "⚠️ Task text cannot be empty.",
+  "task.created":
+    "✅ Scheduled task created\n\nTask: {description}\nProject: {project}\nModel: {model}\nSchedule: {schedule}\n{cronLine}Next run: {nextRunAt}",
+  "task.created.cron": "Cron: {cron}",
+  "task.button.retry_schedule": "🔁 Re-enter schedule",
+  "task.button.cancel": "❌ Cancel",
+  "task.retry_schedule_callback": "Re-entering schedule...",
+  "task.cancel_callback": "Cancelling...",
+  "task.cancelled": "❌ Scheduled task creation cancelled.",
+  "task.inactive_callback": "This scheduled task flow is inactive",
+  "task.inactive": "⚠️ Scheduled task creation is not active. Run /task again.",
+  "task.blocked.expected_input":
+    "⚠️ Finish the current scheduled task setup first by sending text or using the button in the schedule message.",
+  "task.blocked.command_not_allowed":
+    "⚠️ This command is not available while scheduled task creation is active.",
+  "task.limit_reached": "⚠️ Task limit reached ({limit}). Delete an existing scheduled task first.",
+  "task.schedule_too_frequent":
+    "Recurring schedule is too frequent. The minimum allowed interval is once every 5 minutes.",
+  "task.kind.cron": "recurring",
+  "task.kind.once": "one-time",
+  "task.run.success": "⏰ Scheduled task completed: {description}\n\n{result}",
+  "task.run.error": "🔴 Scheduled task failed: {description}\n\nError: {error}",
+
+  "tasklist.empty": "📭 No scheduled tasks yet.",
+  "tasklist.select": "Select a scheduled task:",
+  "tasklist.details":
+    "⏰ Scheduled task\n\nTask: {prompt}\nProject: {project}\nSchedule: {schedule}\n{cronLine}Timezone: {timezone}\nNext run: {nextRunAt}\nLast run: {lastRunAt}\nRun count: {runCount}",
+  "tasklist.details.cron": "Cron: {cron}",
+  "tasklist.button.delete": "🗑 Delete",
+  "tasklist.button.cancel": "❌ Cancel",
+  "tasklist.deleted_callback": "Deleted",
+  "tasklist.cancelled_callback": "Cancelled",
+  "tasklist.inactive_callback": "This scheduled task menu is inactive",
+  "tasklist.load_error": "🔴 Failed to load scheduled tasks.",
 
   "commands.select": "Choose an OpenCode command:",
   "commands.empty": "📭 No OpenCode commands are available for this project.",

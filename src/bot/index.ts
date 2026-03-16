@@ -24,6 +24,8 @@ import { abortCommand } from "./commands/abort.js";
 import { opencodeStartCommand } from "./commands/opencode-start.js";
 import { opencodeStopCommand } from "./commands/opencode-stop.js";
 import { renameCommand, handleRenameCancel, handleRenameTextAnswer } from "./commands/rename.js";
+import { handleTaskCallback, handleTaskTextInput, taskCommand } from "./commands/task.js";
+import { handleTaskListCallback, taskListCommand } from "./commands/tasklist.js";
 import {
   commandsCommand,
   handleCommandsCallback,
@@ -62,6 +64,8 @@ import { sendBotText } from "./utils/telegram-text.js";
 import { getModelCapabilities, supportsInput } from "../model/capabilities.js";
 import { getStoredModel } from "../model/manager.js";
 import type { FilePartInput } from "@opencode-ai/sdk/v2";
+import { foregroundSessionState } from "../scheduled-task/foreground-state.js";
+import { scheduledTaskRuntime } from "../scheduled-task/runtime.js";
 
 let botInstance: Bot<Context> | null = null;
 let chatIdInstance: number | null = null;
@@ -175,11 +179,14 @@ async function ensureEventSubscription(directory: string): Promise<void> {
   summaryAggregator.setOnComplete(async (sessionId, messageText) => {
     if (!botInstance || !chatIdInstance) {
       logger.error("Bot or chat ID not available for sending message");
+      foregroundSessionState.markIdle(sessionId);
       return;
     }
 
     const currentSession = getCurrentSession();
     if (currentSession?.id !== sessionId) {
+      foregroundSessionState.markIdle(sessionId);
+      await scheduledTaskRuntime.flushDeferredDeliveries();
       return;
     }
 
@@ -213,6 +220,9 @@ async function ensureEventSubscription(directory: string): Promise<void> {
       // Stop processing events after critical error to prevent infinite loop
       logger.error("[Bot] CRITICAL: Stopping event processing due to error");
       summaryAggregator.clear();
+    } finally {
+      foregroundSessionState.markIdle(sessionId);
+      await scheduledTaskRuntime.flushDeferredDeliveries();
     }
   });
 
@@ -382,11 +392,14 @@ async function ensureEventSubscription(directory: string): Promise<void> {
 
   summaryAggregator.setOnSessionError(async (sessionId, message) => {
     if (!botInstance || !chatIdInstance) {
+      foregroundSessionState.markIdle(sessionId);
       return;
     }
 
     const currentSession = getCurrentSession();
     if (!currentSession || currentSession.id !== sessionId) {
+      foregroundSessionState.markIdle(sessionId);
+      await scheduledTaskRuntime.flushDeferredDeliveries();
       return;
     }
 
@@ -403,6 +416,9 @@ async function ensureEventSubscription(directory: string): Promise<void> {
       .catch((err) => {
         logger.error("[Bot] Failed to send session.error message:", err);
       });
+
+    foregroundSessionState.markIdle(sessionId);
+    await scheduledTaskRuntime.flushDeferredDeliveries();
   });
 
   summaryAggregator.setOnSessionRetry(async ({ sessionId, message }) => {
@@ -566,6 +582,8 @@ export function createBot(): Bot<Context> {
   bot.command("sessions", sessionsCommand);
   bot.command("new", newCommand);
   bot.command("abort", abortCommand);
+  bot.command("task", taskCommand);
+  bot.command("tasklist", taskListCommand);
   bot.command("rename", renameCommand);
   bot.command("commands", commandsCommand);
 
@@ -590,11 +608,13 @@ export function createBot(): Bot<Context> {
       const handledModel = await handleModelSelect(ctx);
       const handledVariant = await handleVariantSelect(ctx);
       const handledCompactConfirm = await handleCompactConfirm(ctx);
+      const handledTask = await handleTaskCallback(ctx);
+      const handledTaskList = await handleTaskListCallback(ctx);
       const handledRenameCancel = await handleRenameCancel(ctx);
       const handledCommands = await handleCommandsCallback(ctx, { bot, ensureEventSubscription });
 
       logger.debug(
-        `[Bot] Callback handled: inlineCancel=${handledInlineCancel}, session=${handledSession}, project=${handledProject}, question=${handledQuestion}, permission=${handledPermission}, agent=${handledAgent}, model=${handledModel}, variant=${handledVariant}, compactConfirm=${handledCompactConfirm}, rename=${handledRenameCancel}, commands=${handledCommands}`,
+        `[Bot] Callback handled: inlineCancel=${handledInlineCancel}, session=${handledSession}, project=${handledProject}, question=${handledQuestion}, permission=${handledPermission}, agent=${handledAgent}, model=${handledModel}, variant=${handledVariant}, compactConfirm=${handledCompactConfirm}, task=${handledTask}, taskList=${handledTaskList}, rename=${handledRenameCancel}, commands=${handledCommands}`,
       );
 
       if (
@@ -607,6 +627,8 @@ export function createBot(): Bot<Context> {
         !handledModel &&
         !handledVariant &&
         !handledCompactConfirm &&
+        !handledTask &&
+        !handledTaskList &&
         !handledRenameCancel &&
         !handledCommands
       ) {
@@ -826,6 +848,11 @@ export function createBot(): Bot<Context> {
 
     if (questionManager.isActive()) {
       await handleQuestionTextAnswer(ctx);
+      return;
+    }
+
+    const handledTask = await handleTaskTextInput(ctx);
+    if (handledTask) {
       return;
     }
 

@@ -11,6 +11,8 @@ Run AI coding tasks, monitor progress, switch models, and manage sessions from y
 
 No open ports, no exposed APIs. The bot communicates with your local OpenCode server and the Telegram Bot API only.
 
+Scheduled tasks support. Turns the bot into a lightweight OpenClaw alternative for OpenCode users.
+
 Platforms: macOS, Windows, Linux
 
 Languages: English (`en`), Deutsch (`de`), Español (`es`), Français (`fr`), Русский (`ru`), 简体中文 (`zh`)
@@ -30,6 +32,7 @@ Languages: English (`en`), Deutsch (`de`), Español (`es`), Français (`fr`), Р
 - **Interactive Q&A** — answer agent questions and approve permissions via inline buttons
 - **Voice prompts** — send voice/audio messages, transcribe them via a Whisper-compatible API, then forward recognized text to OpenCode
 - **File attachments** — send images, PDF documents, and any text-based files to OpenCode (code, logs, configs etc.)
+- **Scheduled tasks** — schedule prompts to run later or on a recurring interval; see [Scheduled Tasks](#scheduled-tasks)
 - **Context control** — compact context when it gets too large, right from the chat
 - **Input flow control** — when an interactive flow is active, the bot accepts only relevant input to keep context consistent and avoid accidental actions
 - **Security** — strict user ID whitelist; no one else can access your bot, even if they find it
@@ -107,6 +110,8 @@ opencode-telegram config
 | `/projects`       | Switch between OpenCode projects                        |
 | `/rename`         | Rename the current session                              |
 | `/commands`       | Browse and run custom commands                          |
+| `/task`           | Create a scheduled task                                 |
+| `/tasklist`       | Browse and delete scheduled tasks                       |
 | `/opencode_start` | Start the OpenCode server remotely                      |
 | `/opencode_stop`  | Stop the OpenCode server remotely                       |
 | `/help`           | Show available commands                                 |
@@ -114,6 +119,16 @@ opencode-telegram config
 Any regular text message is sent as a prompt to the coding agent only when no blocking interaction is active. Voice/audio messages are transcribed and then sent as prompts when STT is configured.
 
 > `/opencode_start` and `/opencode_stop` are intended as emergency commands — for example, if you need to restart a stuck server while away from your computer. Under normal usage, start `opencode serve` yourself before launching the bot.
+
+## Scheduled Tasks
+
+Scheduled tasks let you prepare prompts in advance and run them automatically later or on a recurring schedule. This is useful for periodic checks, routine code maintenance, or tasks you want OpenCode to execute while you are away from your computer. Use `/task` to create a scheduled task and `/tasklist` to review or delete existing ones.
+
+- Each task is created from the currently selected OpenCode project and model
+- Scheduled executions currently always run with the `build` agent
+- Tasks run outside your active chat session, so they do not interrupt or affect the current session flow
+- The minimum recurring interval is 5 minutes
+- Up to 10 scheduled tasks can exist at once by default; change this with `TASK_LIMIT` in your `.env`
 
 ## Configuration
 
@@ -144,6 +159,7 @@ When installed via npm, the configuration wizard handles the initial setup. The 
 | `BOT_LOCALE`                    | Bot UI language (supported locale code, e.g. `en`, `de`, `es`, `fr`, `ru`, `zh`)                             |    No    | `en`                     |
 | `SESSIONS_LIST_LIMIT`           | Sessions per page in `/sessions`                                                                             |    No    | `10`                     |
 | `PROJECTS_LIST_LIMIT`           | Projects per page in `/projects`                                                                             |    No    | `10`                     |
+| `TASK_LIMIT`                    | Maximum number of scheduled tasks that can exist at once                                                     |    No    | `10`                     |
 | `SERVICE_MESSAGES_INTERVAL_SEC` | Service messages interval (thinking + tool calls); keep `>=2` to avoid Telegram rate limits, `0` = immediate |    No    | `5`                      |
 | `HIDE_THINKING_MESSAGES`        | Hide `💭 Thinking...` service messages                                                                       |    No    | `false`                  |
 | `HIDE_TOOL_CALL_MESSAGES`       | Hide tool-call service messages (`💻 bash ...`, `📖 read ...`, etc.)                                         |    No    | `false`                  |

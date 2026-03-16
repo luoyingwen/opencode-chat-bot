@@ -114,6 +114,7 @@ export const config = {
   bot: {
     sessionsListLimit: getOptionalPositiveIntEnvVar("SESSIONS_LIST_LIMIT", 10),
     projectsListLimit: getOptionalPositiveIntEnvVar("PROJECTS_LIST_LIMIT", 10),
+    taskLimit: getOptionalPositiveIntEnvVar("TASK_LIMIT", 10),
     locale: getOptionalLocaleEnvVar("BOT_LOCALE", "en"),
     serviceMessagesIntervalSec: getOptionalNonNegativeIntEnvVarFromKeys(
       ["SERVICE_MESSAGES_INTERVAL_SEC", "TOOL_MESSAGES_INTERVAL_SEC"],
