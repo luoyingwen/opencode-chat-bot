@@ -77,6 +77,14 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const TEMP_DIR = path.join(__dirname, "..", ".tmp");
 
+function getCurrentReplyKeyboard() {
+  if (!keyboardManager.isInitialized()) {
+    return undefined;
+  }
+
+  return keyboardManager.getKeyboard();
+}
+
 function prepareDocumentCaption(caption: string): string {
   const normalizedCaption = caption.trim();
   if (!normalizedCaption) {
@@ -102,8 +110,11 @@ const toolMessageBatcher = new ToolMessageBatcher({
       return;
     }
 
+    const keyboard = getCurrentReplyKeyboard();
+
     await botInstance.api.sendMessage(chatIdInstance, text, {
       disable_notification: true,
+      ...(keyboard ? { reply_markup: keyboard } : {}),
     });
   },
   sendFile: async (sessionId, fileData) => {
@@ -126,9 +137,12 @@ const toolMessageBatcher = new ToolMessageBatcher({
       await fs.mkdir(TEMP_DIR, { recursive: true });
       await fs.writeFile(tempFilePath, fileData.buffer);
 
+      const keyboard = getCurrentReplyKeyboard();
+
       await botInstance.api.sendDocument(chatIdInstance, new InputFile(tempFilePath), {
         caption: fileData.caption,
         disable_notification: true,
+        ...(keyboard ? { reply_markup: keyboard } : {}),
       });
     } finally {
       await fs.unlink(tempFilePath).catch(() => {});
@@ -202,9 +216,7 @@ async function ensureEventSubscription(directory: string): Promise<void> {
       );
 
       for (let i = 0; i < parts.length; i++) {
-        const isLastPart = i === parts.length - 1;
-        const keyboard =
-          isLastPart && keyboardManager.isInitialized() ? keyboardManager.getKeyboard() : undefined;
+        const keyboard = getCurrentReplyKeyboard();
         const options = keyboard ? { reply_markup: keyboard } : undefined;
 
         await sendBotText({
