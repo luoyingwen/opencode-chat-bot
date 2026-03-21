@@ -389,6 +389,11 @@ export const en = {
   "commands.executing_prefix": "⚡ Executing command:",
   "commands.arguments_empty": "⚠️ Arguments cannot be empty. Send text or tap Execute.",
   "commands.execute_error": "🔴 Failed to execute OpenCode command.",
+  "commands.select_page": "Choose an OpenCode command (page {page}):",
+  "commands.button.prev_page": "⬅️ Prev",
+  "commands.button.next_page": "Next ➡️",
+  "commands.page_empty_callback": "No commands on this page",
+  "commands.page_load_error_callback": "Cannot load this page. Please try again.",
 
   "cmd.description.rename": "Rename current session",
 

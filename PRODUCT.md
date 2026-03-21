@@ -81,6 +81,7 @@ No public inbound ports are required for normal usage.
 - Default model provider and model ID
 - Selected project persisted in `settings.json`
 - Configurable sessions list size (default: 10)
+- Configurable commands list size (default: 10)
 - Configurable scheduled task limit (default: 10)
 - Configurable bot locale
 - Configurable visibility for service messages (thinking/tool calls)

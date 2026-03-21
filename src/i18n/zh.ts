@@ -353,15 +353,19 @@ export const zh: I18nDictionary = {
   "commands.executing_prefix": "⚡ 执行命令:",
   "commands.arguments_empty": "⚠️ 参数不能为空。请发送文本或点击执行。",
   "commands.execute_error": "🔴 执行 OpenCode 命令失败。",
+  "commands.select_page": "请选择一个 OpenCode 命令（第 {page} 页）：",
+  "commands.button.prev_page": "⬅️ 上一页",
+  "commands.button.next_page": "下一页 ➡️",
+  "commands.page_empty_callback": "这一页没有命令",
+  "commands.page_load_error_callback": "无法加载此页面。请重试。",
 
   "cmd.description.rename": "重命名当前会话",
 
   "cli.usage":
-    "用法：\n  opencode-telegram [start] [--mode sources|installed]\n  opencode-telegram status\n  opencode-telegram stop\n  opencode-telegram config\n\n说明：\n  - 不带命令时默认执行 `start`\n  - `--mode` 目前仅支持 `start` 命令",
-  "cli.placeholder.status":
-    "命令 `status` 目前是占位符。真实状态检查将会在 service 层（阶段 5）添加。",
+    "用法:\n  opencode-telegram [start] [--mode sources|installed]\n  opencode-telegram status\n  opencode-telegram stop\n  opencode-telegram config\n\n注意:\n  - 无命令时默认为 `start`\n  - `--mode` 当前仅支持 `start`",
+  "cli.placeholder.status": "`status` 命令当前为占位符。实际状态检查将在服务层中添加（第5阶段）。",
   "cli.placeholder.stop":
-    "命令 `stop` 目前是占位符。真实的后台进程停止将会在 service 层（阶段 5）添加。",
+    "`stop` 命令当前为占位符。实际后台进程停止功能将在服务层中添加（第5阶段）。",
   "cli.placeholder.unavailable": "命令不可用。",
   "cli.error.prefix": "CLI 错误：{message}",
   "cli.args.unknown_command": "未知命令：{value}",

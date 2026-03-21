@@ -5,6 +5,9 @@ import {
   handleCommandTextArguments,
   handleCommandsCallback,
   type ExecuteCommandDeps,
+  parseCommandPageCallback,
+  formatCommandsSelectText,
+  calculateCommandsPaginationRange,
 } from "../../../src/bot/commands/commands.js";
 import { interactionManager } from "../../../src/interaction/manager.js";
 import { t } from "../../../src/i18n/index.js";
@@ -361,5 +364,250 @@ describe("bot/commands/commands", () => {
       show_alert: true,
     });
     expect(interactionManager.getSnapshot()?.kind).toBe("custom");
+  });
+
+  it("shows next-page button when commands exceed page size", async () => {
+    const commands = Array.from({ length: 11 }, (_, i) => ({
+      name: `cmd${i + 1}`,
+      description: `Command ${i + 1} description`,
+    }));
+
+    mocked.commandListMock.mockResolvedValueOnce({
+      data: commands,
+      error: null,
+    });
+
+    const ctx = createCommandContext(700);
+    await commandsCommand(ctx as never);
+
+    expect(mocked.commandListMock).toHaveBeenCalledWith({ directory: "D:/Projects/Repo" });
+
+    const [, options] = (ctx.reply as ReturnType<typeof vi.fn>).mock.calls[0] as [
+      string,
+      { reply_markup: { inline_keyboard: Array<Array<{ callback_data?: string; text: string }>> } },
+    ];
+
+    expect(options.reply_markup.inline_keyboard[0]?.[0]?.callback_data).toBe("commands:select:0");
+    expect(options.reply_markup.inline_keyboard[9]?.[0]?.callback_data).toBe("commands:select:9");
+
+    const paginationRow = options.reply_markup.inline_keyboard[10];
+    expect(paginationRow?.[0]?.callback_data).toBe("commands:page:1");
+    expect(paginationRow?.[0]?.text).toBe(t("commands.button.next_page"));
+
+    expect(options.reply_markup.inline_keyboard[11]?.[0]?.callback_data).toBe("commands:cancel");
+  });
+
+  it("handles next-page callback and renders second page with prev button", async () => {
+    const commands = Array.from({ length: 12 }, (_, i) => ({
+      name: `cmd${i + 1}`,
+      description: `Command ${i + 1} description`,
+    }));
+
+    interactionManager.start({
+      kind: "custom",
+      expectedInput: "callback",
+      metadata: {
+        flow: "commands",
+        stage: "list",
+        messageId: 800,
+        projectDirectory: "D:\\Projects\\Repo",
+        commands,
+        page: 0,
+      },
+    });
+
+    const ctx = createCallbackContext("commands:page:1", 800);
+    const handled = await handleCommandsCallback(ctx, createDeps());
+
+    expect(handled).toBe(true);
+    expect(ctx.editMessageText).toHaveBeenCalledTimes(1);
+
+    const [text, options] = (ctx.editMessageText as ReturnType<typeof vi.fn>).mock.calls[0] as [
+      string,
+      { reply_markup: { inline_keyboard: Array<Array<{ callback_data?: string; text: string }>> } },
+    ];
+
+    expect(text).toBe(t("commands.select_page", { page: 2 }));
+
+    const inlineRows = options.reply_markup.inline_keyboard;
+    expect(inlineRows[0]?.[0]?.callback_data).toBe("commands:select:10");
+    expect(inlineRows[1]?.[0]?.callback_data).toBe("commands:select:11");
+
+    const paginationRow = inlineRows[2];
+    expect(paginationRow?.[0]?.callback_data).toBe("commands:page:0");
+    expect(paginationRow?.[0]?.text).toBe(t("commands.button.prev_page"));
+
+    expect(inlineRows[3]?.[0]?.callback_data).toBe("commands:cancel");
+  });
+
+  it("returns page-empty callback message when requested page has no commands", async () => {
+    const commands = Array.from({ length: 5 }, (_, i) => ({
+      name: `cmd${i + 1}`,
+      description: `Command ${i + 1} description`,
+    }));
+
+    interactionManager.start({
+      kind: "custom",
+      expectedInput: "callback",
+      metadata: {
+        flow: "commands",
+        stage: "list",
+        messageId: 900,
+        projectDirectory: "D:\\Projects\\Repo",
+        commands,
+        page: 0,
+      },
+    });
+
+    const ctx = createCallbackContext("commands:page:5", 900);
+    const handled = await handleCommandsCallback(ctx, createDeps());
+
+    expect(handled).toBe(true);
+    expect(ctx.answerCallbackQuery).toHaveBeenCalledWith({
+      text: t("commands.page_empty_callback"),
+    });
+    expect(ctx.editMessageText).not.toHaveBeenCalled();
+  });
+
+  it("selects command correctly after pagination", async () => {
+    const commands = Array.from({ length: 15 }, (_, i) => ({
+      name: `cmd${i + 1}`,
+      description: `Command ${i + 1} description`,
+    }));
+
+    interactionManager.start({
+      kind: "custom",
+      expectedInput: "callback",
+      metadata: {
+        flow: "commands",
+        stage: "list",
+        messageId: 1000,
+        projectDirectory: "D:\\Projects\\Repo",
+        commands,
+        page: 1,
+      },
+    });
+
+    const ctx = createCallbackContext("commands:select:12", 1000);
+    const handled = await handleCommandsCallback(ctx, createDeps());
+
+    expect(handled).toBe(true);
+    expect(ctx.editMessageText).toHaveBeenCalledWith(
+      t("commands.confirm", { command: "/cmd13" }),
+      expect.objectContaining({ reply_markup: expect.any(Object) }),
+    );
+
+    const state = interactionManager.getSnapshot();
+    expect(state?.kind).toBe("custom");
+    expect(state?.metadata.stage).toBe("confirm");
+    expect(state?.metadata.commandName).toBe("cmd13");
+  });
+});
+
+describe("commands pagination helpers", () => {
+  describe("parseCommandPageCallback", () => {
+    it("parses valid page callbacks", () => {
+      expect(parseCommandPageCallback("commands:page:0")).toBe(0);
+      expect(parseCommandPageCallback("commands:page:12")).toBe(12);
+      expect(parseCommandPageCallback("commands:page:99")).toBe(99);
+    });
+
+    it("returns null for non-page callbacks", () => {
+      expect(parseCommandPageCallback("commands:select:0")).toBeNull();
+      expect(parseCommandPageCallback("commands:page:-1")).toBeNull();
+      expect(parseCommandPageCallback("commands:page:abc")).toBeNull();
+      expect(parseCommandPageCallback("commands:cancel")).toBeNull();
+      expect(parseCommandPageCallback("session:page:1")).toBeNull();
+    });
+  });
+
+  describe("formatCommandsSelectText", () => {
+    it("returns base text for first page", () => {
+      expect(formatCommandsSelectText(0)).toBe("Choose an OpenCode command:");
+    });
+
+    it("returns page-specific text for subsequent pages", () => {
+      expect(formatCommandsSelectText(1)).toBe("Choose an OpenCode command (page 2):");
+      expect(formatCommandsSelectText(5)).toBe("Choose an OpenCode command (page 6):");
+    });
+  });
+
+  describe("calculateCommandsPaginationRange", () => {
+    it("returns first page bounds", () => {
+      expect(calculateCommandsPaginationRange(25, 0, 10)).toEqual({
+        page: 0,
+        totalPages: 3,
+        startIndex: 0,
+        endIndex: 10,
+      });
+    });
+
+    it("returns correct bounds for middle page", () => {
+      expect(calculateCommandsPaginationRange(25, 1, 10)).toEqual({
+        page: 1,
+        totalPages: 3,
+        startIndex: 10,
+        endIndex: 20,
+      });
+    });
+
+    it("returns correct bounds for last page", () => {
+      expect(calculateCommandsPaginationRange(25, 2, 10)).toEqual({
+        page: 2,
+        totalPages: 3,
+        startIndex: 20,
+        endIndex: 25,
+      });
+    });
+
+    it("clamps page to valid range", () => {
+      expect(calculateCommandsPaginationRange(25, 99, 10)).toEqual({
+        page: 2,
+        totalPages: 3,
+        startIndex: 20,
+        endIndex: 25,
+      });
+
+      expect(calculateCommandsPaginationRange(25, -5, 10)).toEqual({
+        page: 0,
+        totalPages: 3,
+        startIndex: 0,
+        endIndex: 10,
+      });
+    });
+
+    it("handles empty list", () => {
+      expect(calculateCommandsPaginationRange(0, 0, 10)).toEqual({
+        page: 0,
+        totalPages: 1,
+        startIndex: 0,
+        endIndex: 0,
+      });
+    });
+
+    it("handles single page", () => {
+      expect(calculateCommandsPaginationRange(5, 0, 10)).toEqual({
+        page: 0,
+        totalPages: 1,
+        startIndex: 0,
+        endIndex: 5,
+      });
+    });
+
+    it("uses provided pageSize correctly", () => {
+      expect(calculateCommandsPaginationRange(15, 0, 5)).toEqual({
+        page: 0,
+        totalPages: 3,
+        startIndex: 0,
+        endIndex: 5,
+      });
+
+      expect(calculateCommandsPaginationRange(15, 1, 5)).toEqual({
+        page: 1,
+        totalPages: 3,
+        startIndex: 5,
+        endIndex: 10,
+      });
+    });
   });
 });

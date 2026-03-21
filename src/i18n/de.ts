@@ -404,6 +404,12 @@ export const de: I18nDictionary = {
   "commands.arguments_empty":
     "⚠️ Argumente dürfen nicht leer sein. Sende Text oder tippe auf Ausführen.",
   "commands.execute_error": "🔴 OpenCode-Befehl konnte nicht ausgeführt werden.",
+  "commands.select_page": "Wähle einen OpenCode-Befehl (Seite {page}):",
+  "commands.button.prev_page": "⬅️ Zurück",
+  "commands.button.next_page": "Weiter ➡️",
+  "commands.page_empty_callback": "Keine Befehle auf dieser Seite",
+  "commands.page_load_error_callback":
+    "Diese Seite konnte nicht geladen werden. Bitte versuche es erneut.",
 
   "cmd.description.rename": "Aktuelle Sitzung umbenennen",
 

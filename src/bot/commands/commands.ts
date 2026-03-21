@@ -17,9 +17,11 @@ import { safeBackgroundTask } from "../../utils/safe-background-task.js";
 import { logger } from "../../utils/logger.js";
 import { t } from "../../i18n/index.js";
 import { foregroundSessionState } from "../../scheduled-task/foreground-state.js";
+import { config } from "../../config.js";
 
 const COMMANDS_CALLBACK_PREFIX = "commands:";
 const COMMANDS_CALLBACK_SELECT_PREFIX = `${COMMANDS_CALLBACK_PREFIX}select:`;
+const COMMANDS_CALLBACK_PAGE_PREFIX = `${COMMANDS_CALLBACK_PREFIX}page:`;
 const COMMANDS_CALLBACK_CANCEL = `${COMMANDS_CALLBACK_PREFIX}cancel`;
 const COMMANDS_CALLBACK_EXECUTE = `${COMMANDS_CALLBACK_PREFIX}execute`;
 const MAX_INLINE_BUTTON_LABEL_LENGTH = 64;
@@ -35,6 +37,7 @@ interface CommandsListMetadata {
   messageId: number;
   projectDirectory: string;
   commands: CommandItem[];
+  page: number;
 }
 
 interface CommandsConfirmMetadata {
@@ -64,6 +67,32 @@ function formatExecutingCommandMessage(commandName: string, args: string): strin
   return `${t("commands.executing_prefix")}\n${commandText}${argsSuffix}`;
 }
 
+export function buildCommandPageCallback(page: number): string {
+  return `${COMMANDS_CALLBACK_PAGE_PREFIX}${page}`;
+}
+
+export function parseCommandPageCallback(data: string): number | null {
+  if (!data.startsWith(COMMANDS_CALLBACK_PAGE_PREFIX)) {
+    return null;
+  }
+
+  const rawPage = data.slice(COMMANDS_CALLBACK_PAGE_PREFIX.length);
+  const page = Number(rawPage);
+  if (!Number.isInteger(page) || page < 0) {
+    return null;
+  }
+
+  return page;
+}
+
+export function formatCommandsSelectText(page: number): string {
+  if (page === 0) {
+    return t("commands.select");
+  }
+
+  return t("commands.select_page", { page: page + 1 });
+}
+
 function normalizeDirectoryForCommandApi(directory: string): string {
   return directory.replace(/\\/g, "/");
 }
@@ -89,14 +118,63 @@ function formatCommandButtonLabel(command: CommandItem): string {
   return `${rawLabel.slice(0, MAX_INLINE_BUTTON_LABEL_LENGTH - 3)}...`;
 }
 
-function buildCommandsListKeyboard(commands: CommandItem[]): InlineKeyboard {
-  const keyboard = new InlineKeyboard();
+export interface CommandsPaginationRange {
+  page: number;
+  totalPages: number;
+  startIndex: number;
+  endIndex: number;
+}
 
-  commands.forEach((command, index) => {
+export function calculateCommandsPaginationRange(
+  totalCommands: number,
+  page: number,
+  pageSize: number,
+): CommandsPaginationRange {
+  const safePageSize = Math.max(1, pageSize);
+  const totalPages = Math.max(1, Math.ceil(totalCommands / safePageSize));
+  const normalizedPage = Math.min(Math.max(0, page), totalPages - 1);
+  const startIndex = normalizedPage * safePageSize;
+  const endIndex = Math.min(startIndex + safePageSize, totalCommands);
+
+  return {
+    page: normalizedPage,
+    totalPages,
+    startIndex,
+    endIndex,
+  };
+}
+
+function buildCommandsListKeyboard(
+  commands: CommandItem[],
+  page: number,
+  pageSize: number,
+): InlineKeyboard {
+  const keyboard = new InlineKeyboard();
+  const {
+    page: normalizedPage,
+    totalPages,
+    startIndex,
+    endIndex,
+  } = calculateCommandsPaginationRange(commands.length, page, pageSize);
+
+  commands.slice(startIndex, endIndex).forEach((command, index) => {
+    const globalIndex = startIndex + index;
     keyboard
-      .text(formatCommandButtonLabel(command), `${COMMANDS_CALLBACK_SELECT_PREFIX}${index}`)
+      .text(formatCommandButtonLabel(command), `${COMMANDS_CALLBACK_SELECT_PREFIX}${globalIndex}`)
       .row();
   });
+
+  if (totalPages > 1) {
+    if (normalizedPage > 0) {
+      keyboard.text(t("commands.button.prev_page"), buildCommandPageCallback(normalizedPage - 1));
+    }
+
+    if (normalizedPage < totalPages - 1) {
+      keyboard.text(t("commands.button.next_page"), buildCommandPageCallback(normalizedPage + 1));
+    }
+
+    keyboard.row();
+  }
 
   keyboard.text(t("commands.button.cancel"), COMMANDS_CALLBACK_CANCEL);
   return keyboard;
@@ -158,12 +236,18 @@ function parseCommandsMetadata(state: InteractionState | null): CommandsMetadata
       return null;
     }
 
+    const page =
+      typeof state.metadata.page === "number" && Number.isInteger(state.metadata.page)
+        ? Math.max(0, state.metadata.page)
+        : 0;
+
     return {
       flow,
       stage,
       messageId,
       projectDirectory,
       commands,
+      page,
     };
   }
 
@@ -382,8 +466,9 @@ export async function commandsCommand(ctx: CommandContext<Context>): Promise<voi
       return;
     }
 
-    const keyboard = buildCommandsListKeyboard(commands);
-    const message = await ctx.reply(t("commands.select"), {
+    const pageSize = config.bot.commandsListLimit;
+    const keyboard = buildCommandsListKeyboard(commands, 0, pageSize);
+    const message = await ctx.reply(formatCommandsSelectText(0), {
       reply_markup: keyboard,
     });
 
@@ -396,6 +481,7 @@ export async function commandsCommand(ctx: CommandContext<Context>): Promise<voi
         messageId: message.message_id,
         projectDirectory: currentProject.worktree,
         commands,
+        page: 0,
       },
     });
   } catch (error) {
@@ -444,6 +530,46 @@ export async function handleCommandsCallback(
         commandName: metadata.commandName,
         argumentsText: "",
       });
+      return true;
+    }
+
+    const page = parseCommandPageCallback(data);
+    if (page !== null) {
+      if (metadata.stage !== "list") {
+        await ctx.answerCallbackQuery({ text: t("callback.processing_error"), show_alert: true });
+        return true;
+      }
+
+      const pageSize = config.bot.commandsListLimit;
+      const { page: normalizedPage, totalPages } = calculateCommandsPaginationRange(
+        metadata.commands.length,
+        page,
+        pageSize,
+      );
+
+      if (page >= totalPages || page < 0) {
+        await ctx.answerCallbackQuery({ text: t("commands.page_empty_callback") });
+        return true;
+      }
+
+      const keyboard = buildCommandsListKeyboard(metadata.commands, normalizedPage, pageSize);
+      await ctx.editMessageText(formatCommandsSelectText(normalizedPage), {
+        reply_markup: keyboard,
+      });
+      await ctx.answerCallbackQuery();
+
+      interactionManager.transition({
+        expectedInput: "callback",
+        metadata: {
+          flow: "commands",
+          stage: "list",
+          messageId: metadata.messageId,
+          projectDirectory: metadata.projectDirectory,
+          commands: metadata.commands,
+          page: normalizedPage,
+        },
+      });
+
       return true;
     }
 

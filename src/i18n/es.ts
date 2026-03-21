@@ -403,6 +403,12 @@ export const es: I18nDictionary = {
   "commands.arguments_empty":
     "⚠️ Los argumentos no pueden estar vacíos. Envía texto o toca Ejecutar.",
   "commands.execute_error": "🔴 No se pudo ejecutar el comando de OpenCode.",
+  "commands.select_page": "Elige un comando de OpenCode (página {page}):",
+  "commands.button.prev_page": "⬅️ Anterior",
+  "commands.button.next_page": "Siguiente ➡️",
+  "commands.page_empty_callback": "No hay comandos en esta página",
+  "commands.page_load_error_callback":
+    "No se pudo cargar esta página. Por favor, inténtalo de nuevo.",
 
   "cmd.description.rename": "Renombrar la sesión actual",
 

@@ -392,6 +392,12 @@ export const ru: I18nDictionary = {
   "commands.arguments_empty":
     "⚠️ Аргументы не могут быть пустыми. Отправьте текст или нажмите Выполнить.",
   "commands.execute_error": "🔴 Не удалось выполнить команду OpenCode.",
+  "commands.select_page": "Выберите команду OpenCode (страница {page}):",
+  "commands.button.prev_page": "⬅️ Назад",
+  "commands.button.next_page": "Вперёд ➡️",
+  "commands.page_empty_callback": "На этой странице нет команд",
+  "commands.page_load_error_callback":
+    "Не удалось загрузить эту страницу. Пожалуйста, попробуйте снова.",
 
   "cmd.description.rename": "Переименовать текущую сессию",
 
