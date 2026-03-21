@@ -61,10 +61,29 @@ export interface ExecuteCommandDeps {
   ensureEventSubscription: (directory: string) => Promise<void>;
 }
 
-function formatExecutingCommandMessage(commandName: string, args: string): string {
-  const commandText = `／${commandName}`;
+interface ExecutingCommandMessage {
+  text: string;
+  entities: Array<{
+    type: "code";
+    offset: number;
+    length: number;
+  }>;
+}
+
+function formatExecutingCommandMessage(commandName: string, args: string): ExecutingCommandMessage {
+  const prefix = t("commands.executing_prefix");
+  const commandText = `/${commandName}`;
   const argsSuffix = args ? ` ${args}` : "";
-  return `${t("commands.executing_prefix")}\n${commandText}${argsSuffix}`;
+  return {
+    text: `${prefix}\n${commandText}${argsSuffix}`,
+    entities: [
+      {
+        type: "code",
+        offset: prefix.length + 1,
+        length: commandText.length,
+      },
+    ],
+  };
 }
 
 export function buildCommandPageCallback(page: number): string {
@@ -389,7 +408,8 @@ async function executeCommand(
   }
 
   const args = params.argumentsText.trim();
-  await ctx.reply(formatExecutingCommandMessage(params.commandName, args));
+  const executingMessage = formatExecutingCommandMessage(params.commandName, args);
+  await ctx.reply(executingMessage.text, { entities: executingMessage.entities });
 
   const session = await ensureSessionForProject(ctx, params.projectDirectory);
   if (!session) {

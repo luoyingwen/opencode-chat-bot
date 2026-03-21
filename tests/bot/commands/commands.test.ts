@@ -294,7 +294,9 @@ describe("bot/commands/commands", () => {
     expect(handled).toBe(true);
     expect(interactionManager.getSnapshot()).toBeNull();
     expect(ctx.deleteMessage).toHaveBeenCalledTimes(1);
-    expect(ctx.reply).toHaveBeenCalledWith(`${t("commands.executing_prefix")}\n／poem`);
+    expect(ctx.reply).toHaveBeenCalledWith(`${t("commands.executing_prefix")}\n/poem`, {
+      entities: [{ type: "code", offset: t("commands.executing_prefix").length + 1, length: 5 }],
+    });
     expect(mocked.ensureEventSubscriptionMock).toHaveBeenCalledWith("D:\\Projects\\Repo");
     expect(mocked.setSessionSummaryMock).toHaveBeenCalledWith("session-1");
     expect(mocked.sessionCommandMock).toHaveBeenCalledWith({
@@ -329,7 +331,10 @@ describe("bot/commands/commands", () => {
     expect(interactionManager.getSnapshot()).toBeNull();
     expect(ctx.api.deleteMessage).toHaveBeenCalledWith(777, 500);
     expect(ctx.reply).toHaveBeenCalledWith(
-      `${t("commands.executing_prefix")}\n／poem about spring`,
+      `${t("commands.executing_prefix")}\n/poem about spring`,
+      {
+        entities: [{ type: "code", offset: t("commands.executing_prefix").length + 1, length: 5 }],
+      },
     );
     expect(mocked.sessionCommandMock).toHaveBeenCalledWith({
       sessionID: "session-1",
