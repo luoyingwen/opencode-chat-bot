@@ -213,8 +213,8 @@ describe("bot/commands/commands", () => {
   it("shows commands list and starts custom interaction", async () => {
     mocked.commandListMock.mockResolvedValue({
       data: [
-        { name: "init", description: "create/update AGENTS.md" },
-        { name: "poem", description: "write a poem" },
+        { name: "init", description: "create/update AGENTS.md", source: "command" },
+        { name: "poem", description: "write a poem", source: "command" },
       ],
       error: null,
     });
@@ -370,6 +370,7 @@ describe("bot/commands/commands", () => {
     const commands = Array.from({ length: 11 }, (_, i) => ({
       name: `cmd${i + 1}`,
       description: `Command ${i + 1} description`,
+      source: "command",
     }));
 
     mocked.commandListMock.mockResolvedValueOnce({
@@ -395,6 +396,41 @@ describe("bot/commands/commands", () => {
     expect(paginationRow?.[0]?.text).toBe(t("commands.button.next_page"));
 
     expect(options.reply_markup.inline_keyboard[11]?.[0]?.callback_data).toBe("commands:cancel");
+  });
+
+  it("filters out non-command sources from command list", async () => {
+    mocked.commandListMock.mockResolvedValue({
+      data: [
+        { name: "init", description: "create/update AGENTS.md", source: "command" },
+        { name: "review", description: "review changes", source: "command" },
+        { name: "borsch", description: "Borsch recipe", source: "skill" },
+        { name: "from-mcp", description: "MCP prompt", source: "mcp" },
+      ],
+      error: null,
+    });
+
+    const ctx = createCommandContext(750);
+    await commandsCommand(ctx as never);
+
+    expect(ctx.reply).toHaveBeenCalledTimes(1);
+
+    const [, options] = (ctx.reply as ReturnType<typeof vi.fn>).mock.calls[0] as [
+      string,
+      { reply_markup: { inline_keyboard: Array<Array<{ callback_data?: string }>> } },
+    ];
+
+    expect(options.reply_markup.inline_keyboard[0]?.[0]?.callback_data).toBe("commands:select:0");
+    expect(options.reply_markup.inline_keyboard[1]?.[0]?.callback_data).toBe("commands:select:1");
+    expect(options.reply_markup.inline_keyboard[2]?.[0]?.callback_data).toBe("commands:cancel");
+
+    const state = interactionManager.getSnapshot();
+    expect(state?.kind).toBe("custom");
+    expect(state?.metadata.flow).toBe("commands");
+    expect(state?.metadata.stage).toBe("list");
+    expect(state?.metadata.commands).toEqual([
+      { name: "init", description: "create/update AGENTS.md" },
+      { name: "review", description: "review changes" },
+    ]);
   });
 
   it("handles next-page callback and renders second page with prev button", async () => {

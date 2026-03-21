@@ -286,7 +286,12 @@ async function getCommandList(projectDirectory: string): Promise<CommandItem[]> 
   }
 
   return data
-    .filter((command) => typeof command.name === "string" && command.name.trim().length > 0)
+    .filter((command) => {
+      const source = (command as { source?: unknown }).source;
+      return (
+        typeof command.name === "string" && command.name.trim().length > 0 && source === "command"
+      );
+    })
     .map((command) => ({
       name: command.name,
       description: command.description,
