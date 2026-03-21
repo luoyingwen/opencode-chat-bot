@@ -91,10 +91,14 @@ export async function interactionGuardMiddleware(ctx: Context, next: NextFunctio
     return;
   }
 
-  const message = getInteractionBlockedMessage(decision.reason, decision.state?.kind);
+  const message = decision.busy
+    ? decision.state?.kind === "question" || decision.state?.kind === "permission"
+      ? getInteractionBlockedMessage(decision.reason, decision.state.kind)
+      : t("interaction.blocked.finish_current")
+    : getInteractionBlockedMessage(decision.reason, decision.state?.kind);
 
   logger.debug(
-    `[InteractionGuard] Blocked input: interactionKind=${decision.state?.kind || "none"}, inputType=${decision.inputType}, reason=${decision.reason || "unknown"}, command=${decision.command || "-"}`,
+    `[InteractionGuard] Blocked input: interactionKind=${decision.state?.kind || "none"}, inputType=${decision.inputType}, reason=${decision.reason || "unknown"}, command=${decision.command || "-"}, busy=${decision.busy ? "yes" : "no"}`,
   );
 
   if (ctx.callbackQuery) {

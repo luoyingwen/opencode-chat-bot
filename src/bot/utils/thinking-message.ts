@@ -1,0 +1,27 @@
+import type { ToolMessageBatcher } from "../../summary/tool-message-batcher.js";
+import { t } from "../../i18n/index.js";
+
+interface ThinkingMessageOptions {
+  responseStreaming: boolean;
+  hideThinkingMessages: boolean;
+}
+
+type ThinkingBatcher = Pick<ToolMessageBatcher, "enqueue" | "sendTextNow">;
+
+export function deliverThinkingMessage(
+  sessionId: string,
+  batcher: ThinkingBatcher,
+  options: ThinkingMessageOptions,
+): void {
+  if (options.hideThinkingMessages) {
+    return;
+  }
+
+  const message = t("bot.thinking");
+  if (options.responseStreaming) {
+    batcher.sendTextNow(sessionId, message, "thinking_started_streaming");
+    return;
+  }
+
+  batcher.enqueue(sessionId, message);
+}

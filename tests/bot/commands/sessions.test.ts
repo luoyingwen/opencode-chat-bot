@@ -2,6 +2,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { Context } from "grammy";
 import { sessionsCommand, handleSessionSelect } from "../../../src/bot/commands/sessions.js";
 import { interactionManager } from "../../../src/interaction/manager.js";
+import { foregroundSessionState } from "../../../src/scheduled-task/foreground-state.js";
 import { t } from "../../../src/i18n/index.js";
 
 const mocked = vi.hoisted(() => ({
@@ -139,6 +140,7 @@ function getKeyboardButtons(ctx: Context): Array<Array<{ text: string; callback_
 describe("bot/commands/sessions", () => {
   beforeEach(() => {
     interactionManager.clear("test_setup");
+    foregroundSessionState.__resetForTests();
     mocked.currentProject = {
       id: "project-1",
       worktree: "/repo",
@@ -181,6 +183,16 @@ describe("bot/commands/sessions", () => {
     expect(keyboardRows[9]?.[0]?.callback_data).toBe("session:session-10");
     expect(keyboardRows[10]?.[0]?.callback_data).toBe("session:page:1");
     expect(keyboardRows[11]?.[0]?.callback_data).toBe("inline:cancel:session");
+  });
+
+  it("blocks sessions command while foreground session is busy", async () => {
+    foregroundSessionState.markBusy("session-1");
+
+    const ctx = createCommandContext();
+    await sessionsCommand(ctx as never);
+
+    expect(mocked.sessionListMock).not.toHaveBeenCalled();
+    expect(ctx.reply).toHaveBeenCalledWith(t("interaction.blocked.finish_current"));
   });
 
   it("handles next-page callback and renders second page with prev button", async () => {
@@ -290,5 +302,28 @@ describe("bot/commands/sessions", () => {
     expect(mocked.clearInteractionMock).toHaveBeenCalledWith("session_select_error");
     expect(ctx.answerCallbackQuery).toHaveBeenCalled();
     expect(ctx.reply).toHaveBeenCalledWith(t("sessions.select_error"));
+  });
+
+  it("blocks session selection callback while foreground session is busy", async () => {
+    foregroundSessionState.markBusy("session-1");
+
+    interactionManager.start({
+      kind: "inline",
+      expectedInput: "callback",
+      metadata: {
+        menuKind: "session",
+        messageId: 456,
+      },
+    });
+
+    const ctx = createCallbackContext("session:session-1", 456);
+    const handled = await handleSessionSelect(ctx);
+
+    expect(handled).toBe(true);
+    expect(mocked.sessionGetMock).not.toHaveBeenCalled();
+    expect(mocked.setCurrentSessionMock).not.toHaveBeenCalled();
+    expect(ctx.answerCallbackQuery).toHaveBeenCalledWith({
+      text: t("interaction.blocked.finish_current"),
+    });
   });
 });

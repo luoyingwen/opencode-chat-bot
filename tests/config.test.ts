@@ -17,11 +17,13 @@ describe("config boolean env parsing", () => {
   it("uses false defaults for hide service message flags", async () => {
     vi.stubEnv("HIDE_THINKING_MESSAGES", "");
     vi.stubEnv("HIDE_TOOL_CALL_MESSAGES", "");
+    vi.stubEnv("RESPONSE_STREAMING", "");
 
     const config = await loadConfig();
 
     expect(config.bot.hideThinkingMessages).toBe(false);
     expect(config.bot.hideToolCallMessages).toBe(false);
+    expect(config.bot.responseStreaming).toBe(true);
   });
 
   it("parses truthy values for hide service message flags", async () => {
@@ -47,11 +49,21 @@ describe("config boolean env parsing", () => {
   it("falls back to defaults on invalid values", async () => {
     vi.stubEnv("HIDE_THINKING_MESSAGES", "banana");
     vi.stubEnv("HIDE_TOOL_CALL_MESSAGES", "nope");
+    vi.stubEnv("RESPONSE_STREAMING", "not-a-bool");
 
     const config = await loadConfig();
 
     expect(config.bot.hideThinkingMessages).toBe(false);
     expect(config.bot.hideToolCallMessages).toBe(false);
+    expect(config.bot.responseStreaming).toBe(true);
+  });
+
+  it("allows disabling response streaming via env", async () => {
+    vi.stubEnv("RESPONSE_STREAMING", "0");
+
+    const config = await loadConfig();
+
+    expect(config.bot.responseStreaming).toBe(false);
   });
 
   it("uses markdown as default message format mode", async () => {

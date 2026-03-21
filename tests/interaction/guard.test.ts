@@ -2,6 +2,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { Context } from "grammy";
 import { resolveInteractionGuardDecision } from "../../src/interaction/guard.js";
 import { interactionManager } from "../../src/interaction/manager.js";
+import { foregroundSessionState } from "../../src/scheduled-task/foreground-state.js";
 
 function createContext({
   text,
@@ -47,6 +48,7 @@ function createContext({
 describe("interaction guard", () => {
   beforeEach(() => {
     interactionManager.clear("test_setup");
+    foregroundSessionState.__resetForTests();
   });
 
   it("allows input when there is no active interaction", () => {
@@ -295,5 +297,93 @@ describe("interaction guard", () => {
     expect(decision.allow).toBe(true);
     expect(decision.state).toBeNull();
     expect(decision.inputType).toBe("other");
+  });
+
+  it("allows only abort, status, and help commands while busy without interaction", () => {
+    foregroundSessionState.markBusy("session-1");
+
+    expect(resolveInteractionGuardDecision(createContext({ text: "/abort" })).allow).toBe(true);
+    expect(resolveInteractionGuardDecision(createContext({ text: "/status" })).allow).toBe(true);
+    expect(resolveInteractionGuardDecision(createContext({ text: "/help" })).allow).toBe(true);
+
+    const blockedDecision = resolveInteractionGuardDecision(createContext({ text: "/new" }));
+    expect(blockedDecision.allow).toBe(false);
+    expect(blockedDecision.reason).toBe("command_not_allowed");
+    expect(blockedDecision.busy).toBe(true);
+  });
+
+  it("blocks start, plain text, and media while busy without interaction", () => {
+    foregroundSessionState.markBusy("session-1");
+
+    const startDecision = resolveInteractionGuardDecision(createContext({ text: "/start" }));
+    const textDecision = resolveInteractionGuardDecision(createContext({ text: "hello" }));
+    const voiceDecision = resolveInteractionGuardDecision(createContext({ voice: true }));
+    const photoDecision = resolveInteractionGuardDecision(createContext({ photo: true }));
+
+    expect(startDecision.allow).toBe(false);
+    expect(startDecision.reason).toBe("command_not_allowed");
+    expect(textDecision.allow).toBe(false);
+    expect(textDecision.reason).toBe("expected_text");
+    expect(voiceDecision.allow).toBe(false);
+    expect(voiceDecision.reason).toBe("expected_text");
+    expect(photoDecision.allow).toBe(false);
+    expect(photoDecision.reason).toBe("expected_text");
+  });
+
+  it("allows valid question answers while busy", () => {
+    foregroundSessionState.markBusy("session-1");
+    interactionManager.start({
+      kind: "question",
+      expectedInput: "mixed",
+    });
+
+    const callbackDecision = resolveInteractionGuardDecision(
+      createContext({ callbackData: "question:select:0:1" }),
+    );
+    const textDecision = resolveInteractionGuardDecision(createContext({ text: "custom answer" }));
+    const commandDecision = resolveInteractionGuardDecision(createContext({ text: "/status" }));
+    const blockedCommand = resolveInteractionGuardDecision(createContext({ text: "/new" }));
+
+    expect(callbackDecision.allow).toBe(true);
+    expect(callbackDecision.busy).toBe(true);
+    expect(textDecision.allow).toBe(true);
+    expect(textDecision.busy).toBe(true);
+    expect(commandDecision.allow).toBe(true);
+    expect(blockedCommand.allow).toBe(false);
+    expect(blockedCommand.reason).toBe("command_not_allowed");
+  });
+
+  it("allows valid permission callback while busy and blocks other inputs", () => {
+    foregroundSessionState.markBusy("session-1");
+    interactionManager.start({
+      kind: "permission",
+      expectedInput: "callback",
+    });
+
+    const callbackDecision = resolveInteractionGuardDecision(
+      createContext({ callbackData: "permission:allow:123" }),
+    );
+    const textDecision = resolveInteractionGuardDecision(createContext({ text: "hello" }));
+
+    expect(callbackDecision.allow).toBe(true);
+    expect(callbackDecision.busy).toBe(true);
+    expect(textDecision.allow).toBe(false);
+    expect(textDecision.reason).toBe("expected_callback");
+    expect(textDecision.busy).toBe(true);
+  });
+
+  it("does not allow rename callback to bypass busy state", () => {
+    foregroundSessionState.markBusy("session-1");
+    interactionManager.start({
+      kind: "rename",
+      expectedInput: "text",
+    });
+
+    const decision = resolveInteractionGuardDecision(
+      createContext({ callbackData: "rename:cancel" }),
+    );
+
+    expect(decision.allow).toBe(false);
+    expect(decision.busy).toBe(true);
   });
 });

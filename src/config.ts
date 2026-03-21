@@ -122,6 +122,7 @@ export const config = {
     ),
     hideThinkingMessages: getOptionalBooleanEnvVar("HIDE_THINKING_MESSAGES", false),
     hideToolCallMessages: getOptionalBooleanEnvVar("HIDE_TOOL_CALL_MESSAGES", false),
+    responseStreaming: getOptionalBooleanEnvVar("RESPONSE_STREAMING", true),
     messageFormatMode: getOptionalMessageFormatModeEnvVar("MESSAGE_FORMAT_MODE", "markdown"),
   },
   files: {

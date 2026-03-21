@@ -48,7 +48,12 @@ import { clearAllInteractionState } from "../interaction/cleanup.js";
 import { keyboardManager } from "../keyboard/manager.js";
 import { subscribeToEvents } from "../opencode/events.js";
 import { summaryAggregator } from "../summary/aggregator.js";
-import { formatSummary, formatToolInfo, getAssistantParseMode } from "../summary/formatter.js";
+import {
+  formatSummary,
+  formatSummaryWithMode,
+  formatToolInfo,
+  getAssistantParseMode,
+} from "../summary/formatter.js";
 import { ToolMessageBatcher } from "../summary/tool-message-batcher.js";
 import { getCurrentSession } from "../session/manager.js";
 import { ingestSessionInfoForCache } from "../session/cache-manager.js";
@@ -60,18 +65,28 @@ import { processUserPrompt } from "./handlers/prompt.js";
 import { handleVoiceMessage } from "./handlers/voice.js";
 import { handleDocumentMessage } from "./handlers/document.js";
 import { downloadTelegramFile, toDataUri } from "./utils/file-download.js";
+import { finalizeAssistantResponse } from "./utils/finalize-assistant-response.js";
+import { deliverThinkingMessage } from "./utils/thinking-message.js";
 import { sendBotText } from "./utils/telegram-text.js";
 import { getModelCapabilities, supportsInput } from "../model/capabilities.js";
 import { getStoredModel } from "../model/manager.js";
 import type { FilePartInput } from "@opencode-ai/sdk/v2";
 import { foregroundSessionState } from "../scheduled-task/foreground-state.js";
 import { scheduledTaskRuntime } from "../scheduled-task/runtime.js";
+import { ResponseStreamer } from "./streaming/response-streamer.js";
+import type { StreamingMessagePayload } from "./streaming/response-streamer.js";
+import {
+  editMessageWithMarkdownFallback,
+  sendMessageWithMarkdownFallback,
+} from "./utils/send-with-markdown-fallback.js";
 
 let botInstance: Bot<Context> | null = null;
 let chatIdInstance: number | null = null;
 let commandsInitialized = false;
 
 const TELEGRAM_DOCUMENT_CAPTION_MAX_LENGTH = 1024;
+const RESPONSE_STREAM_THROTTLE_MS = 200;
+const RESPONSE_STREAM_TEXT_LIMIT = 3800;
 const SESSION_RETRY_PREFIX = "🔁";
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -96,6 +111,22 @@ function prepareDocumentCaption(caption: string): string {
   }
 
   return `${normalizedCaption.slice(0, TELEGRAM_DOCUMENT_CAPTION_MAX_LENGTH - 3)}...`;
+}
+
+function prepareStreamingPayload(messageText: string): StreamingMessagePayload | null {
+  const parts = formatSummaryWithMode(
+    messageText,
+    config.bot.messageFormatMode,
+    RESPONSE_STREAM_TEXT_LIMIT,
+  );
+  if (parts.length === 0) {
+    return null;
+  }
+
+  return {
+    parts,
+    format: config.bot.messageFormatMode === "markdown" ? "markdown_v2" : "raw",
+  };
 }
 
 const toolMessageBatcher = new ToolMessageBatcher({
@@ -150,6 +181,70 @@ const toolMessageBatcher = new ToolMessageBatcher({
   },
 });
 
+const responseStreamer = new ResponseStreamer({
+  throttleMs: RESPONSE_STREAM_THROTTLE_MS,
+  sendText: async (text, format, options) => {
+    if (!botInstance || !chatIdInstance || chatIdInstance <= 0) {
+      throw new Error("Bot context missing for streamed send");
+    }
+
+    const parseMode = format === "markdown_v2" ? "MarkdownV2" : undefined;
+    const sentMessage = await sendMessageWithMarkdownFallback({
+      api: botInstance.api,
+      chatId: chatIdInstance,
+      text,
+      options,
+      parseMode,
+    });
+
+    return sentMessage.message_id;
+  },
+  editText: async (messageId, text, format, options) => {
+    if (!botInstance || !chatIdInstance || chatIdInstance <= 0) {
+      throw new Error("Bot context missing for streamed edit");
+    }
+
+    const parseMode = format === "markdown_v2" ? "MarkdownV2" : undefined;
+
+    try {
+      await editMessageWithMarkdownFallback({
+        api: botInstance.api,
+        chatId: chatIdInstance,
+        messageId,
+        text,
+        options,
+        parseMode,
+      });
+    } catch (error) {
+      const errorMessage =
+        error instanceof Error ? error.message.toLowerCase() : String(error).toLowerCase();
+      if (errorMessage.includes("message is not modified")) {
+        return;
+      }
+
+      throw error;
+    }
+  },
+  deleteText: async (messageId) => {
+    if (!botInstance || !chatIdInstance || chatIdInstance <= 0) {
+      throw new Error("Bot context missing for streamed delete");
+    }
+
+    await botInstance.api.deleteMessage(chatIdInstance, messageId).catch((error) => {
+      const errorMessage =
+        error instanceof Error ? error.message.toLowerCase() : String(error).toLowerCase();
+      if (
+        errorMessage.includes("message to delete not found") ||
+        errorMessage.includes("message identifier is not specified")
+      ) {
+        return;
+      }
+
+      throw error;
+    });
+  },
+});
+
 async function ensureCommandsInitialized(ctx: Context, next: NextFunction): Promise<void> {
   if (commandsInitialized || !ctx.from || ctx.from.id !== config.telegram.allowedUserId) {
     await next();
@@ -186,46 +281,87 @@ async function ensureEventSubscription(directory: string): Promise<void> {
   }
 
   toolMessageBatcher.setIntervalSeconds(config.bot.serviceMessagesIntervalSec);
+  summaryAggregator.setTypingIndicatorEnabled(true);
   summaryAggregator.setOnCleared(() => {
     toolMessageBatcher.clearAll("summary_aggregator_clear");
+    responseStreamer.clearAll("summary_aggregator_clear");
   });
 
-  summaryAggregator.setOnComplete(async (sessionId, messageText) => {
+  summaryAggregator.setOnPartial((sessionId, messageId, messageText) => {
+    if (!config.bot.responseStreaming) {
+      return;
+    }
+
+    if (!botInstance || !chatIdInstance) {
+      return;
+    }
+
+    const currentSession = getCurrentSession();
+    if (!currentSession || currentSession.id !== sessionId) {
+      return;
+    }
+
+    const preparedStreamPayload = prepareStreamingPayload(messageText);
+    if (!preparedStreamPayload) {
+      return;
+    }
+
+    preparedStreamPayload.sendOptions = undefined;
+    preparedStreamPayload.editOptions = undefined;
+
+    responseStreamer.enqueue(sessionId, messageId, preparedStreamPayload);
+  });
+
+  summaryAggregator.setOnComplete(async (sessionId, messageId, messageText) => {
     if (!botInstance || !chatIdInstance) {
       logger.error("Bot or chat ID not available for sending message");
+      responseStreamer.clearMessage(sessionId, messageId, "bot_context_missing");
       foregroundSessionState.markIdle(sessionId);
       return;
     }
 
     const currentSession = getCurrentSession();
     if (currentSession?.id !== sessionId) {
+      responseStreamer.clearMessage(sessionId, messageId, "session_mismatch");
       foregroundSessionState.markIdle(sessionId);
       await scheduledTaskRuntime.flushDeferredDeliveries();
       return;
     }
 
-    await toolMessageBatcher.flushSession(sessionId, "assistant_message_completed");
+    const botApi = botInstance.api;
+    const chatId = chatIdInstance;
 
     try {
-      const parts = formatSummary(messageText);
-      const assistantParseMode = getAssistantParseMode();
-      const assistantMessageFormat = assistantParseMode === "MarkdownV2" ? "markdown_v2" : "raw";
+      const streamedViaMessages = await finalizeAssistantResponse({
+        responseStreaming: config.bot.responseStreaming,
+        sessionId,
+        messageId,
+        messageText,
+        responseStreamer,
+        flushPendingServiceMessages: () =>
+          toolMessageBatcher.flushSession(sessionId, "assistant_message_completed"),
+        prepareStreamingPayload,
+        formatSummary,
+        resolveFormat: () => (getAssistantParseMode() === "MarkdownV2" ? "markdown_v2" : "raw"),
+        getReplyKeyboard: getCurrentReplyKeyboard,
+        sendText: async (text, options, format) => {
+          await sendBotText({
+            api: botApi,
+            chatId,
+            text,
+            options: options as Parameters<typeof sendBotText>[0]["options"],
+            format,
+          });
+        },
+      });
 
-      logger.debug(
-        `[Bot] Sending completed message to Telegram (chatId=${chatIdInstance}, parts=${parts.length})`,
-      );
-
-      for (let i = 0; i < parts.length; i++) {
-        const keyboard = getCurrentReplyKeyboard();
-        const options = keyboard ? { reply_markup: keyboard } : undefined;
-
-        await sendBotText({
-          api: botInstance.api,
-          chatId: chatIdInstance,
-          text: parts[i],
-          options,
-          format: assistantMessageFormat,
-        });
+      if (streamedViaMessages) {
+        logger.debug(
+          `[Bot] Final assistant message already streamed (session=${sessionId}, message=${messageId})`,
+        );
+        foregroundSessionState.markIdle(sessionId);
+        await scheduledTaskRuntime.flushDeferredDeliveries();
+        return;
       }
     } catch (err) {
       logger.error("Failed to send message to Telegram:", err);
@@ -349,10 +485,6 @@ async function ensureEventSubscription(directory: string): Promise<void> {
   });
 
   summaryAggregator.setOnThinking(async (sessionId) => {
-    if (config.bot.hideThinkingMessages) {
-      return;
-    }
-
     if (!botInstance || !chatIdInstance) {
       return;
     }
@@ -364,7 +496,10 @@ async function ensureEventSubscription(directory: string): Promise<void> {
 
     logger.debug("[Bot] Agent started thinking");
 
-    toolMessageBatcher.enqueue(sessionId, t("bot.thinking"));
+    deliverThinkingMessage(sessionId, toolMessageBatcher, {
+      responseStreaming: config.bot.responseStreaming,
+      hideThinkingMessages: config.bot.hideThinkingMessages,
+    });
   });
 
   summaryAggregator.setOnTokens(async (tokens) => {
@@ -423,11 +558,13 @@ async function ensureEventSubscription(directory: string): Promise<void> {
 
     const currentSession = getCurrentSession();
     if (!currentSession || currentSession.id !== sessionId) {
+      responseStreamer.clearSession(sessionId, "session_error_not_current");
       foregroundSessionState.markIdle(sessionId);
       await scheduledTaskRuntime.flushDeferredDeliveries();
       return;
     }
 
+    responseStreamer.clearSession(sessionId, "session_error");
     await toolMessageBatcher.flushSession(sessionId, "session_error");
 
     const normalizedMessage = message.trim() || t("common.unknown_error");

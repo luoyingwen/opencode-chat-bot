@@ -1,5 +1,6 @@
 import type { Context } from "grammy";
 import { interactionManager } from "./manager.js";
+import { allowsBusyInteraction, isBusyAllowedCommand } from "./busy.js";
 import type {
   BlockReason,
   ExpectedInput,
@@ -7,6 +8,7 @@ import type {
   IncomingInputType,
   InteractionState,
 } from "./types.js";
+import { foregroundSessionState } from "../scheduled-task/foreground-state.js";
 
 function normalizeIncomingCommand(text: string): string | null {
   const trimmed = text.trim();
@@ -66,18 +68,37 @@ function createAllowDecision(
   inputType: IncomingInputType,
   state: InteractionState | null,
   command?: string,
+  busy?: boolean,
 ): GuardDecision {
   return {
     allow: true,
     inputType,
     state,
     command,
+    busy,
   };
 }
 
 function createBlockDecision(
   inputType: IncomingInputType,
   state: InteractionState,
+  reason: BlockReason,
+  command?: string,
+  busy?: boolean,
+): GuardDecision {
+  return {
+    allow: false,
+    inputType,
+    state,
+    reason,
+    command,
+    busy,
+  };
+}
+
+function createBusyBlockDecision(
+  inputType: IncomingInputType,
+  state: InteractionState | null,
   reason: BlockReason,
   command?: string,
 ): GuardDecision {
@@ -87,6 +108,7 @@ function createBlockDecision(
     state,
     reason,
     command,
+    busy: true,
   };
 }
 
@@ -108,14 +130,48 @@ function isAllowedTaskCallback(ctx: Context, state: InteractionState): boolean {
 export function resolveInteractionGuardDecision(ctx: Context): GuardDecision {
   const state = interactionManager.getSnapshot();
   const { inputType, command } = classifyIncomingInput(ctx);
+  const isBusy = foregroundSessionState.isBusy();
+
+  if (state && interactionManager.isExpired()) {
+    interactionManager.clear("expired");
+    return createBlockDecision(inputType, state, "expired", command, isBusy);
+  }
+
+  if (isBusy) {
+    if (inputType === "command") {
+      if (isBusyAllowedCommand(command)) {
+        return createAllowDecision(inputType, state, command, true);
+      }
+
+      return createBusyBlockDecision(inputType, state, "command_not_allowed", command);
+    }
+
+    if (state && allowsBusyInteraction(state.kind)) {
+      if (state.expectedInput === "mixed") {
+        if (inputType === "callback" || inputType === "text") {
+          return createAllowDecision(inputType, state, command, true);
+        }
+
+        return createBusyBlockDecision(inputType, state, "expected_text", command);
+      }
+
+      if (state.expectedInput === inputType) {
+        return createAllowDecision(inputType, state, command, true);
+      }
+
+      return createBusyBlockDecision(
+        inputType,
+        state,
+        getExpectedInputBlockReason(state.expectedInput),
+        command,
+      );
+    }
+
+    return createBusyBlockDecision(inputType, state, "expected_text", command);
+  }
 
   if (!state) {
     return createAllowDecision(inputType, null, command);
-  }
-
-  if (interactionManager.isExpired()) {
-    interactionManager.clear("expired");
-    return createBlockDecision(inputType, state, "expired", command);
   }
 
   if (inputType === "command") {

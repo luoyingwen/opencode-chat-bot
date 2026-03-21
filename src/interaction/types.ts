@@ -46,4 +46,5 @@ export interface GuardDecision {
   state: InteractionState | null;
   reason?: BlockReason;
   command?: string;
+  busy?: boolean;
 }
