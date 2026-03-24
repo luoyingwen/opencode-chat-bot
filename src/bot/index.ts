@@ -75,6 +75,7 @@ import { foregroundSessionState } from "../scheduled-task/foreground-state.js";
 import { scheduledTaskRuntime } from "../scheduled-task/runtime.js";
 import { ResponseStreamer } from "./streaming/response-streamer.js";
 import type { StreamingMessagePayload } from "./streaming/response-streamer.js";
+import { ToolCallStreamer } from "./streaming/tool-call-streamer.js";
 import {
   editMessageWithMarkdownFallback,
   sendMessageWithMarkdownFallback,
@@ -245,6 +246,71 @@ const responseStreamer = new ResponseStreamer({
   },
 });
 
+const toolCallStreamer = new ToolCallStreamer({
+  throttleMs: RESPONSE_STREAM_THROTTLE_MS,
+  sendText: async (sessionId, text) => {
+    if (!botInstance || !chatIdInstance || chatIdInstance <= 0) {
+      throw new Error("Bot context missing for tool stream send");
+    }
+
+    const currentSession = getCurrentSession();
+    if (!currentSession || currentSession.id !== sessionId) {
+      throw new Error(`Tool stream session mismatch for send: ${sessionId}`);
+    }
+
+    const sentMessage = await botInstance.api.sendMessage(chatIdInstance, text, {
+      disable_notification: true,
+    });
+
+    return sentMessage.message_id;
+  },
+  editText: async (sessionId, messageId, text) => {
+    if (!botInstance || !chatIdInstance || chatIdInstance <= 0) {
+      throw new Error("Bot context missing for tool stream edit");
+    }
+
+    const currentSession = getCurrentSession();
+    if (!currentSession || currentSession.id !== sessionId) {
+      throw new Error(`Tool stream session mismatch for edit: ${sessionId}`);
+    }
+
+    try {
+      await botInstance.api.editMessageText(chatIdInstance, messageId, text);
+    } catch (error) {
+      const errorMessage =
+        error instanceof Error ? error.message.toLowerCase() : String(error).toLowerCase();
+      if (errorMessage.includes("message is not modified")) {
+        return;
+      }
+
+      throw error;
+    }
+  },
+  deleteText: async (sessionId, messageId) => {
+    if (!botInstance || !chatIdInstance || chatIdInstance <= 0) {
+      throw new Error("Bot context missing for tool stream delete");
+    }
+
+    const currentSession = getCurrentSession();
+    if (!currentSession || currentSession.id !== sessionId) {
+      throw new Error(`Tool stream session mismatch for delete: ${sessionId}`);
+    }
+
+    await botInstance.api.deleteMessage(chatIdInstance, messageId).catch((error) => {
+      const errorMessage =
+        error instanceof Error ? error.message.toLowerCase() : String(error).toLowerCase();
+      if (
+        errorMessage.includes("message to delete not found") ||
+        errorMessage.includes("message identifier is not specified")
+      ) {
+        return;
+      }
+
+      throw error;
+    });
+  },
+});
+
 async function ensureCommandsInitialized(ctx: Context, next: NextFunction): Promise<void> {
   if (commandsInitialized || !ctx.from || ctx.from.id !== config.telegram.allowedUserId) {
     await next();
@@ -284,6 +350,7 @@ async function ensureEventSubscription(directory: string): Promise<void> {
   summaryAggregator.setTypingIndicatorEnabled(true);
   summaryAggregator.setOnCleared(() => {
     toolMessageBatcher.clearAll("summary_aggregator_clear");
+    toolCallStreamer.clearAll("summary_aggregator_clear");
     responseStreamer.clearAll("summary_aggregator_clear");
   });
 
@@ -316,6 +383,7 @@ async function ensureEventSubscription(directory: string): Promise<void> {
     if (!botInstance || !chatIdInstance) {
       logger.error("Bot or chat ID not available for sending message");
       responseStreamer.clearMessage(sessionId, messageId, "bot_context_missing");
+      toolCallStreamer.clearSession(sessionId, "bot_context_missing");
       foregroundSessionState.markIdle(sessionId);
       return;
     }
@@ -323,6 +391,7 @@ async function ensureEventSubscription(directory: string): Promise<void> {
     const currentSession = getCurrentSession();
     if (currentSession?.id !== sessionId) {
       responseStreamer.clearMessage(sessionId, messageId, "session_mismatch");
+      toolCallStreamer.clearSession(sessionId, "session_mismatch");
       foregroundSessionState.markIdle(sessionId);
       await scheduledTaskRuntime.flushDeferredDeliveries();
       return;
@@ -339,7 +408,10 @@ async function ensureEventSubscription(directory: string): Promise<void> {
         messageText,
         responseStreamer,
         flushPendingServiceMessages: () =>
-          toolMessageBatcher.flushSession(sessionId, "assistant_message_completed"),
+          Promise.all([
+            toolMessageBatcher.flushSession(sessionId, "assistant_message_completed"),
+            toolCallStreamer.flushSession(sessionId, "assistant_message_completed"),
+          ]).then(() => undefined),
         prepareStreamingPayload,
         formatSummary,
         resolveFormat: () => (getAssistantParseMode() === "MarkdownV2" ? "markdown_v2" : "raw"),
@@ -396,7 +468,7 @@ async function ensureEventSubscription(directory: string): Promise<void> {
     try {
       const message = formatToolInfo(toolInfo);
       if (message) {
-        toolMessageBatcher.enqueue(toolInfo.sessionId, message);
+        toolCallStreamer.append(toolInfo.sessionId, message);
       }
     } catch (err) {
       logger.error("Failed to send tool notification to Telegram:", err);
@@ -415,6 +487,8 @@ async function ensureEventSubscription(directory: string): Promise<void> {
     }
 
     try {
+      await toolCallStreamer.breakSession(fileInfo.sessionId, "tool_file_boundary");
+
       const toolMessage = formatToolInfo(fileInfo);
       const caption = prepareDocumentCaption(toolMessage || fileInfo.fileData.caption);
 
@@ -435,7 +509,10 @@ async function ensureEventSubscription(directory: string): Promise<void> {
 
     const currentSession = getCurrentSession();
     if (currentSession) {
-      await toolMessageBatcher.flushSession(currentSession.id, "question_asked");
+      await Promise.all([
+        toolMessageBatcher.flushSession(currentSession.id, "question_asked"),
+        toolCallStreamer.flushSession(currentSession.id, "question_asked"),
+      ]);
     }
 
     if (questionManager.isActive()) {
@@ -476,7 +553,10 @@ async function ensureEventSubscription(directory: string): Promise<void> {
       return;
     }
 
-    await toolMessageBatcher.flushSession(request.sessionID, "permission_asked");
+    await Promise.all([
+      toolMessageBatcher.flushSession(request.sessionID, "permission_asked"),
+      toolCallStreamer.flushSession(request.sessionID, "permission_asked"),
+    ]);
 
     logger.info(
       `[Bot] Received permission request from agent: type=${request.permission}, requestID=${request.id}`,
@@ -495,6 +575,8 @@ async function ensureEventSubscription(directory: string): Promise<void> {
     }
 
     logger.debug("[Bot] Agent started thinking");
+
+    await toolCallStreamer.breakSession(sessionId, "thinking_started");
 
     deliverThinkingMessage(sessionId, toolMessageBatcher, {
       responseStreaming: config.bot.responseStreaming,
@@ -559,13 +641,17 @@ async function ensureEventSubscription(directory: string): Promise<void> {
     const currentSession = getCurrentSession();
     if (!currentSession || currentSession.id !== sessionId) {
       responseStreamer.clearSession(sessionId, "session_error_not_current");
+      toolCallStreamer.clearSession(sessionId, "session_error_not_current");
       foregroundSessionState.markIdle(sessionId);
       await scheduledTaskRuntime.flushDeferredDeliveries();
       return;
     }
 
     responseStreamer.clearSession(sessionId, "session_error");
-    await toolMessageBatcher.flushSession(sessionId, "session_error");
+    await Promise.all([
+      toolMessageBatcher.flushSession(sessionId, "session_error"),
+      toolCallStreamer.flushSession(sessionId, "session_error"),
+    ]);
 
     const normalizedMessage = message.trim() || t("common.unknown_error");
     const truncatedMessage =
@@ -600,7 +686,7 @@ async function ensureEventSubscription(directory: string): Promise<void> {
         : normalizedMessage;
 
     const retryMessage = t("bot.session_retry", { message: truncatedMessage });
-    toolMessageBatcher.enqueueUniqueByPrefix(sessionId, retryMessage, SESSION_RETRY_PREFIX);
+    toolCallStreamer.replaceByPrefix(sessionId, SESSION_RETRY_PREFIX, retryMessage);
   });
 
   summaryAggregator.setOnSessionDiff(async (_sessionId, diffs) => {

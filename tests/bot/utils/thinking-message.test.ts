@@ -14,15 +14,11 @@ describe("bot/utils/thinking-message", () => {
       hideThinkingMessages: false,
     });
 
-    expect(batcher.sendTextNow).toHaveBeenCalledWith(
-      "s1",
-      t("bot.thinking"),
-      "thinking_started_streaming",
-    );
+    expect(batcher.sendTextNow).toHaveBeenCalledWith("s1", t("bot.thinking"), "thinking_started");
     expect(batcher.enqueue).not.toHaveBeenCalled();
   });
 
-  it("keeps queued thinking behavior when response streaming is disabled", () => {
+  it("keeps thinking as a separate immediate message when response streaming is disabled", () => {
     const batcher = {
       enqueue: vi.fn(),
       sendTextNow: vi.fn(),
@@ -33,8 +29,8 @@ describe("bot/utils/thinking-message", () => {
       hideThinkingMessages: false,
     });
 
-    expect(batcher.enqueue).toHaveBeenCalledWith("s1", t("bot.thinking"));
-    expect(batcher.sendTextNow).not.toHaveBeenCalled();
+    expect(batcher.sendTextNow).toHaveBeenCalledWith("s1", t("bot.thinking"), "thinking_started");
+    expect(batcher.enqueue).not.toHaveBeenCalled();
   });
 
   it("does not send thinking message when hidden", () => {

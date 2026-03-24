@@ -18,10 +18,6 @@ export function deliverThinkingMessage(
   }
 
   const message = t("bot.thinking");
-  if (options.responseStreaming) {
-    batcher.sendTextNow(sessionId, message, "thinking_started_streaming");
-    return;
-  }
-
-  batcher.enqueue(sessionId, message);
+  void options.responseStreaming;
+  batcher.sendTextNow(sessionId, message, "thinking_started");
 }
