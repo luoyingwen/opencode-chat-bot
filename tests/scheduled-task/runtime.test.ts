@@ -22,6 +22,9 @@ vi.mock("../../src/config.js", () => ({
     telegram: {
       allowedUserId: 777,
     },
+    bot: {
+      messageFormatMode: "markdown",
+    },
     opencode: {
       apiUrl: "http://localhost:4096",
       password: "",
@@ -177,10 +180,13 @@ describe("scheduled-task/runtime", () => {
     foregroundSessionState.markIdle("session-1");
     await runtime.flushDeferredDeliveries();
 
-    expect(mocked.sendBotTextMock).toHaveBeenCalledWith(
+    expect(mocked.sendBotTextMock).toHaveBeenCalledTimes(1);
+    expect(mocked.sendBotTextMock).toHaveBeenNthCalledWith(
+      1,
       expect.objectContaining({
         chatId: 777,
-        text: expect.stringContaining("All good"),
+        format: "markdown_v2",
+        text: expect.stringMatching(/Send report[\s\S]*All good/),
       }),
     );
 
@@ -218,6 +224,7 @@ describe("scheduled-task/runtime", () => {
     expect(mocked.sendBotTextMock).toHaveBeenCalledWith(
       expect.objectContaining({
         chatId: 777,
+        format: "raw",
         text: expect.stringContaining("Task failed"),
       }),
     );

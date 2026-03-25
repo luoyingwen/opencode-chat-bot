@@ -374,7 +374,7 @@ export const de: I18nDictionary = {
     "Der wiederkehrende Zeitplan ist zu häufig. Das minimale erlaubte Intervall ist einmal alle 5 Minuten.",
   "task.kind.cron": "wiederkehrend",
   "task.kind.once": "einmalig",
-  "task.run.success": "⏰ Geplante Aufgabe abgeschlossen: {description}\n\n{result}",
+  "task.run.success": "⏰ Geplante Aufgabe abgeschlossen: {description}",
   "task.run.error": "🔴 Geplante Aufgabe fehlgeschlagen: {description}\n\nFehler: {error}",
 
   "tasklist.empty": "📭 Noch keine geplanten Aufgaben.",
