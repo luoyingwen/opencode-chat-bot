@@ -325,7 +325,7 @@ export const zh: I18nDictionary = {
   "task.schedule_too_frequent": "重复任务过于频繁。最小允许间隔为每 5 分钟一次。",
   "task.kind.cron": "重复",
   "task.kind.once": "一次性",
-  "task.run.success": "⏰ 定时任务已完成: {description}\n\n{result}",
+  "task.run.success": "⏰ 定时任务已完成: {description}",
   "task.run.error": "🔴 定时任务执行失败: {description}\n\n错误: {error}",
 
   "tasklist.empty": "📭 还没有定时任务。",

@@ -8,6 +8,7 @@ import { t } from "../i18n/index.js";
 import { getCurrentProject } from "../settings/manager.js";
 
 const TELEGRAM_MESSAGE_LIMIT = 4096;
+const MARKDOWN_V2_RESERVED_CHARS = /([_\*\[\]\(\)~`>#+\-=|{}.!\\])/g;
 
 function splitText(text: string, maxLength: number): string[] {
   const parts: string[] = [];
@@ -176,6 +177,10 @@ export function getAssistantParseMode(): "MarkdownV2" | undefined {
   }
 
   return undefined;
+}
+
+export function escapePlainTextForTelegramMarkdownV2(text: string): string {
+  return text.replace(MARKDOWN_V2_RESERVED_CHARS, "\\$1");
 }
 
 function formatMarkdownForTelegram(text: string): string {

@@ -109,5 +109,6 @@ export interface QueuedScheduledTaskDelivery {
   prompt: string;
   runAt: string;
   status: "success" | "error";
-  messageText: string;
+  notificationText: string;
+  resultText?: string;
 }

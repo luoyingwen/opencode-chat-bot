@@ -362,7 +362,7 @@ export const ru: I18nDictionary = {
     "Повторяющееся расписание слишком частое. Минимально допустимый интервал - один запуск в 5 минут.",
   "task.kind.cron": "повторяющаяся",
   "task.kind.once": "однократная",
-  "task.run.success": "⏰ Задача по расписанию выполнена: {description}\n\n{result}",
+  "task.run.success": "⏰ Задача по расписанию выполнена: {description}",
   "task.run.error": "🔴 Ошибка выполнения задачи по расписанию: {description}\n\nОшибка: {error}",
 
   "tasklist.empty": "📭 Задач по расписанию пока нет.",
