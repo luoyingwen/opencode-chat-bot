@@ -32,6 +32,24 @@ describe("summary/tool-message-batcher", () => {
     expect(sendFile).not.toHaveBeenCalled();
   });
 
+  it("sends text immediately outside the queue when requested", async () => {
+    const sendText = vi.fn().mockResolvedValue(undefined);
+    const sendFile = vi.fn().mockResolvedValue(undefined);
+    const batcher = new ToolMessageBatcher({
+      intervalSeconds: 5,
+      sendText,
+      sendFile,
+    });
+
+    batcher.sendTextNow("s1", "thinking", "thinking_started_streaming");
+
+    await vi.waitFor(() => {
+      expect(sendText).toHaveBeenCalledTimes(1);
+    });
+    expect(sendText).toHaveBeenCalledWith("s1", "thinking");
+    expect(sendFile).not.toHaveBeenCalled();
+  });
+
   it("sends file immediately when interval is zero", async () => {
     const sendText = vi.fn().mockResolvedValue(undefined);
     const sendFile = vi.fn().mockResolvedValue(undefined);

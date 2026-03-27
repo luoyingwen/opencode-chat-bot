@@ -3,8 +3,11 @@ import { readFile } from "node:fs/promises";
 import { createBot } from "../bot/index.js";
 import { getCurrentProject, loadSettings, setCurrentProject } from "../settings/manager.js";
 import { processManager } from "../process/manager.js";
+import { scheduledTaskRuntime } from "../scheduled-task/runtime.js";
 import { warmupSessionDirectoryCache } from "../session/cache-manager.js";
+import { reconcileStoredModelSelection } from "../model/manager.js";
 import { getRuntimeMode } from "../runtime/mode.js";
+import { getRuntimePaths } from "../runtime/paths.js";
 import { logger } from "../utils/logger.js";
 import { config } from "../config.js";
 import { opencodeClient } from "../opencode/client.js";
@@ -25,6 +28,7 @@ async function getBotVersion(): Promise<string> {
 
 export async function startBotApp(): Promise<void> {
   const mode = getRuntimeMode();
+  const runtimePaths = getRuntimePaths();
   const version = await getBotVersion();
 
   const hasTelegram = !!config.telegram.token;

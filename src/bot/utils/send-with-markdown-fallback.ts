@@ -2,13 +2,24 @@ import { logger } from "../../utils/logger.js";
 import type { Api, RawApi } from "grammy";
 
 type SendMessageApi = Pick<Api<RawApi>, "sendMessage">;
+type EditMessageApi = Pick<Api<RawApi>, "editMessageText">;
 type TelegramSendMessageOptions = Parameters<SendMessageApi["sendMessage"]>[2];
+type TelegramEditMessageOptions = Parameters<EditMessageApi["editMessageText"]>[3];
 
 interface SendMessageWithMarkdownFallbackParams {
   api: SendMessageApi;
   chatId: Parameters<SendMessageApi["sendMessage"]>[0];
   text: string;
   options?: TelegramSendMessageOptions;
+  parseMode?: "Markdown" | "MarkdownV2";
+}
+
+interface EditMessageWithMarkdownFallbackParams {
+  api: EditMessageApi;
+  chatId: Parameters<EditMessageApi["editMessageText"]>[0];
+  messageId: Parameters<EditMessageApi["editMessageText"]>[1];
+  text: string;
+  options?: TelegramEditMessageOptions;
   parseMode?: "Markdown" | "MarkdownV2";
 }
 
@@ -65,10 +76,11 @@ export async function sendMessageWithMarkdownFallback({
   text,
   options,
   parseMode,
-}: SendMessageWithMarkdownFallbackParams): Promise<void> {
+}: SendMessageWithMarkdownFallbackParams): Promise<
+  Awaited<ReturnType<SendMessageApi["sendMessage"]>>
+> {
   if (!parseMode) {
-    await api.sendMessage(chatId, text, options);
-    return;
+    return api.sendMessage(chatId, text, options);
   }
 
   const markdownOptions: TelegramSendMessageOptions = {
@@ -77,13 +89,44 @@ export async function sendMessageWithMarkdownFallback({
   };
 
   try {
-    await api.sendMessage(chatId, text, markdownOptions);
+    return await api.sendMessage(chatId, text, markdownOptions);
   } catch (error) {
     if (!isTelegramMarkdownParseError(error)) {
       throw error;
     }
 
     logger.warn("[Bot] Markdown parse failed, retrying assistant message in raw mode", error);
-    await api.sendMessage(chatId, text, options);
+    return api.sendMessage(chatId, text, options);
+  }
+}
+
+export async function editMessageWithMarkdownFallback({
+  api,
+  chatId,
+  messageId,
+  text,
+  options,
+  parseMode,
+}: EditMessageWithMarkdownFallbackParams): Promise<
+  Awaited<ReturnType<EditMessageApi["editMessageText"]>>
+> {
+  if (!parseMode) {
+    return api.editMessageText(chatId, messageId, text, options);
+  }
+
+  const markdownOptions: TelegramEditMessageOptions = {
+    ...(options || {}),
+    parse_mode: parseMode,
+  };
+
+  try {
+    return await api.editMessageText(chatId, messageId, text, markdownOptions);
+  } catch (error) {
+    if (!isTelegramMarkdownParseError(error)) {
+      throw error;
+    }
+
+    logger.warn("[Bot] Markdown parse failed, retrying edited message in raw mode", error);
+    return api.editMessageText(chatId, messageId, text, options);
   }
 }

@@ -53,6 +53,22 @@ describe("summary/formatter", () => {
     expect(parts[0].endsWith("\n```")).toBe(false);
   });
 
+  it("supports custom message limits for streamed markdown parts", () => {
+    const parts = formatSummaryWithMode("hello ".repeat(80), "markdown", 120);
+
+    expect(parts.length).toBeGreaterThan(1);
+    expect(parts.every((part) => part.length <= 120)).toBe(true);
+  });
+
+  it("keeps raw code-block parts within the custom limit", () => {
+    const parts = formatSummaryWithMode("a".repeat(300), "raw", 120);
+
+    expect(parts.length).toBeGreaterThan(1);
+    expect(parts.every((part) => part.length <= 120)).toBe(true);
+    expect(parts[0].startsWith("```\n")).toBe(true);
+    expect(parts[0].endsWith("\n```")).toBe(true);
+  });
+
   it("adapts headings, quotes, tables and horizontal rules for Telegram", () => {
     const text = [
       "# Main heading",
@@ -73,10 +89,20 @@ describe("summary/formatter", () => {
     expect(parts[0]).toContain("*Main heading*");
     expect(parts[0]).toContain("> This is a quote\\.");
     expect(parts[0]).toContain("> Quote continues on next line\\.");
-    expect(parts[0]).toContain("| Header 1 | Header 2 |");
-    expect(parts[0]).toContain("| Cell A | Cell B |");
+    expect(parts[0]).toContain("\\| Header 1 \\| Header 2 \\|");
+    expect(parts[0]).toContain("\\| Cell A \\| Cell B \\|");
     expect(parts[0]).not.toContain("```\nHeader 1");
     expect(parts[0]).toContain("──────────");
+  });
+
+  it("escapes table pipes for MarkdownV2 outside code blocks", () => {
+    const text = ["| A | B |", "", "```ts", 'const row = "| raw |";', "```"].join("\n");
+
+    const parts = formatSummaryWithMode(text, "markdown");
+
+    expect(parts).toHaveLength(1);
+    expect(parts[0]).toContain("\\| A \\| B \\|");
+    expect(parts[0]).toContain('const row = "| raw |";');
   });
 
   it("renders markdown checklists as visual checkboxes", () => {

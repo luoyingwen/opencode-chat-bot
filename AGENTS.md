@@ -67,10 +67,34 @@ After any code change, always run: `npm run build && npm run lint && npm test`
 
 ### Error handling
 
-- Wrap async operations in `try/catch`.
-- Log errors with context: session ID, operation type, component tag.
-- Send user-friendly error messages. Never expose stack traces to users.
-- Use `safeBackgroundTask()` from `src/utils/safe-background-task.ts` for fire-and-forget async work.
+- Use `try/catch` around async operations.
+- Log errors with context (session ID, operation type, etc.).
+- Send understandable error messages to users.
+- Never expose stack traces to users.
+
+### Bot commands
+
+The command list is centralized in `src/bot/commands/definitions.ts`.
+
+```typescript
+const COMMAND_DEFINITIONS: BotCommandI18nDefinition[] = [
+  { command: "status", descriptionKey: "cmd.description.status" },
+  { command: "new", descriptionKey: "cmd.description.new" },
+  { command: "abort", descriptionKey: "cmd.description.stop" },
+  { command: "sessions", descriptionKey: "cmd.description.sessions" },
+  { command: "projects", descriptionKey: "cmd.description.projects" },
+  { command: "rename", descriptionKey: "cmd.description.rename" },
+  { command: "opencode_start", descriptionKey: "cmd.description.opencode_start" },
+  { command: "opencode_stop", descriptionKey: "cmd.description.opencode_stop" },
+  { command: "help", descriptionKey: "cmd.description.help" },
+];
+```
+
+Important:
+
+- When adding a command, update `definitions.ts` only.
+- The same source is used for Telegram `setMyCommands` and help/docs.
+- Do not duplicate command lists elsewhere.
 
 ### Logging
 

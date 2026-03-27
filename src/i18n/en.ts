@@ -4,6 +4,8 @@ export const en = {
   "cmd.description.stop": "Stop current action",
   "cmd.description.sessions": "List sessions",
   "cmd.description.projects": "List projects",
+  "cmd.description.task": "Create a scheduled task",
+  "cmd.description.tasklist": "List scheduled tasks",
   "cmd.description.commands": "Custom commands",
   "cmd.description.opencode_start": "Start OpenCode server",
   "cmd.description.opencode_stop": "Stop OpenCode server",
@@ -45,7 +47,7 @@ export const en = {
   "common.unknown_error": "unknown error",
 
   "start.welcome":
-    "👋 Welcome to OpenCode Telegram Bot!\n\nUse commands:\n/projects — select project\n/sessions — session list\n/new — new session\n/status — status\n/help — help\n\nUse the bottom buttons to select agent mode, model, and variant.",
+    "👋 Welcome to OpenCode Telegram Bot!\n\nUse commands:\n/projects — select project\n/sessions — session list\n/new — new session\n/task — scheduled task\n/tasklist — scheduled tasks\n/status — status\n/help — help\n\nUse the bottom buttons to select agent mode, model, and variant.",
   "help.keyboard_hint":
     "💡 Use the bottom keyboard buttons for agent mode, model, variant, and context actions.",
   "help.text":
@@ -59,13 +61,13 @@ export const en = {
     "🔴 Failed to create session. Try /new or check server status with /status.",
   "bot.session_created": "✅ Session created: {title}",
   "bot.session_busy":
-    "⏳ Agent is already running a task. Wait for completion or use /stop to interrupt current run.",
+    "⏳ Agent is already running a task. Wait for completion or use /abort to interrupt current run.",
   "bot.session_reset_project_mismatch":
     "⚠️ Active session does not match the selected project, so it was reset. Use /sessions to pick one or /new to create a new session.",
   "bot.prompt_send_error": "Failed to send request to OpenCode.",
   "bot.session_error": "🔴 OpenCode returned an error: {message}",
   "bot.session_retry":
-    "🔁 {message}\n\nProvider keeps returning the same error on repeated retries. Use /stop to abort.",
+    "🔁 {message}\n\nProvider keeps returning the same error on repeated retries. Use /abort to abort.",
   "bot.unknown_command": "⚠️ Unknown command: {command}. Use /help to see available commands.",
   "bot.photo_downloading": "⏳ Downloading photo...",
   "bot.photo_too_large": "⚠️ Photo is too large (max {maxSizeMb}MB)",
@@ -78,23 +80,23 @@ export const en = {
   "bot.model_no_pdf": "⚠️ Current model doesn't support PDF input. Sending text only.",
   "bot.text_file_too_large": "⚠️ Text file is too large (max {maxSizeKb}KB)",
 
-  "status.header_running": "🟢 **OpenCode Server is running**",
+  "status.header_running": "🟢 OpenCode Server is running",
   "status.health.healthy": "Healthy",
   "status.health.unhealthy": "Unhealthy",
   "status.line.health": "Status: {health}",
   "status.line.version": "Version: {version}",
-  "status.line.managed_yes": "Managed by bot: Yes",
-  "status.line.managed_no": "Managed by bot: No",
+  "status.line.managed_yes": "Started by bot: Yes",
+  "status.line.managed_no": "Started by bot: No",
   "status.line.pid": "PID: {pid}",
   "status.line.uptime_sec": "Uptime: {seconds} sec",
   "status.line.mode": "Mode: {mode}",
   "status.line.model": "Model: {model}",
   "status.agent_not_set": "not set",
-  "status.project_selected": "🏗 Project: {project}",
-  "status.project_not_selected": "🏗 Project: not selected",
+  "status.project_selected": "Project: {project}",
+  "status.project_not_selected": "Project: not selected",
   "status.project_hint": "Use /projects to select a project",
-  "status.session_selected": "📋 Current session: {title}",
-  "status.session_not_selected": "📋 Current session: not selected",
+  "status.session_selected": "Current session: {title}",
+  "status.session_not_selected": "Current session: not selected",
   "status.session_hint": "Use /sessions to select one or /new to create one",
   "status.server_unavailable":
     "🔴 OpenCode Server is unavailable\n\nUse /opencode_start to start the server.",
@@ -144,15 +146,15 @@ export const en = {
   "stop.in_progress":
     "🛑 Event stream stopped, sending abort signal...\n\nWaiting for agent to stop.",
   "stop.warn_unconfirmed":
-    "⚠️ Event stream stopped, but server did not confirm abort.\n\nCheck /status and retry /stop in a few seconds.",
+    "⚠️ Event stream stopped, but server did not confirm abort.\n\nCheck /status and retry /abort in a few seconds.",
   "stop.warn_maybe_finished": "⚠️ Event stream stopped, but the agent may have already finished.",
   "stop.success": "✅ Agent action interrupted. No more messages from this run will be sent.",
   "stop.warn_still_busy":
     "⚠️ Signal sent, but agent is still busy.\n\nEvent stream is already disabled, so no intermediate messages will be sent.",
   "stop.warn_timeout":
-    "⚠️ Abort request timeout.\n\nEvent stream is already disabled, retry /stop in a few seconds.",
+    "⚠️ Abort request timeout.\n\nEvent stream is already disabled, retry /abort in a few seconds.",
   "stop.warn_local_only": "⚠️ Event stream stopped locally, but server-side abort failed.",
-  "stop.error": "🔴 Failed to stop action.\n\nEvent stream is stopped, try /stop again.",
+  "stop.error": "🔴 Failed to stop action.\n\nEvent stream is stopped, try /abort again.",
 
   "opencode_start.already_running_managed":
     "⚠️ OpenCode Server is already running\n\nPID: {pid}\nUptime: {seconds} seconds",
@@ -160,7 +162,7 @@ export const en = {
     "✅ OpenCode Server is already running as an external process\n\nVersion: {version}\n\nThis server was not started by bot, so /opencode-stop cannot stop it.",
   "opencode_start.starting": "🔄 Starting OpenCode Server...",
   "opencode_start.start_error":
-    "🔴 Failed to start OpenCode Server\n\nError: {error}\n\nCheck that OpenCode CLI is installed and available in PATH:\n`opencode --version`\n`npm install -g @opencode-ai/cli`",
+    "🔴 Failed to start OpenCode Server\n\nError: {error}\n\nCheck that OpenCode CLI is installed and available in PATH:\nopencode --version\nnpm install -g @opencode-ai/cli",
   "opencode_start.started_not_ready":
     "⚠️ OpenCode Server started, but is not responding\n\nPID: {pid}\n\nServer may still be starting. Try /status in a few seconds.",
   "opencode_start.success":
@@ -228,7 +230,7 @@ export const en = {
     "⚠️ Please answer the permission request first using the buttons above.",
   "permission.blocked.command_not_allowed":
     "⚠️ This command is not available until you answer the permission request.",
-  "permission.header": "{emoji} **Permission request: {name}**\n\n",
+  "permission.header": "{emoji} Permission request: {name}\n\n",
   "permission.button.allow": "✅ Allow once",
   "permission.button.always": "🔓 Allow always",
   "permission.button.reject": "❌ Reject",
@@ -243,6 +245,7 @@ export const en = {
   "permission.name.list": "List Directory",
   "permission.name.task": "Task",
   "permission.name.lsp": "LSP",
+  "permission.name.external_directory": "External Directory",
 
   "question.inactive_callback": "Poll is inactive",
   "question.processing_error_callback": "Processing error",
@@ -254,7 +257,7 @@ export const en = {
   "question.no_active_project": "❌ No active project",
   "question.no_active_request": "❌ No active request",
   "question.send_answers_error": "❌ Failed to send answers to agent",
-  "question.multi_hint": "\n*You can select multiple options*",
+  "question.multi_hint": "\n(You can select multiple options)",
   "question.button.submit": "✅ Done",
   "question.button.custom": "🔤 Custom answer",
   "question.button.cancel": "❌ Cancel",
@@ -276,6 +279,7 @@ export const en = {
   "pinned.line.project": "Project: {project}",
   "pinned.line.model": "Model: {model}",
   "pinned.line.context": "Context: {used} / {limit} ({percent}%)",
+  "pinned.line.cost": "Cost: {cost} spent",
   "pinned.files.title": "Files ({count}):",
   "pinned.files.item": "  {path}{diff}",
   "pinned.files.more": "  ... and {count} more",
@@ -300,6 +304,10 @@ export const en = {
   "runtime.wizard.user_id_invalid": "Enter a positive integer (> 0).\n",
   "runtime.wizard.ask_api_url":
     "Enter OpenCode API URL (optional).\nPress Enter to use default: {defaultUrl}\n> ",
+  "runtime.wizard.ask_server_username":
+    "Enter OpenCode server username (optional).\nPress Enter to use default: {defaultUsername}\n> ",
+  "runtime.wizard.ask_server_password":
+    "Enter OpenCode server password (optional).\nPress Enter to keep it empty.\n> ",
   "runtime.wizard.api_url_invalid": "Enter a valid URL (http/https) or press Enter for default.\n",
   "runtime.wizard.start": "OpenCode Telegram Bot setup.\n",
   "runtime.wizard.saved": "Configuration saved:\n- {envPath}\n- {settingsPath}\n",
@@ -322,6 +330,51 @@ export const en = {
     "⚠️ This command is not available while rename is waiting for a new name.",
   "rename.button.cancel": "❌ Cancel",
 
+  "task.prompt.schedule":
+    "⏰ Send the task schedule in natural language.\n\nExamples:\n- every 5 minutes\n- every day at 17:00\n- tomorrow at 12:00",
+  "task.schedule_empty": "⚠️ Schedule cannot be empty.",
+  "task.parse.in_progress": "⏳ Parsing schedule...",
+  "task.parse_error":
+    "🔴 Failed to parse schedule.\n\n{message}\n\nSend the schedule again in a clearer form.",
+  "task.schedule_preview":
+    "✅ Schedule parsed\n\nHow I understood it: {summary}\n{cronLine}Timezone: {timezone}\nType: {kind}\nNext run: {nextRunAt}",
+  "task.schedule_preview.cron": "Cron: {cron}",
+  "task.prompt.body": "📝 Now send what the bot should do on schedule.",
+  "task.prompt_empty": "⚠️ Task text cannot be empty.",
+  "task.created":
+    "✅ Scheduled task created\n\nTask: {description}\nProject: {project}\nModel: {model}\nSchedule: {schedule}\n{cronLine}Next run: {nextRunAt}",
+  "task.created.cron": "Cron: {cron}",
+  "task.button.retry_schedule": "🔁 Re-enter schedule",
+  "task.button.cancel": "❌ Cancel",
+  "task.retry_schedule_callback": "Re-entering schedule...",
+  "task.cancel_callback": "Cancelling...",
+  "task.cancelled": "❌ Scheduled task creation cancelled.",
+  "task.inactive_callback": "This scheduled task flow is inactive",
+  "task.inactive": "⚠️ Scheduled task creation is not active. Run /task again.",
+  "task.blocked.expected_input":
+    "⚠️ Finish the current scheduled task setup first by sending text or using the button in the schedule message.",
+  "task.blocked.command_not_allowed":
+    "⚠️ This command is not available while scheduled task creation is active.",
+  "task.limit_reached": "⚠️ Task limit reached ({limit}). Delete an existing scheduled task first.",
+  "task.schedule_too_frequent":
+    "Recurring schedule is too frequent. The minimum allowed interval is once every 5 minutes.",
+  "task.kind.cron": "recurring",
+  "task.kind.once": "one-time",
+  "task.run.success": "⏰ Scheduled task completed: {description}",
+  "task.run.error": "🔴 Scheduled task failed: {description}\n\nError: {error}",
+
+  "tasklist.empty": "📭 No scheduled tasks yet.",
+  "tasklist.select": "Select a scheduled task:",
+  "tasklist.details":
+    "⏰ Scheduled task\n\nTask: {prompt}\nProject: {project}\nSchedule: {schedule}\n{cronLine}Timezone: {timezone}\nNext run: {nextRunAt}\nLast run: {lastRunAt}\nRun count: {runCount}",
+  "tasklist.details.cron": "Cron: {cron}",
+  "tasklist.button.delete": "🗑 Delete",
+  "tasklist.button.cancel": "❌ Cancel",
+  "tasklist.deleted_callback": "Deleted",
+  "tasklist.cancelled_callback": "Cancelled",
+  "tasklist.inactive_callback": "This scheduled task menu is inactive",
+  "tasklist.load_error": "🔴 Failed to load scheduled tasks.",
+
   "commands.select": "Choose an OpenCode command:",
   "commands.empty": "📭 No OpenCode commands are available for this project.",
   "commands.fetch_error": "🔴 Failed to load OpenCode commands.",
@@ -336,6 +389,11 @@ export const en = {
   "commands.executing_prefix": "⚡ Executing command:",
   "commands.arguments_empty": "⚠️ Arguments cannot be empty. Send text or tap Execute.",
   "commands.execute_error": "🔴 Failed to execute OpenCode command.",
+  "commands.select_page": "Choose an OpenCode command (page {page}):",
+  "commands.button.prev_page": "⬅️ Prev",
+  "commands.button.next_page": "Next ➡️",
+  "commands.page_empty_callback": "No commands on this page",
+  "commands.page_load_error_callback": "Cannot load this page. Please try again.",
 
   "cmd.description.rename": "Rename current session",
 
@@ -355,7 +413,7 @@ export const en = {
 
   "legacy.models.fetch_error": "🔴 Failed to get models list. Check server status with /status.",
   "legacy.models.empty": "📋 No available models. Configure providers in OpenCode.",
-  "legacy.models.header": "📋 **Available models:**\n\n",
+  "legacy.models.header": "📋 Available models:\n\n",
   "legacy.models.no_provider_models": "  ⚠️ No available models\n",
   "legacy.models.env_hint": "💡 To use model in .env:\n",
   "legacy.models.error": "🔴 An error occurred while loading models list.",

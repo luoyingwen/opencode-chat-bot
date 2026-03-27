@@ -1,5 +1,6 @@
 interface SummaryAggregatorPrivateState {
   onCompleteCallback: null;
+  onPartialCallback: null;
   onToolCallback: null;
   onToolFileCallback: null;
   onQuestionCallback: null;
@@ -13,6 +14,7 @@ interface SummaryAggregatorPrivateState {
   onFileChangeCallback: null;
   bot: null;
   chatId: null;
+  typingIndicatorEnabled: boolean;
 }
 
 interface KeyboardManagerPrivateState {
@@ -84,6 +86,7 @@ export async function resetSingletonState(): Promise<void> {
 
   const aggregator = summaryAggregator as unknown as SummaryAggregatorPrivateState;
   aggregator.onCompleteCallback = null;
+  aggregator.onPartialCallback = null;
   aggregator.onToolCallback = null;
   aggregator.onToolFileCallback = null;
   aggregator.onQuestionCallback = null;
@@ -97,6 +100,7 @@ export async function resetSingletonState(): Promise<void> {
   aggregator.onFileChangeCallback = null;
   aggregator.bot = null;
   aggregator.chatId = null;
+  aggregator.typingIndicatorEnabled = true;
 
   const keyboard = keyboardManager as unknown as KeyboardManagerPrivateState;
   keyboard.state = null;

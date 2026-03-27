@@ -56,6 +56,18 @@ function getInteractionBlockedMessage(
     }
   }
 
+  if (interactionKind === "task") {
+    switch (reason) {
+      case "command_not_allowed":
+        return t("task.blocked.command_not_allowed");
+      case "expected_callback":
+      case "expected_command":
+      case "expected_text":
+      default:
+        return t("task.blocked.expected_input");
+    }
+  }
+
   switch (reason) {
     case "expired":
       return t("interaction.blocked.expired");
@@ -79,10 +91,14 @@ export async function interactionGuardMiddleware(ctx: Context, next: NextFunctio
     return;
   }
 
-  const message = getInteractionBlockedMessage(decision.reason, decision.state?.kind);
+  const message = decision.busy
+    ? decision.state?.kind === "question" || decision.state?.kind === "permission"
+      ? getInteractionBlockedMessage(decision.reason, decision.state.kind)
+      : t("interaction.blocked.finish_current")
+    : getInteractionBlockedMessage(decision.reason, decision.state?.kind);
 
   logger.debug(
-    `[InteractionGuard] Blocked input: interactionKind=${decision.state?.kind || "none"}, inputType=${decision.inputType}, reason=${decision.reason || "unknown"}, command=${decision.command || "-"}`,
+    `[InteractionGuard] Blocked input: interactionKind=${decision.state?.kind || "none"}, inputType=${decision.inputType}, reason=${decision.reason || "unknown"}, command=${decision.command || "-"}, busy=${decision.busy ? "yes" : "no"}`,
   );
 
   if (ctx.callbackQuery) {
