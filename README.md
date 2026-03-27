@@ -1,7 +1,9 @@
-# OpenCode Telegram Bot
+# OpenCode Telegram, Slack Bot
 
-[![npm version](https://img.shields.io/npm/v/@grinev/opencode-telegram-bot)](https://www.npmjs.com/package/@grinev/opencode-telegram-bot)
-[![CI](https://github.com/grinev/opencode-telegram-bot/actions/workflows/ci.yml/badge.svg)](https://github.com/grinev/opencode-telegram-bot/actions/workflows/ci.yml)
+fork from <https://github.com/grinev/opencode-telegram-bot>
+
+新增：支援 Slack, proxy, zh-TW
+
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 [![Node.js](https://img.shields.io/badge/node-%3E%3D20-brightgreen)](https://nodejs.org)
 
@@ -15,11 +17,9 @@ Scheduled tasks support. Turns the bot into a lightweight OpenClaw alternative f
 
 Platforms: macOS, Windows, Linux
 
-Languages: English (`en`), Deutsch (`de`), Español (`es`), Français (`fr`), Русский (`ru`), 简体中文 (`zh`)
+Languages: English (`en`), Deutsch (`de`), Español (`es`), Русский (`ru`), 简体中文 (`zh`), 繁體中文 (`zh-TW`)
 
-<p align="center">
-  <img src="assets/screencast.gif" width="45%" alt="OpenCode Telegram Bot screencast" />
-</p>
+[Demo gif](assets/screencast.gif)
 
 ## Features
 
@@ -56,6 +56,10 @@ Planned features currently in development are listed in [Current Task List](PROD
 
 You'll also need your **Telegram User ID** — send any message to [@userinfobot](https://t.me/userinfobot) and it will reply with your numeric ID.
 
+### Slack Bot
+
+refrence [Slack Bot](./slack_bot.md)
+
 ### 2. Start OpenCode Server
 
 Start the OpenCode server:
@@ -66,13 +70,7 @@ opencode serve
 
 > The bot connects to the OpenCode API at `http://localhost:4096` by default.
 
-### 3. Install & Run
-
-The fastest way — run directly with `npx`:
-
-```bash
-npx @grinev/opencode-telegram-bot
-```
+### 3. Development
 
 > Quick start is for npm usage. You do not need to clone this repository. If you run this command from the source directory (repository root), it may fail with `opencode-telegram: not found`. To run from sources, use the [Development](#development) section.
 
@@ -81,17 +79,20 @@ On first launch, an interactive wizard will guide you through the configuration 
 #### Alternative: Global Install
 
 ```bash
-npm install -g @grinev/opencode-telegram-bot
-opencode-telegram start
+git clone https://github.com/bigheadfjuee/opencode-telegram-slack-bot.git
+cd opencode-telegram-slack-bot
+npm install
+cp .env.example .env
+# Edit .env with your bot token, user ID, and model settings
 ```
 
-To reconfigure at any time:
+Build and run:
 
 ```bash
-opencode-telegram config
+npm run dev
 ```
 
-## Supported Platforms
+## Supported Platforms (Node.js)
 
 | Platform | Status                                       |
 | -------- | -------------------------------------------- |
@@ -134,7 +135,7 @@ Scheduled tasks let you prepare prompts in advance and run them automatically la
 
 ### Localization
 
-- Supported locales: `en`, `de`, `es`, `fr`, `ru`, `zh`
+- Supported locales: `en`, `de`, `es`, `ru`, `zh`, `zh-TW`
 - The setup wizard asks for language first
 - You can change locale later with `BOT_LOCALE`
 
@@ -156,7 +157,7 @@ When installed via npm, the configuration wizard handles the initial setup. The 
 | `OPENCODE_SERVER_PASSWORD`      | Server auth password                                                                                         |    No    | —                        |
 | `OPENCODE_MODEL_PROVIDER`       | Default model provider                                                                                       |   Yes    | `opencode`               |
 | `OPENCODE_MODEL_ID`             | Default model ID                                                                                             |   Yes    | `big-pickle`             |
-| `BOT_LOCALE`                    | Bot UI language (supported locale code, e.g. `en`, `de`, `es`, `fr`, `ru`, `zh`)                             |    No    | `en`                     |
+| `BOT_LOCALE`                    | Bot UI language (supported locale code, e.g. `en`, `de`, `es`, `ru`, `zh`, `zh-TW`)                          |    No    | `en`                     |
 | `SESSIONS_LIST_LIMIT`           | Sessions per page in `/sessions`                                                                             |    No    | `10`                     |
 | `PROJECTS_LIST_LIMIT`           | Projects per page in `/projects`                                                                             |    No    | `10`                     |
 | `COMMANDS_LIST_LIMIT`           | Commands per page in `/commands`                                                                             |    No    | `10`                     |
@@ -215,23 +216,6 @@ The bot enforces a strict **user ID whitelist**. Only the Telegram user whose nu
 
 Since the bot runs locally on your machine and connects to your local OpenCode server, there is no external attack surface beyond the Telegram Bot API itself.
 
-## Development
-
-### Running from Source
-
-```bash
-git clone https://github.com/grinev/opencode-telegram-bot.git
-cd opencode-telegram-bot
-npm install
-cp .env.example .env
-# Edit .env with your bot token, user ID, and model settings
-```
-
-Build and run:
-
-```bash
-npm run dev
-```
 
 ### Available Scripts
 
@@ -276,8 +260,8 @@ Please follow commit and release note conventions in [CONTRIBUTING.md](CONTRIBUT
 
 ## Community
 
-Have questions, want to share your experience using the bot, or have an idea for a feature? Join the conversation in [GitHub Discussions](https://github.com/grinev/opencode-telegram-bot/discussions).
+Have questions, want to share your experience using the bot, or have an idea for a feature? Join the conversation in [GitHub Discussions](https://github.com/bigheadfjuee/opencode-telegram-slack-bot/discussions).
 
 ## License
 
-[MIT](LICENSE) © Ruslan Grinev
+[MIT](LICENSE) © Tony Lee
