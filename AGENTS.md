@@ -1,106 +1,69 @@
 # AGENTS.md
 
-Instructions for AI agents working on this project.
+Instructions for AI coding agents working on **opencode-telegram-bot** — a Telegram + Slack bot that acts as a mobile client for [OpenCode](https://opencode.ai). Single-user design; both platforms share the same session/project state.
 
-## About the project
+See [PRODUCT.md](./PRODUCT.md) for functional requirements and development status.
 
-**opencode-telegram-bot** is a Telegram bot that acts as a mobile client for OpenCode.
-It lets a user run and monitor coding tasks on a local machine through Telegram.
+## Build / Lint / Test commands
 
-Functional requirements, features, and development status are in [PRODUCT.md](./PRODUCT.md).
+```bash
+npm run build          # TypeScript → dist/ (runs `tsc`)
+npm run lint           # ESLint with zero warnings allowed
+npm run format         # Prettier auto-format src/**/*.ts
+npm test               # Vitest — run all tests
+npm run test:coverage  # Vitest with V8 coverage
 
-## Technology stack
+# Run a single test file
+npx vitest run tests/config.test.ts
 
-- **Language:** TypeScript 5.x
-- **Runtime:** Node.js 20+
-- **Package manager:** npm
-- **Configuration:** environment variables (`.env`)
-- **Logging:** custom logger with levels (`debug`, `info`, `warn`, `error`)
+# Run tests matching a name pattern
+npx vitest run -t "parses truthy values"
 
-### Core dependencies
-
-- `grammy` - Telegram Bot API framework (https://grammy.dev/)
-- `@grammyjs/menu` - inline keyboards and menus
-- `@opencode-ai/sdk` - official OpenCode Server SDK
-- `dotenv` - environment variable loading
-
-### Test dependencies
-
-- Vitest
-- Mocks/stubs via `vi.mock()`
-
-### Code quality
-
-- ESLint + Prettier
-- TypeScript strict mode
-
-## Architecture
-
-### Main components
-
-1. **Bot Layer** - grammY setup, middleware, commands, callback handlers
-2. **OpenCode Client Layer** - SDK wrapper and SSE event subscription
-3. **State Managers** - session/project/settings/question/permission/model/agent/variant/keyboard/pinned
-4. **Summary Pipeline** - event aggregation and Telegram-friendly formatting
-5. **Process Manager** - local OpenCode server process start, stop, and status
-6. **Runtime/CLI Layer** - runtime mode, config bootstrap, CLI commands
-7. **I18n Layer** - localized bot and CLI strings to multiple languages
-
-### Data flow
-
-```text
-Telegram User
-  -> Telegram Bot (grammY)
-  -> Managers + OpenCodeClient
-  -> OpenCode Server
-
-OpenCode Server
-  -> SSE Events
-  -> Event Listener
-  -> Summary Aggregator / Tool Managers
-  -> Telegram Bot
-  -> Telegram User
+# Run all tests in a directory
+npx vitest run tests/bot/commands/
 ```
 
-### State management
+After any code change, always run: `npm run build && npm run lint && npm test`
 
-- Persistent state is stored in `settings.json`.
-- Active runtime state is kept in dedicated in-memory managers.
-- Session/project/model/agent context is synchronized through OpenCode API calls.
-- The app is currently single-user by design.
+## Tech stack
 
-## AI agent behavior rules
+- **Language:** TypeScript 5.x (strict mode, ES2022 target, NodeNext modules)
+- **Runtime:** Node.js 20+, ESM (`"type": "module"` in package.json)
+- **Package manager:** npm (ignore `pnpm-lock.yaml` if present)
+- **Bot frameworks:** `grammy` (Telegram), `@slack/bolt` (Slack, Socket Mode)
+- **OpenCode SDK:** `@opencode-ai/sdk` — SSE event subscription, session/project management
+- **Test framework:** Vitest with `vi.mock()` / `vi.stubEnv()` — tests in `tests/` mirroring `src/` structure
+- **Config:** environment variables via `dotenv` (`.env` file)
 
-### Communication
+## Code style
 
-- **Response language:** Reply in the same language the user uses in their questions.
-- **Clarifications:** If plan confirmation is needed, use the `question` tool. Do not make major decisions (architecture changes, mass deletion, risky changes) without explicit confirmation.
+### Formatting (Prettier)
 
-### Git
+- Double quotes, semicolons, trailing commas (`all`)
+- 2-space indent, 100 char print width
 
-- **Commits:** Never create commits automatically. Commit only when the user explicitly asks.
+### ESLint rules
 
-### Windows / PowerShell
+- `no-console: "error"` — use `logger` from `src/utils/logger.ts` instead
+  - Exception: `src/utils/logger.ts` itself
+- `@typescript-eslint/no-explicit-any: "warn"` — avoid `any`; use `unknown` + narrowing
+- `@typescript-eslint/no-unused-vars: ["warn", { argsIgnorePattern: "^_" }]` — prefix unused args with `_`
 
-- Keep in mind the runtime environment is Windows.
-- Avoid fragile one-liners that can break in PowerShell.
-- Use absolute paths when working with file tools (`read`, `write`, `edit`).
+### TypeScript
 
-## Coding rules
+- Strict mode enabled. Never suppress errors with `as any`, `@ts-ignore`, or `@ts-expect-error`.
+- All imports use `.js` extension (ESM requirement): `import { foo } from "./bar.js"`
+- Prefer `const` over `let`. No `var`.
+- Prefer `async/await` over `.then()` chains.
+- Use `type` imports when importing only types: `import type { Foo } from "./bar.js"`
 
-### Language
+### Naming
 
-- Code, identifiers, comments, and in-code documentation must be in English.
-- User-facing Telegram messages should be localized through i18n.
-
-### Code style
-
-- Use TypeScript strict mode.
-- Use ESLint + Prettier.
-- Prefer `const` over `let`.
-- Use clear names and avoid unnecessary abbreviations.
-- Keep functions small and focused.
-- Prefer `async/await` over chained `.then()`.
+- Files: `kebab-case.ts` (e.g., `cache-manager.ts`, `safe-background-task.ts`)
+- Types/interfaces: `PascalCase` (e.g., `SessionInfo`, `BotCommandDefinition`)
+- Functions/variables: `camelCase`
+- Constants: `camelCase` for module-level (e.g., `const LOG_LEVELS` is an exception for lookup maps)
+- Logger tags: `[Component]` prefix (e.g., `logger.info("[Slack] Bot started")`)
 
 ### Error handling
 
@@ -135,82 +98,76 @@ Important:
 
 ### Logging
 
-The project uses `src/utils/logger.ts` with level-based logging.
-
-Levels:
-
-- **DEBUG** - detailed diagnostics (callbacks, keyboard build, SSE internals, polling flow)
-- **INFO** - key lifecycle events (session/task start/finish, status changes)
-- **WARN** - recoverable issues (timeouts, retries, unauthorized attempts)
-- **ERROR** - critical failures requiring attention
-
-Use:
-
 ```typescript
 import { logger } from "../utils/logger.js";
 
-logger.debug("[Component] Detailed operation", details);
-logger.info("[Component] Important event occurred");
-logger.warn("[Component] Recoverable problem", error);
-logger.error("[Component] Critical failure", error);
+logger.debug("[Component] Detailed diagnostics", details);  // SSE internals, polling
+logger.info("[Component] Lifecycle event");                  // session start/stop
+logger.warn("[Component] Recoverable issue", error);         // timeouts, retries
+logger.error("[Component] Critical failure", error);         // must-fix problems
 ```
 
-Important:
+Default level is `info`. Never use `console.log`/`console.error` in feature code.
 
-- Do not use raw `console.log` / `console.error` directly in feature code; use `logger`.
-- Put internal diagnostics under `debug`.
-- Keep important operational events under `info`.
-- Default level is `info`.
+## Architecture
 
-## Testing
-
-### What to test
-
-- Unit tests for business logic, formatters, managers, runtime helpers
-- Integration-style tests around OpenCode SDK interaction using mocks
-- Focus on critical paths; avoid over-testing trivial code
-
-### Test structure
-
-- Tests live in `tests/` (organized by module)
-- Use descriptive test names
-- Follow Arrange-Act-Assert
-- Use `vi.mock()` for external dependencies
-
-## OpenCode SDK quick reference
-
-```typescript
-import { createOpencodeClient } from "@opencode-ai/sdk";
-
-const client = createOpencodeClient({ baseUrl: "http://localhost:4096" });
-
-await client.global.health();
-
-await client.project.list();
-await client.project.current();
-
-await client.session.list();
-await client.session.create({ body: { title: "My session" } });
-await client.session.prompt({
-  path: { id: "session-id" },
-  body: { parts: [{ type: "text", text: "Implement feature X" }] },
-});
-await client.session.abort({ path: { id: "session-id" } });
-
-const events = await client.event.subscribe();
-for await (const event of events.stream) {
-  // handle SSE event
-}
+```
+src/
+├── app/          # Application startup (start-bot-app.ts)
+├── bot/          # Telegram bot — grammY setup, commands, handlers, middleware
+├── slack/        # Slack bot — Bolt handler, event routing, mrkdwn formatter
+├── opencode/     # SDK client wrapper + SSE event subscription
+├── summary/      # Event aggregation + Telegram MarkdownV2 formatting
+├── session/      # Session state manager
+├── settings/     # Persistent settings (settings.json)
+├── project/      # Project manager
+├── agent/        # Agent selection manager
+├── model/        # Model selection manager
+├── i18n/         # Localization (en, de, es, ru, zh, zh-TW)
+├── process/      # OpenCode server process start/stop/status
+├── runtime/      # Runtime mode, paths, CLI bootstrap
+├── utils/        # Logger, error formatting, background tasks
+└── config.ts     # Centralized env var config
 ```
 
-Full docs: https://opencode.ai/docs/sdk
+**Data flow:** User message → Bot handler → Managers + OpenCode SDK → OpenCode Server → SSE events → Summary Aggregator → Bot → User
+
+**Platform routing:** Both Telegram and Slack share the aggregator singleton. `src/slack/events.ts` patches aggregator callbacks to route output based on which platform sent the current prompt (`isSlackActive()`).
+
+## Key conventions
+
+### Bot commands
+
+Centralized in `src/bot/commands/definitions.ts`. When adding a command, update that file only — it feeds both Telegram `setMyCommands` and help output. Do not duplicate command lists.
+
+### I18n
+
+User-facing messages go through `t()` from `src/i18n/index.ts`. Code, comments, and identifiers are always in English.
+
+### Config
+
+All env vars are read in `src/config.ts` via `getEnvVar(key, required)`. Telegram and Slack configs are independently optional — at least one platform must be configured.
+
+### Tests
+
+- Tests mirror `src/` structure under `tests/`.
+- Global setup in `tests/setup.ts` resets singletons and mocks between tests.
+- Use `vi.mock()` for module mocking, `vi.stubEnv()` for env vars.
+- Follow Arrange–Act–Assert. Use descriptive test names.
+- Dynamic config imports: `vi.resetModules()` then `await import("../src/config.js")`.
+
+### Slack-specific
+
+- `@slack/bolt` uses CJS default export in ESM: `import pkg from "@slack/bolt"; const { App } = pkg;`
+- Slack formatting uses `mrkdwn` (not Markdown): `*bold*`, `_italic_`, `` `code` ``, ` ```block``` `
+- Auth is channel-based (`SLACK_ALLOWED_CHANNEL_ID`), not user-based.
 
 ## Workflow
 
-1. Read [PRODUCT.md](./PRODUCT.md) to understand scope and status.
+1. Read [PRODUCT.md](./PRODUCT.md) for scope and status.
 2. Inspect existing code before adding or changing components.
-3. Align major architecture changes (including new dependencies) with the user first.
+3. Confirm major architecture changes or new dependencies with the user first.
 4. Add or update tests for new functionality.
-5. After code changes, run quality checks: `npm run build`, `npm run lint`, and `npm test`.
+5. Run `npm run build && npm run lint && npm test` after changes.
 6. Update checkboxes in `PRODUCT.md` when relevant tasks are completed.
-7. Keep code clean, consistent, and maintainable.
+7. Never create commits automatically — only when explicitly asked.

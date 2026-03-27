@@ -114,27 +114,27 @@ describe("config boolean env parsing", () => {
     expect(config.bot.locale).toBe("en");
   });
 
-  it("uses default task limit when TASK_LIMIT is missing", async () => {
-    vi.stubEnv("TASK_LIMIT", "");
+  it("parses zh-TW locale from BOT_LOCALE", async () => {
+    vi.stubEnv("BOT_LOCALE", "zh-TW");
 
     const config = await loadConfig();
 
-    expect(config.bot.taskLimit).toBe(10);
+    expect(config.bot.locale).toBe("zh-TW");
   });
 
-  it("parses TASK_LIMIT as a positive integer", async () => {
-    vi.stubEnv("TASK_LIMIT", "25");
+  it("parses zh-TW locale case-insensitively", async () => {
+    vi.stubEnv("BOT_LOCALE", "zh-tw");
 
     const config = await loadConfig();
 
-    expect(config.bot.taskLimit).toBe(25);
+    expect(config.bot.locale).toBe("zh-TW");
   });
 
-  it("falls back to default task limit on invalid TASK_LIMIT", async () => {
-    vi.stubEnv("TASK_LIMIT", "zero");
+  it("resolves zh to Simplified Chinese, not Traditional", async () => {
+    vi.stubEnv("BOT_LOCALE", "zh");
 
     const config = await loadConfig();
 
-    expect(config.bot.taskLimit).toBe(10);
+    expect(config.bot.locale).toBe("zh");
   });
 });

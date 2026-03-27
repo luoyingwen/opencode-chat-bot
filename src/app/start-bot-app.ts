@@ -1,8 +1,7 @@
 import { readFile } from "node:fs/promises";
 
 import { createBot } from "../bot/index.js";
-import { config } from "../config.js";
-import { loadSettings } from "../settings/manager.js";
+import { getCurrentProject, loadSettings, setCurrentProject } from "../settings/manager.js";
 import { processManager } from "../process/manager.js";
 import { scheduledTaskRuntime } from "../scheduled-task/runtime.js";
 import { warmupSessionDirectoryCache } from "../session/cache-manager.js";
@@ -10,6 +9,9 @@ import { reconcileStoredModelSelection } from "../model/manager.js";
 import { getRuntimeMode } from "../runtime/mode.js";
 import { getRuntimePaths } from "../runtime/paths.js";
 import { logger } from "../utils/logger.js";
+import { config } from "../config.js";
+import { opencodeClient } from "../opencode/client.js";
+import { getProjects } from "../project/manager.js";
 
 async function getBotVersion(): Promise<string> {
   try {
@@ -29,29 +31,95 @@ export async function startBotApp(): Promise<void> {
   const runtimePaths = getRuntimePaths();
   const version = await getBotVersion();
 
-  logger.info(`Starting OpenCode Telegram Bot v${version}...`);
-  logger.info(`Config loaded from ${runtimePaths.envFilePath}`);
-  logger.info(`Allowed User ID: ${config.telegram.allowedUserId}`);
+  const hasTelegram = !!config.telegram.token;
+  const hasSlack = !!(config.slack.botToken && config.slack.appToken);
+
+  if (!hasTelegram && !hasSlack) {
+    throw new Error(
+      "No bot platform configured. Set TELEGRAM_BOT_TOKEN or SLACK_BOT_TOKEN + SLACK_APP_TOKEN.",
+    );
+  }
+
+  logger.info(`Starting OpenCode Bot v${version}...`);
   logger.debug(`[Runtime] Application start mode: ${mode}`);
+  logger.info(`[App] OpenCode API: ${config.opencode.apiUrl}`);
+  logger.info(`[App] Platforms: Telegram=${hasTelegram ? "enabled" : "disabled"}, Slack=${hasSlack ? "enabled" : "disabled"}`);
 
   await loadSettings();
   await processManager.initialize();
-  await reconcileStoredModelSelection();
-  await warmupSessionDirectoryCache();
 
-  const bot = createBot();
-  await scheduledTaskRuntime.initialize(bot);
-
-  const webhookInfo = await bot.api.getWebhookInfo();
-  if (webhookInfo.url) {
-    logger.info(`[Bot] Webhook detected: ${webhookInfo.url}, removing...`);
-    await bot.api.deleteWebhook();
-    logger.info("[Bot] Webhook removed, switching to long polling");
+  try {
+    const { data, error } = await opencodeClient.global.health();
+    if (error) {
+      logger.warn(`[App] OpenCode API health check failed: ${String(error)}`);
+    } else {
+      logger.info(`[App] OpenCode API connection OK (${config.opencode.apiUrl})`, data);
+    }
+  } catch (error) {
+    logger.warn(`[App] OpenCode API unreachable at ${config.opencode.apiUrl}`, error);
   }
 
-  await bot.start({
-    onStart: (botInfo) => {
-      logger.info(`Bot @${botInfo.username} started!`);
-    },
-  });
+  await warmupSessionDirectoryCache();
+
+  // ─── Auto-select project if none is set ──────────────────────────
+  if (!getCurrentProject()) {
+    try {
+      const projects = await getProjects();
+      if (projects.length === 0) {
+        logger.warn("[App] No projects found. Use /projects to select one after creating a project.");
+      } else {
+        const selected = projects[0];
+        setCurrentProject(selected);
+        logger.info(
+          `[App] Auto-selected project: ${selected.name ?? selected.worktree} (${selected.id})` +
+            (projects.length > 1 ? ` — ${projects.length} projects available, picked most recent` : ""),
+        );
+      }
+    } catch (error) {
+      logger.warn("[App] Failed to auto-select project", error);
+    }
+  } else {
+    const current = getCurrentProject();
+    logger.debug(`[App] Project already set: ${current?.name ?? current?.worktree}`);
+  }
+
+  // ─── Start Telegram bot (if configured) ────────────────────────────
+  if (hasTelegram) {
+    logger.info(`Allowed Telegram User ID: ${config.telegram.allowedUserId}`);
+
+    const bot = createBot();
+
+    const webhookInfo = await bot.api.getWebhookInfo();
+    if (webhookInfo.url) {
+      logger.info(`[Bot] Webhook detected: ${webhookInfo.url}, removing...`);
+      await bot.api.deleteWebhook();
+      logger.info("[Bot] Webhook removed, switching to long polling");
+    }
+
+    await bot.start({
+      onStart: (botInfo) => {
+        logger.info(`Bot @${botInfo.username} started!`);
+      },
+    });
+  } else {
+    logger.info("[App] Telegram not configured, skipping");
+  }
+
+  // ─── Start Slack bot (if configured) ───────────────────────────────
+  if (hasSlack) {
+    try {
+      const { initializeSlackHandler, sendSlackStartupMessage } = await import(
+        "../slack/handler.js"
+      );
+      const slackApp = await initializeSlackHandler();
+      await sendSlackStartupMessage(slackApp);
+      logger.info("[App] Slack bot started");
+    } catch (err) {
+      logger.error("[App] Failed to start Slack bot:", err);
+      // If Slack is the only platform and it failed, re-throw
+      if (!hasTelegram) throw err;
+    }
+  } else {
+    logger.debug("[App] Slack not configured, skipping");
+  }
 }

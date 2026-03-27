@@ -333,8 +333,15 @@ class SummaryAggregator {
       case "permission.replied":
         logger.info(`[Aggregator] Permission replied: requestID=${event.properties.requestID}`);
         break;
+      case "server.connected":
+      case "server.instance.disposed":
+        // Infrastructure events — no action needed
+        break;
       default:
-        logger.debug(`[Aggregator] Unhandled event type: ${event.type}`);
+        // server.heartbeat is not in the SDK type union but arrives at runtime
+        if (!event.type.startsWith("server.")) {
+          logger.debug(`[Aggregator] Unhandled event type: ${event.type}`);
+        }
         break;
     }
   }
