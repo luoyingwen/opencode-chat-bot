@@ -93,14 +93,21 @@ export async function initializeSlackHandler(): Promise<SlackApp> {
     );
   }
 
-  // Build clientOptions with optional proxy agent (same pattern as Telegram)
+  // Build clientOptions with optional proxy agent.
+  // Priority: SLACK_PROXY_URL > HTTPS_PROXY/HTTP_PROXY (system env), same as tony-slack/app.js
+  const effectiveProxyUrl =
+    proxyUrl ||
+    process.env.HTTPS_PROXY ||
+    process.env.https_proxy ||
+    process.env.HTTP_PROXY ||
+    process.env.http_proxy;
   let clientOptions: { agent: InstanceType<typeof HttpsProxyAgent> | InstanceType<typeof SocksProxyAgent> } | undefined;
-  if (proxyUrl) {
-    const agent = proxyUrl.startsWith("socks")
-      ? new SocksProxyAgent(proxyUrl)
-      : new HttpsProxyAgent(proxyUrl);
+  if (effectiveProxyUrl) {
+    const agent = effectiveProxyUrl.startsWith("socks")
+      ? new SocksProxyAgent(effectiveProxyUrl)
+      : new HttpsProxyAgent(effectiveProxyUrl);
     clientOptions = { agent };
-    logger.info(`[Slack] Using proxy: ${proxyUrl.replace(/\/\/.*@/, "//***@")}`);
+    logger.info(`[Slack] Using proxy: ${effectiveProxyUrl.replace(/\/\/.*@/, "//***@")}`);
   }
 
   const app = new App({
