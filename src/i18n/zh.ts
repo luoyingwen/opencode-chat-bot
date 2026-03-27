@@ -6,6 +6,8 @@ export const zh: I18nDictionary = {
   "cmd.description.stop": "停止当前操作",
   "cmd.description.sessions": "列出会话",
   "cmd.description.projects": "列出项目",
+  "cmd.description.task": "创建定时任务",
+  "cmd.description.tasklist": "查看定时任务",
   "cmd.description.commands": "自定义命令",
   "cmd.description.opencode_start": "启动 OpenCode 服务器",
   "cmd.description.opencode_stop": "停止 OpenCode 服务器",
@@ -41,7 +43,7 @@ export const zh: I18nDictionary = {
   "common.unknown_error": "未知错误",
 
   "start.welcome":
-    "👋 欢迎使用 OpenCode Telegram Bot！\n\n可用命令：\n/projects — 选择项目\n/sessions — 会话列表\n/new — 新建会话\n/status — 状态\n/help — 帮助\n\n请使用底部按钮选择模式、模型和变体。",
+    "👋 欢迎使用 OpenCode Telegram Bot！\n\n可用命令：\n/projects — 选择项目\n/sessions — 会话列表\n/new — 新建会话\n/task — 定时任务\n/tasklist — 定时任务列表\n/status — 状态\n/help — 帮助\n\n请使用底部按钮选择模式、模型和变体。",
   "help.keyboard_hint": "💡 代理模式、模型、变体和上下文操作请使用底部键盘按钮。",
   "help.text":
     "📖 **帮助**\n\n/status - 查看服务器状态\n/sessions - 会话列表\n/new - 创建新会话\n/help - 帮助",
@@ -51,12 +53,12 @@ export const zh: I18nDictionary = {
   "bot.creating_session": "🔄 正在创建新会话...",
   "bot.create_session_error": "🔴 创建会话失败。请重试 /new，或使用 /status 检查服务器状态。",
   "bot.session_created": "✅ 会话已创建：{title}",
-  "bot.session_busy": "⏳ 代理正在执行任务。请等待完成，或使用 /stop 中断当前运行。",
+  "bot.session_busy": "⏳ 代理正在执行任务。请等待完成，或使用 /abort 中断当前运行。",
   "bot.session_reset_project_mismatch":
     "⚠️ 活动会话与所选项目不匹配，因此已重置。使用 /sessions 选择一个会话，或 /new 创建新会话。",
   "bot.prompt_send_error": "向 OpenCode 发送请求失败。",
   "bot.session_error": "🔴 OpenCode 返回错误：{message}",
-  "bot.session_retry": "🔁 {message}\n\n提供方在重复重试时持续返回同一错误。使用 /stop 可停止。",
+  "bot.session_retry": "🔁 {message}\n\n提供方在重复重试时持续返回同一错误。使用 /abort 可停止。",
   "bot.unknown_command": "⚠️ 未知命令：{command}。使用 /help 查看可用命令。",
   "bot.photo_downloading": "⏳ 正在下载照片...",
   "bot.photo_too_large": "⚠️ 照片过大（最大 {maxSizeMb}MB）",
@@ -69,23 +71,23 @@ export const zh: I18nDictionary = {
   "bot.model_no_pdf": "⚠️ 当前模型不支持PDF输入。将仅发送文本。",
   "bot.text_file_too_large": "⚠️ 文本文件过大（最大 {maxSizeKb}KB）",
 
-  "status.header_running": "🟢 **OpenCode 服务器正在运行**",
+  "status.header_running": "🟢 OpenCode 服务器正在运行",
   "status.health.healthy": "健康",
   "status.health.unhealthy": "不健康",
   "status.line.health": "状态：{health}",
   "status.line.version": "版本：{version}",
-  "status.line.managed_yes": "由机器人管理：是",
-  "status.line.managed_no": "由机器人管理：否",
+  "status.line.managed_yes": "由机器人启动：是",
+  "status.line.managed_no": "由机器人启动：否",
   "status.line.pid": "PID：{pid}",
   "status.line.uptime_sec": "运行时间：{seconds} 秒",
   "status.line.mode": "模式：{mode}",
   "status.line.model": "模型：{model}",
   "status.agent_not_set": "未设置",
-  "status.project_selected": "🏗 项目：{project}",
-  "status.project_not_selected": "🏗 项目：未选择",
+  "status.project_selected": "项目：{project}",
+  "status.project_not_selected": "项目：未选择",
   "status.project_hint": "使用 /projects 选择项目",
-  "status.session_selected": "📋 当前会话：{title}",
-  "status.session_not_selected": "📋 当前会话：未选择",
+  "status.session_selected": "当前会话：{title}",
+  "status.session_not_selected": "当前会话：未选择",
   "status.session_hint": "使用 /sessions 选择一个会话，或 /new 创建",
   "status.server_unavailable": "🔴 OpenCode 服务器不可用\n\n使用 /opencode_start 启动服务器。",
 
@@ -127,13 +129,13 @@ export const zh: I18nDictionary = {
   "stop.no_active_session": "🛑 代理尚未启动\n\n使用 /new 创建会话，或通过 /sessions 选择一个。",
   "stop.in_progress": "🛑 已停止事件流，正在发送中止信号...\n\n等待代理停止。",
   "stop.warn_unconfirmed":
-    "⚠️ 事件流已停止，但服务器未确认中止。\n\n检查 /status，并在几秒后重试 /stop。",
+    "⚠️ 事件流已停止，但服务器未确认中止。\n\n检查 /status，并在几秒后重试 /abort。",
   "stop.warn_maybe_finished": "⚠️ 事件流已停止，但代理可能已完成。",
   "stop.success": "✅ 代理操作已中断。本次运行的后续消息将不再发送。",
   "stop.warn_still_busy": "⚠️ 信号已发送，但代理仍在忙。\n\n事件流已禁用，因此不会发送中间消息。",
-  "stop.warn_timeout": "⚠️ 中止请求超时。\n\n事件流已禁用，请在几秒后重试 /stop。",
+  "stop.warn_timeout": "⚠️ 中止请求超时。\n\n事件流已禁用，请在几秒后重试 /abort。",
   "stop.warn_local_only": "⚠️ 已在本地停止事件流，但服务器端中止失败。",
-  "stop.error": "🔴 停止操作失败。\n\n事件流已停止，请再次尝试 /stop。",
+  "stop.error": "🔴 停止操作失败。\n\n事件流已停止，请再次尝试 /abort。",
 
   "opencode_start.already_running_managed":
     "⚠️ OpenCode 服务器已在运行\n\nPID：{pid}\n运行时间：{seconds} 秒",
@@ -141,7 +143,7 @@ export const zh: I18nDictionary = {
     "✅ OpenCode 服务器正作为外部进程运行\n\n版本：{version}\n\n该服务器不是由机器人启动，因此 /opencode-stop 无法停止它。",
   "opencode_start.starting": "🔄 正在启动 OpenCode 服务器...",
   "opencode_start.start_error":
-    "🔴 启动 OpenCode 服务器失败\n\n错误：{error}\n\n请检查 OpenCode CLI 已安装且在 PATH 中可用：\n`opencode --version`\n`npm install -g @opencode-ai/cli`",
+    "🔴 启动 OpenCode 服务器失败\n\n错误：{error}\n\n请检查 OpenCode CLI 已安装且在 PATH 中可用：\nopencode --version\nnpm install -g @opencode-ai/cli",
   "opencode_start.started_not_ready":
     "⚠️ OpenCode 服务器已启动，但未响应\n\nPID：{pid}\n\n服务器可能仍在启动中。几秒后试试 /status。",
   "opencode_start.success": "✅ OpenCode 服务器启动成功\n\nPID：{pid}\n版本：{version}",
@@ -203,7 +205,7 @@ export const zh: I18nDictionary = {
   "permission.send_reply_error": "❌ 发送权限回复失败",
   "permission.blocked.expected_reply": "⚠️ 请先使用上方按钮回答权限请求。",
   "permission.blocked.command_not_allowed": "⚠️ 在你回答权限请求之前不可用此命令。",
-  "permission.header": "{emoji} **权限请求：{name}**\n\n",
+  "permission.header": "{emoji} 权限请求：{name}\n\n",
   "permission.button.allow": "✅ 允许一次",
   "permission.button.always": "🔓 始终允许",
   "permission.button.reject": "❌ 拒绝",
@@ -218,6 +220,7 @@ export const zh: I18nDictionary = {
   "permission.name.list": "列出目录",
   "permission.name.task": "任务",
   "permission.name.lsp": "LSP",
+  "permission.name.external_directory": "外部目录",
 
   "question.inactive_callback": "投票已失效",
   "question.processing_error_callback": "处理错误",
@@ -229,7 +232,7 @@ export const zh: I18nDictionary = {
   "question.no_active_project": "❌ 没有活动项目",
   "question.no_active_request": "❌ 没有活动请求",
   "question.send_answers_error": "❌ 向代理发送答案失败",
-  "question.multi_hint": "\n*你可以选择多个选项*",
+  "question.multi_hint": "\n（你可以选择多个选项）",
   "question.button.submit": "✅ 完成",
   "question.button.custom": "🔤 自定义回答",
   "question.button.cancel": "❌ 取消",
@@ -250,6 +253,7 @@ export const zh: I18nDictionary = {
   "pinned.line.project": "项目: {project}",
   "pinned.line.model": "模型: {model}",
   "pinned.line.context": "上下文: {used} / {limit} ({percent}%)",
+  "pinned.line.cost": "费用: {cost}",
   "pinned.files.title": "文件（{count}）：",
   "pinned.files.item": "  {path}{diff}",
   "pinned.files.more": "  ... 还有 {count} 个",
@@ -271,6 +275,10 @@ export const zh: I18nDictionary = {
   "runtime.wizard.user_id_invalid": "请输入一个正整数（> 0）。\n",
   "runtime.wizard.ask_api_url":
     "请输入 OpenCode API URL（可选）。\n按 Enter 使用默认值：{defaultUrl}\n> ",
+  "runtime.wizard.ask_server_username":
+    "请输入 OpenCode 服务器用户名（可选）。\n按 Enter 使用默认值：{defaultUsername}\n> ",
+  "runtime.wizard.ask_server_password":
+    "请输入 OpenCode 服务器密码（可选）。\n按 Enter 保持为空。\n> ",
   "runtime.wizard.api_url_invalid": "请输入有效 URL（http/https），或按 Enter 使用默认值。\n",
   "runtime.wizard.start": "OpenCode Telegram Bot 设置。\n",
   "runtime.wizard.saved": "配置已保存：\n- {envPath}\n- {settingsPath}\n",
@@ -290,6 +298,48 @@ export const zh: I18nDictionary = {
   "rename.blocked.command_not_allowed": "⚠️ 重命名等待新名称期间不可用此命令。",
   "rename.button.cancel": "❌ 取消",
 
+  "task.prompt.schedule":
+    "⏰ 请用自然语言发送任务的时间安排。\n\n示例：\n- 每 5 分钟\n- 每天 17:00\n- 明天 12:00",
+  "task.schedule_empty": "⚠️ 时间安排不能为空。",
+  "task.parse.in_progress": "⏳ 正在解析时间安排...",
+  "task.parse_error": "🔴 无法解析时间安排。\n\n{message}\n\n请用更清晰的方式重新发送。",
+  "task.schedule_preview":
+    "✅ 时间安排已解析\n\n理解为：{summary}\n{cronLine}时区：{timezone}\n类型：{kind}\n下次运行：{nextRunAt}",
+  "task.schedule_preview.cron": "Cron: {cron}",
+  "task.prompt.body": "📝 现在发送机器人按此时间安排需要执行的内容。",
+  "task.prompt_empty": "⚠️ 任务文本不能为空。",
+  "task.created":
+    "✅ 定时任务已创建\n\n任务：{description}\n项目：{project}\n模型：{model}\n时间安排：{schedule}\n{cronLine}下次运行：{nextRunAt}",
+  "task.created.cron": "Cron: {cron}",
+  "task.button.retry_schedule": "🔁 重新输入时间安排",
+  "task.button.cancel": "❌ 取消",
+  "task.retry_schedule_callback": "正在重新输入时间安排...",
+  "task.cancel_callback": "正在取消...",
+  "task.cancelled": "❌ 定时任务创建已取消。",
+  "task.inactive_callback": "这个定时任务流程已失效",
+  "task.inactive": "⚠️ 定时任务创建流程未激活。请重新运行 /task。",
+  "task.blocked.expected_input":
+    "⚠️ 请先完成当前定时任务设置：发送文本，或使用时间安排消息中的按钮。",
+  "task.blocked.command_not_allowed": "⚠️ 定时任务创建进行中时，此命令不可用。",
+  "task.limit_reached": "⚠️ 已达到任务数量上限（{limit}）。请先删除一个现有定时任务。",
+  "task.schedule_too_frequent": "重复任务过于频繁。最小允许间隔为每 5 分钟一次。",
+  "task.kind.cron": "重复",
+  "task.kind.once": "一次性",
+  "task.run.success": "⏰ 定时任务已完成: {description}",
+  "task.run.error": "🔴 定时任务执行失败: {description}\n\n错误: {error}",
+
+  "tasklist.empty": "📭 还没有定时任务。",
+  "tasklist.select": "请选择一个定时任务：",
+  "tasklist.details":
+    "⏰ 定时任务\n\n任务：{prompt}\n项目：{project}\n计划：{schedule}\n{cronLine}时区：{timezone}\n下次运行：{nextRunAt}\n上次运行：{lastRunAt}\n运行次数：{runCount}",
+  "tasklist.details.cron": "Cron: {cron}",
+  "tasklist.button.delete": "🗑 删除",
+  "tasklist.button.cancel": "❌ 取消",
+  "tasklist.deleted_callback": "已删除",
+  "tasklist.cancelled_callback": "已取消",
+  "tasklist.inactive_callback": "此定时任务菜单已失效",
+  "tasklist.load_error": "🔴 无法加载定时任务。",
+
   "commands.select": "请选择一个 OpenCode 命令：",
   "commands.empty": "📭 当前项目没有可用的 OpenCode 命令。",
   "commands.fetch_error": "🔴 加载 OpenCode 命令失败。",
@@ -303,15 +353,19 @@ export const zh: I18nDictionary = {
   "commands.executing_prefix": "⚡ 执行命令:",
   "commands.arguments_empty": "⚠️ 参数不能为空。请发送文本或点击执行。",
   "commands.execute_error": "🔴 执行 OpenCode 命令失败。",
+  "commands.select_page": "请选择一个 OpenCode 命令（第 {page} 页）：",
+  "commands.button.prev_page": "⬅️ 上一页",
+  "commands.button.next_page": "下一页 ➡️",
+  "commands.page_empty_callback": "这一页没有命令",
+  "commands.page_load_error_callback": "无法加载此页面。请重试。",
 
   "cmd.description.rename": "重命名当前会话",
 
   "cli.usage":
-    "用法：\n  opencode-telegram [start] [--mode sources|installed]\n  opencode-telegram status\n  opencode-telegram stop\n  opencode-telegram config\n\n说明：\n  - 不带命令时默认执行 `start`\n  - `--mode` 目前仅支持 `start` 命令",
-  "cli.placeholder.status":
-    "命令 `status` 目前是占位符。真实状态检查将会在 service 层（阶段 5）添加。",
+    "用法:\n  opencode-telegram [start] [--mode sources|installed]\n  opencode-telegram status\n  opencode-telegram stop\n  opencode-telegram config\n\n注意:\n  - 无命令时默认为 `start`\n  - `--mode` 当前仅支持 `start`",
+  "cli.placeholder.status": "`status` 命令当前为占位符。实际状态检查将在服务层中添加（第5阶段）。",
   "cli.placeholder.stop":
-    "命令 `stop` 目前是占位符。真实的后台进程停止将会在 service 层（阶段 5）添加。",
+    "`stop` 命令当前为占位符。实际后台进程停止功能将在服务层中添加（第5阶段）。",
   "cli.placeholder.unavailable": "命令不可用。",
   "cli.error.prefix": "CLI 错误：{message}",
   "cli.args.unknown_command": "未知命令：{value}",
@@ -322,7 +376,7 @@ export const zh: I18nDictionary = {
 
   "legacy.models.fetch_error": "🔴 获取模型列表失败。请使用 /status 检查服务器状态。",
   "legacy.models.empty": "📋 没有可用模型。请在 OpenCode 中配置 providers。",
-  "legacy.models.header": "📋 **可用模型：**\n\n",
+  "legacy.models.header": "📋 可用模型：\n\n",
   "legacy.models.no_provider_models": "  ⚠️ 没有可用模型\n",
   "legacy.models.env_hint": "💡 在 .env 中使用该模型：\n",
   "legacy.models.error": "🔴 加载模型列表时发生错误。",

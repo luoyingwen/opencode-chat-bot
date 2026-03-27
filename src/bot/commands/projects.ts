@@ -17,6 +17,7 @@ import {
   ensureActiveInlineMenu,
   replyWithInlineMenu,
 } from "../handlers/inline-menu.js";
+import { isForegroundBusy, replyBusyBlocked } from "../utils/busy-guard.js";
 import { logger } from "../../utils/logger.js";
 import { t } from "../../i18n/index.js";
 import { config } from "../../config.js";
@@ -172,6 +173,11 @@ function buildProjectsMenuView(
 
 export async function projectsCommand(ctx: CommandContext<Context>) {
   try {
+    if (isForegroundBusy()) {
+      await replyBusyBlocked(ctx);
+      return;
+    }
+
     await syncSessionDirectoryCache();
     const projects = await getProjects();
 
@@ -197,6 +203,11 @@ export async function handleProjectSelect(ctx: Context): Promise<boolean> {
   const callbackQuery = ctx.callbackQuery;
   if (!callbackQuery?.data) {
     return false;
+  }
+
+  if (isForegroundBusy()) {
+    await replyBusyBlocked(ctx);
+    return true;
   }
 
   const page = parseProjectPageCallback(callbackQuery.data);

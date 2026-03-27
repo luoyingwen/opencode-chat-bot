@@ -3,7 +3,7 @@ import { getRuntimePaths } from "./runtime/paths.js";
 import { normalizeLocale, type Locale } from "./i18n/index.js";
 
 const runtimePaths = getRuntimePaths();
-dotenv.config({ path: runtimePaths.envFilePath });
+dotenv.config({ path: runtimePaths.envFilePath, quiet: true });
 
 export type MessageFormatMode = "raw" | "markdown";
 
@@ -114,6 +114,8 @@ export const config = {
   bot: {
     sessionsListLimit: getOptionalPositiveIntEnvVar("SESSIONS_LIST_LIMIT", 10),
     projectsListLimit: getOptionalPositiveIntEnvVar("PROJECTS_LIST_LIMIT", 10),
+    commandsListLimit: getOptionalPositiveIntEnvVar("COMMANDS_LIST_LIMIT", 10),
+    taskLimit: getOptionalPositiveIntEnvVar("TASK_LIMIT", 10),
     locale: getOptionalLocaleEnvVar("BOT_LOCALE", "en"),
     serviceMessagesIntervalSec: getOptionalNonNegativeIntEnvVarFromKeys(
       ["SERVICE_MESSAGES_INTERVAL_SEC", "TOOL_MESSAGES_INTERVAL_SEC"],
@@ -121,6 +123,7 @@ export const config = {
     ),
     hideThinkingMessages: getOptionalBooleanEnvVar("HIDE_THINKING_MESSAGES", false),
     hideToolCallMessages: getOptionalBooleanEnvVar("HIDE_TOOL_CALL_MESSAGES", false),
+    responseStreaming: getOptionalBooleanEnvVar("RESPONSE_STREAMING", true),
     messageFormatMode: getOptionalMessageFormatModeEnvVar("MESSAGE_FORMAT_MODE", "markdown"),
   },
   files: {

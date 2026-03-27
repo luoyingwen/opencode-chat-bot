@@ -20,10 +20,12 @@ import {
 import { sessionsCommand, handleSessionSelect } from "./commands/sessions.js";
 import { newCommand } from "./commands/new.js";
 import { projectsCommand, handleProjectSelect } from "./commands/projects.js";
-import { stopCommand } from "./commands/stop.js";
+import { abortCommand } from "./commands/abort.js";
 import { opencodeStartCommand } from "./commands/opencode-start.js";
 import { opencodeStopCommand } from "./commands/opencode-stop.js";
 import { renameCommand, handleRenameCancel, handleRenameTextAnswer } from "./commands/rename.js";
+import { handleTaskCallback, handleTaskTextInput, taskCommand } from "./commands/task.js";
+import { handleTaskListCallback, taskListCommand } from "./commands/tasklist.js";
 import {
   commandsCommand,
   handleCommandsCallback,
@@ -46,7 +48,12 @@ import { clearAllInteractionState } from "../interaction/cleanup.js";
 import { keyboardManager } from "../keyboard/manager.js";
 import { subscribeToEvents } from "../opencode/events.js";
 import { summaryAggregator } from "../summary/aggregator.js";
-import { formatSummary, formatToolInfo, getAssistantParseMode } from "../summary/formatter.js";
+import {
+  formatSummary,
+  formatSummaryWithMode,
+  formatToolInfo,
+  getAssistantParseMode,
+} from "../summary/formatter.js";
 import { ToolMessageBatcher } from "../summary/tool-message-batcher.js";
 import { getCurrentSession } from "../session/manager.js";
 import { ingestSessionInfoForCache } from "../session/cache-manager.js";
@@ -58,20 +65,41 @@ import { processUserPrompt } from "./handlers/prompt.js";
 import { handleVoiceMessage } from "./handlers/voice.js";
 import { handleDocumentMessage } from "./handlers/document.js";
 import { downloadTelegramFile, toDataUri } from "./utils/file-download.js";
-import { sendMessageWithMarkdownFallback } from "./utils/send-with-markdown-fallback.js";
+import { finalizeAssistantResponse } from "./utils/finalize-assistant-response.js";
+import { deliverThinkingMessage } from "./utils/thinking-message.js";
+import { sendBotText } from "./utils/telegram-text.js";
 import { getModelCapabilities, supportsInput } from "../model/capabilities.js";
 import { getStoredModel } from "../model/manager.js";
 import type { FilePartInput } from "@opencode-ai/sdk/v2";
+import { foregroundSessionState } from "../scheduled-task/foreground-state.js";
+import { scheduledTaskRuntime } from "../scheduled-task/runtime.js";
+import { ResponseStreamer } from "./streaming/response-streamer.js";
+import type { StreamingMessagePayload } from "./streaming/response-streamer.js";
+import { ToolCallStreamer } from "./streaming/tool-call-streamer.js";
+import {
+  editMessageWithMarkdownFallback,
+  sendMessageWithMarkdownFallback,
+} from "./utils/send-with-markdown-fallback.js";
 
 let botInstance: Bot<Context> | null = null;
 let chatIdInstance: number | null = null;
 let commandsInitialized = false;
 
 const TELEGRAM_DOCUMENT_CAPTION_MAX_LENGTH = 1024;
+const RESPONSE_STREAM_THROTTLE_MS = 200;
+const RESPONSE_STREAM_TEXT_LIMIT = 3800;
 const SESSION_RETRY_PREFIX = "🔁";
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const TEMP_DIR = path.join(__dirname, "..", ".tmp");
+
+function getCurrentReplyKeyboard() {
+  if (!keyboardManager.isInitialized()) {
+    return undefined;
+  }
+
+  return keyboardManager.getKeyboard();
+}
 
 function prepareDocumentCaption(caption: string): string {
   const normalizedCaption = caption.trim();
@@ -86,6 +114,22 @@ function prepareDocumentCaption(caption: string): string {
   return `${normalizedCaption.slice(0, TELEGRAM_DOCUMENT_CAPTION_MAX_LENGTH - 3)}...`;
 }
 
+function prepareStreamingPayload(messageText: string): StreamingMessagePayload | null {
+  const parts = formatSummaryWithMode(
+    messageText,
+    config.bot.messageFormatMode,
+    RESPONSE_STREAM_TEXT_LIMIT,
+  );
+  if (parts.length === 0) {
+    return null;
+  }
+
+  return {
+    parts,
+    format: config.bot.messageFormatMode === "markdown" ? "markdown_v2" : "raw",
+  };
+}
+
 const toolMessageBatcher = new ToolMessageBatcher({
   intervalSeconds: 5,
   sendText: async (sessionId, text) => {
@@ -98,8 +142,11 @@ const toolMessageBatcher = new ToolMessageBatcher({
       return;
     }
 
+    const keyboard = getCurrentReplyKeyboard();
+
     await botInstance.api.sendMessage(chatIdInstance, text, {
       disable_notification: true,
+      ...(keyboard ? { reply_markup: keyboard } : {}),
     });
   },
   sendFile: async (sessionId, fileData) => {
@@ -122,13 +169,145 @@ const toolMessageBatcher = new ToolMessageBatcher({
       await fs.mkdir(TEMP_DIR, { recursive: true });
       await fs.writeFile(tempFilePath, fileData.buffer);
 
+      const keyboard = getCurrentReplyKeyboard();
+
       await botInstance.api.sendDocument(chatIdInstance, new InputFile(tempFilePath), {
         caption: fileData.caption,
         disable_notification: true,
+        ...(keyboard ? { reply_markup: keyboard } : {}),
       });
     } finally {
       await fs.unlink(tempFilePath).catch(() => {});
     }
+  },
+});
+
+const responseStreamer = new ResponseStreamer({
+  throttleMs: RESPONSE_STREAM_THROTTLE_MS,
+  sendText: async (text, format, options) => {
+    if (!botInstance || !chatIdInstance || chatIdInstance <= 0) {
+      throw new Error("Bot context missing for streamed send");
+    }
+
+    const parseMode = format === "markdown_v2" ? "MarkdownV2" : undefined;
+    const sentMessage = await sendMessageWithMarkdownFallback({
+      api: botInstance.api,
+      chatId: chatIdInstance,
+      text,
+      options,
+      parseMode,
+    });
+
+    return sentMessage.message_id;
+  },
+  editText: async (messageId, text, format, options) => {
+    if (!botInstance || !chatIdInstance || chatIdInstance <= 0) {
+      throw new Error("Bot context missing for streamed edit");
+    }
+
+    const parseMode = format === "markdown_v2" ? "MarkdownV2" : undefined;
+
+    try {
+      await editMessageWithMarkdownFallback({
+        api: botInstance.api,
+        chatId: chatIdInstance,
+        messageId,
+        text,
+        options,
+        parseMode,
+      });
+    } catch (error) {
+      const errorMessage =
+        error instanceof Error ? error.message.toLowerCase() : String(error).toLowerCase();
+      if (errorMessage.includes("message is not modified")) {
+        return;
+      }
+
+      throw error;
+    }
+  },
+  deleteText: async (messageId) => {
+    if (!botInstance || !chatIdInstance || chatIdInstance <= 0) {
+      throw new Error("Bot context missing for streamed delete");
+    }
+
+    await botInstance.api.deleteMessage(chatIdInstance, messageId).catch((error) => {
+      const errorMessage =
+        error instanceof Error ? error.message.toLowerCase() : String(error).toLowerCase();
+      if (
+        errorMessage.includes("message to delete not found") ||
+        errorMessage.includes("message identifier is not specified")
+      ) {
+        return;
+      }
+
+      throw error;
+    });
+  },
+});
+
+const toolCallStreamer = new ToolCallStreamer({
+  throttleMs: RESPONSE_STREAM_THROTTLE_MS,
+  sendText: async (sessionId, text) => {
+    if (!botInstance || !chatIdInstance || chatIdInstance <= 0) {
+      throw new Error("Bot context missing for tool stream send");
+    }
+
+    const currentSession = getCurrentSession();
+    if (!currentSession || currentSession.id !== sessionId) {
+      throw new Error(`Tool stream session mismatch for send: ${sessionId}`);
+    }
+
+    const sentMessage = await botInstance.api.sendMessage(chatIdInstance, text, {
+      disable_notification: true,
+    });
+
+    return sentMessage.message_id;
+  },
+  editText: async (sessionId, messageId, text) => {
+    if (!botInstance || !chatIdInstance || chatIdInstance <= 0) {
+      throw new Error("Bot context missing for tool stream edit");
+    }
+
+    const currentSession = getCurrentSession();
+    if (!currentSession || currentSession.id !== sessionId) {
+      throw new Error(`Tool stream session mismatch for edit: ${sessionId}`);
+    }
+
+    try {
+      await botInstance.api.editMessageText(chatIdInstance, messageId, text);
+    } catch (error) {
+      const errorMessage =
+        error instanceof Error ? error.message.toLowerCase() : String(error).toLowerCase();
+      if (errorMessage.includes("message is not modified")) {
+        return;
+      }
+
+      throw error;
+    }
+  },
+  deleteText: async (sessionId, messageId) => {
+    if (!botInstance || !chatIdInstance || chatIdInstance <= 0) {
+      throw new Error("Bot context missing for tool stream delete");
+    }
+
+    const currentSession = getCurrentSession();
+    if (!currentSession || currentSession.id !== sessionId) {
+      throw new Error(`Tool stream session mismatch for delete: ${sessionId}`);
+    }
+
+    await botInstance.api.deleteMessage(chatIdInstance, messageId).catch((error) => {
+      const errorMessage =
+        error instanceof Error ? error.message.toLowerCase() : String(error).toLowerCase();
+      if (
+        errorMessage.includes("message to delete not found") ||
+        errorMessage.includes("message identifier is not specified")
+      ) {
+        return;
+      }
+
+      throw error;
+    });
   },
 });
 
@@ -153,7 +332,7 @@ async function ensureCommandsInitialized(ctx: Context, next: NextFunction): Prom
     });
 
     commandsInitialized = true;
-    logger.info(`[Bot] Commands initialized for authorized user (chat_id=${ctx.chat.id})`);
+    logger.debug(`[Bot] Commands initialized for authorized user (chat_id=${ctx.chat.id})`);
   } catch (err) {
     logger.error("[Bot] Failed to set commands:", err);
   }
@@ -168,50 +347,102 @@ async function ensureEventSubscription(directory: string): Promise<void> {
   }
 
   toolMessageBatcher.setIntervalSeconds(config.bot.serviceMessagesIntervalSec);
+  summaryAggregator.setTypingIndicatorEnabled(true);
   summaryAggregator.setOnCleared(() => {
     toolMessageBatcher.clearAll("summary_aggregator_clear");
+    toolCallStreamer.clearAll("summary_aggregator_clear");
+    responseStreamer.clearAll("summary_aggregator_clear");
   });
 
-  summaryAggregator.setOnComplete(async (sessionId, messageText) => {
+  summaryAggregator.setOnPartial((sessionId, messageId, messageText) => {
+    if (!config.bot.responseStreaming) {
+      return;
+    }
+
+    if (!botInstance || !chatIdInstance) {
+      return;
+    }
+
+    const currentSession = getCurrentSession();
+    if (!currentSession || currentSession.id !== sessionId) {
+      return;
+    }
+
+    const preparedStreamPayload = prepareStreamingPayload(messageText);
+    if (!preparedStreamPayload) {
+      return;
+    }
+
+    preparedStreamPayload.sendOptions = undefined;
+    preparedStreamPayload.editOptions = undefined;
+
+    responseStreamer.enqueue(sessionId, messageId, preparedStreamPayload);
+  });
+
+  summaryAggregator.setOnComplete(async (sessionId, messageId, messageText) => {
     if (!botInstance || !chatIdInstance) {
       logger.error("Bot or chat ID not available for sending message");
+      responseStreamer.clearMessage(sessionId, messageId, "bot_context_missing");
+      toolCallStreamer.clearSession(sessionId, "bot_context_missing");
+      foregroundSessionState.markIdle(sessionId);
       return;
     }
 
     const currentSession = getCurrentSession();
     if (currentSession?.id !== sessionId) {
+      responseStreamer.clearMessage(sessionId, messageId, "session_mismatch");
+      toolCallStreamer.clearSession(sessionId, "session_mismatch");
+      foregroundSessionState.markIdle(sessionId);
+      await scheduledTaskRuntime.flushDeferredDeliveries();
       return;
     }
 
-    await toolMessageBatcher.flushSession(sessionId, "assistant_message_completed");
+    const botApi = botInstance.api;
+    const chatId = chatIdInstance;
 
     try {
-      const parts = formatSummary(messageText);
-      const assistantParseMode = getAssistantParseMode();
+      const streamedViaMessages = await finalizeAssistantResponse({
+        responseStreaming: config.bot.responseStreaming,
+        sessionId,
+        messageId,
+        messageText,
+        responseStreamer,
+        flushPendingServiceMessages: () =>
+          Promise.all([
+            toolMessageBatcher.flushSession(sessionId, "assistant_message_completed"),
+            toolCallStreamer.flushSession(sessionId, "assistant_message_completed"),
+          ]).then(() => undefined),
+        prepareStreamingPayload,
+        formatSummary,
+        resolveFormat: () => (getAssistantParseMode() === "MarkdownV2" ? "markdown_v2" : "raw"),
+        getReplyKeyboard: getCurrentReplyKeyboard,
+        sendText: async (text, options, format) => {
+          await sendBotText({
+            api: botApi,
+            chatId,
+            text,
+            options: options as Parameters<typeof sendBotText>[0]["options"],
+            format,
+          });
+        },
+      });
 
-      logger.debug(
-        `[Bot] Sending completed message to Telegram (chatId=${chatIdInstance}, parts=${parts.length})`,
-      );
-
-      for (let i = 0; i < parts.length; i++) {
-        const isLastPart = i === parts.length - 1;
-        const keyboard =
-          isLastPart && keyboardManager.isInitialized() ? keyboardManager.getKeyboard() : undefined;
-        const options = keyboard ? { reply_markup: keyboard } : undefined;
-
-        await sendMessageWithMarkdownFallback({
-          api: botInstance.api,
-          chatId: chatIdInstance,
-          text: parts[i],
-          options,
-          parseMode: assistantParseMode,
-        });
+      if (streamedViaMessages) {
+        logger.debug(
+          `[Bot] Final assistant message already streamed (session=${sessionId}, message=${messageId})`,
+        );
+        foregroundSessionState.markIdle(sessionId);
+        await scheduledTaskRuntime.flushDeferredDeliveries();
+        return;
       }
     } catch (err) {
       logger.error("Failed to send message to Telegram:", err);
       // Stop processing events after critical error to prevent infinite loop
       logger.error("[Bot] CRITICAL: Stopping event processing due to error");
       summaryAggregator.clear();
+    } finally {
+      foregroundSessionState.markIdle(sessionId);
+      await scheduledTaskRuntime.flushDeferredDeliveries();
     }
   });
 
@@ -237,7 +468,7 @@ async function ensureEventSubscription(directory: string): Promise<void> {
     try {
       const message = formatToolInfo(toolInfo);
       if (message) {
-        toolMessageBatcher.enqueue(toolInfo.sessionId, message);
+        toolCallStreamer.append(toolInfo.sessionId, message);
       }
     } catch (err) {
       logger.error("Failed to send tool notification to Telegram:", err);
@@ -256,6 +487,8 @@ async function ensureEventSubscription(directory: string): Promise<void> {
     }
 
     try {
+      await toolCallStreamer.breakSession(fileInfo.sessionId, "tool_file_boundary");
+
       const toolMessage = formatToolInfo(fileInfo);
       const caption = prepareDocumentCaption(toolMessage || fileInfo.fileData.caption);
 
@@ -276,7 +509,10 @@ async function ensureEventSubscription(directory: string): Promise<void> {
 
     const currentSession = getCurrentSession();
     if (currentSession) {
-      await toolMessageBatcher.flushSession(currentSession.id, "question_asked");
+      await Promise.all([
+        toolMessageBatcher.flushSession(currentSession.id, "question_asked"),
+        toolCallStreamer.flushSession(currentSession.id, "question_asked"),
+      ]);
     }
 
     if (questionManager.isActive()) {
@@ -317,7 +553,10 @@ async function ensureEventSubscription(directory: string): Promise<void> {
       return;
     }
 
-    await toolMessageBatcher.flushSession(request.sessionID, "permission_asked");
+    await Promise.all([
+      toolMessageBatcher.flushSession(request.sessionID, "permission_asked"),
+      toolCallStreamer.flushSession(request.sessionID, "permission_asked"),
+    ]);
 
     logger.info(
       `[Bot] Received permission request from agent: type=${request.permission}, requestID=${request.id}`,
@@ -326,10 +565,6 @@ async function ensureEventSubscription(directory: string): Promise<void> {
   });
 
   summaryAggregator.setOnThinking(async (sessionId) => {
-    if (config.bot.hideThinkingMessages) {
-      return;
-    }
-
     if (!botInstance || !chatIdInstance) {
       return;
     }
@@ -341,7 +576,12 @@ async function ensureEventSubscription(directory: string): Promise<void> {
 
     logger.debug("[Bot] Agent started thinking");
 
-    toolMessageBatcher.enqueue(sessionId, t("bot.thinking"));
+    await toolCallStreamer.breakSession(sessionId, "thinking_started");
+
+    deliverThinkingMessage(sessionId, toolMessageBatcher, {
+      responseStreaming: config.bot.responseStreaming,
+      hideThinkingMessages: config.bot.hideThinkingMessages,
+    });
   });
 
   summaryAggregator.setOnTokens(async (tokens) => {
@@ -366,6 +606,19 @@ async function ensureEventSubscription(directory: string): Promise<void> {
     }
   });
 
+  summaryAggregator.setOnCost(async (cost) => {
+    if (!pinnedMessageManager.isInitialized()) {
+      return;
+    }
+
+    try {
+      logger.debug(`[Bot] Cost update: $${cost.toFixed(2)}`);
+      await pinnedMessageManager.onCostUpdate(cost);
+    } catch (err) {
+      logger.error("[Bot] Error updating cost:", err);
+    }
+  });
+
   summaryAggregator.setOnSessionCompacted(async (sessionId, directory) => {
     if (!pinnedMessageManager.isInitialized()) {
       return;
@@ -381,15 +634,24 @@ async function ensureEventSubscription(directory: string): Promise<void> {
 
   summaryAggregator.setOnSessionError(async (sessionId, message) => {
     if (!botInstance || !chatIdInstance) {
+      foregroundSessionState.markIdle(sessionId);
       return;
     }
 
     const currentSession = getCurrentSession();
     if (!currentSession || currentSession.id !== sessionId) {
+      responseStreamer.clearSession(sessionId, "session_error_not_current");
+      toolCallStreamer.clearSession(sessionId, "session_error_not_current");
+      foregroundSessionState.markIdle(sessionId);
+      await scheduledTaskRuntime.flushDeferredDeliveries();
       return;
     }
 
-    await toolMessageBatcher.flushSession(sessionId, "session_error");
+    responseStreamer.clearSession(sessionId, "session_error");
+    await Promise.all([
+      toolMessageBatcher.flushSession(sessionId, "session_error"),
+      toolCallStreamer.flushSession(sessionId, "session_error"),
+    ]);
 
     const normalizedMessage = message.trim() || t("common.unknown_error");
     const truncatedMessage =
@@ -402,6 +664,9 @@ async function ensureEventSubscription(directory: string): Promise<void> {
       .catch((err) => {
         logger.error("[Bot] Failed to send session.error message:", err);
       });
+
+    foregroundSessionState.markIdle(sessionId);
+    await scheduledTaskRuntime.flushDeferredDeliveries();
   });
 
   summaryAggregator.setOnSessionRetry(async ({ sessionId, message }) => {
@@ -421,7 +686,7 @@ async function ensureEventSubscription(directory: string): Promise<void> {
         : normalizedMessage;
 
     const retryMessage = t("bot.session_retry", { message: truncatedMessage });
-    toolMessageBatcher.enqueueUniqueByPrefix(sessionId, retryMessage, SESSION_RETRY_PREFIX);
+    toolCallStreamer.replaceByPrefix(sessionId, SESSION_RETRY_PREFIX, retryMessage);
   });
 
   summaryAggregator.setOnSessionDiff(async (_sessionId, diffs) => {
@@ -477,7 +742,9 @@ async function ensureEventSubscription(directory: string): Promise<void> {
 export function createBot(): Bot<Context> {
   clearAllInteractionState("bot_startup");
   toolMessageBatcher.setIntervalSeconds(config.bot.serviceMessagesIntervalSec);
-  logger.info(`[ToolBatcher] Service messages interval: ${config.bot.serviceMessagesIntervalSec}s`);
+  logger.debug(
+    `[ToolBatcher] Service messages interval: ${config.bot.serviceMessagesIntervalSec}s`,
+  );
 
   const botOptions: ConstructorParameters<typeof Bot<Context>>[1] = {};
 
@@ -562,7 +829,9 @@ export function createBot(): Bot<Context> {
   bot.command("projects", projectsCommand);
   bot.command("sessions", sessionsCommand);
   bot.command("new", newCommand);
-  bot.command("stop", stopCommand);
+  bot.command("abort", abortCommand);
+  bot.command("task", taskCommand);
+  bot.command("tasklist", taskListCommand);
   bot.command("rename", renameCommand);
   bot.command("commands", commandsCommand);
 
@@ -587,11 +856,13 @@ export function createBot(): Bot<Context> {
       const handledModel = await handleModelSelect(ctx);
       const handledVariant = await handleVariantSelect(ctx);
       const handledCompactConfirm = await handleCompactConfirm(ctx);
+      const handledTask = await handleTaskCallback(ctx);
+      const handledTaskList = await handleTaskListCallback(ctx);
       const handledRenameCancel = await handleRenameCancel(ctx);
       const handledCommands = await handleCommandsCallback(ctx, { bot, ensureEventSubscription });
 
       logger.debug(
-        `[Bot] Callback handled: inlineCancel=${handledInlineCancel}, session=${handledSession}, project=${handledProject}, question=${handledQuestion}, permission=${handledPermission}, agent=${handledAgent}, model=${handledModel}, variant=${handledVariant}, compactConfirm=${handledCompactConfirm}, rename=${handledRenameCancel}, commands=${handledCommands}`,
+        `[Bot] Callback handled: inlineCancel=${handledInlineCancel}, session=${handledSession}, project=${handledProject}, question=${handledQuestion}, permission=${handledPermission}, agent=${handledAgent}, model=${handledModel}, variant=${handledVariant}, compactConfirm=${handledCompactConfirm}, task=${handledTask}, taskList=${handledTaskList}, rename=${handledRenameCancel}, commands=${handledCommands}`,
       );
 
       if (
@@ -604,6 +875,8 @@ export function createBot(): Bot<Context> {
         !handledModel &&
         !handledVariant &&
         !handledCompactConfirm &&
+        !handledTask &&
+        !handledTaskList &&
         !handledRenameCancel &&
         !handledCommands
       ) {
@@ -710,7 +983,7 @@ export function createBot(): Bot<Context> {
     },
     onSuccess: (result) => {
       if (result.success) {
-        logger.info("[Bot] Cleared global commands (default and all_private_chats scopes)");
+        logger.debug("[Bot] Cleared global commands (default and all_private_chats scopes)");
         return;
       }
 
@@ -823,6 +1096,11 @@ export function createBot(): Bot<Context> {
 
     if (questionManager.isActive()) {
       await handleQuestionTextAnswer(ctx);
+      return;
+    }
+
+    const handledTask = await handleTaskTextInput(ctx);
+    if (handledTask) {
       return;
     }
 

@@ -25,6 +25,7 @@ describe("summary/aggregator", () => {
     summaryAggregator.setOnCleared(() => {});
     summaryAggregator.setOnTool(() => {});
     summaryAggregator.setOnToolFile(() => {});
+    summaryAggregator.setOnPartial(() => {});
     summaryAggregator.setOnThinking(() => {});
     summaryAggregator.setOnSessionError(() => {});
     summaryAggregator.setOnSessionRetry(() => {});
@@ -173,6 +174,305 @@ describe("summary/aggregator", () => {
     await new Promise<void>((resolve) => setImmediate(resolve));
 
     expect(onThinking).toHaveBeenCalledWith("session-1");
+  });
+
+  it("streams partial text and passes messageId on completion", () => {
+    const onPartial = vi.fn();
+    const onComplete = vi.fn();
+
+    summaryAggregator.setOnPartial(onPartial);
+    summaryAggregator.setOnComplete(onComplete);
+    summaryAggregator.setSession("session-1");
+
+    summaryAggregator.processEvent({
+      type: "message.updated",
+      properties: {
+        info: {
+          id: "message-stream-1",
+          sessionID: "session-1",
+          role: "assistant",
+          time: { created: Date.now() },
+        },
+      },
+    } as unknown as Event);
+
+    summaryAggregator.processEvent({
+      type: "message.part.updated",
+      properties: {
+        part: {
+          id: "part-stream-1",
+          sessionID: "session-1",
+          messageID: "message-stream-1",
+          type: "text",
+          text: "Partial answer",
+          time: { start: Date.now() },
+        },
+      },
+    } as unknown as Event);
+
+    summaryAggregator.processEvent({
+      type: "message.updated",
+      properties: {
+        info: {
+          id: "message-stream-1",
+          sessionID: "session-1",
+          role: "assistant",
+          time: { created: Date.now(), completed: Date.now() },
+        },
+      },
+    } as unknown as Event);
+
+    expect(onPartial).toHaveBeenCalledWith("session-1", "message-stream-1", "Partial answer");
+    expect(onComplete).toHaveBeenCalledWith("session-1", "message-stream-1", "Partial answer");
+  });
+
+  it("combines multiple text parts into a single final message", () => {
+    const onPartial = vi.fn();
+    const onComplete = vi.fn();
+
+    summaryAggregator.setOnPartial(onPartial);
+    summaryAggregator.setOnComplete(onComplete);
+    summaryAggregator.setSession("session-1");
+
+    summaryAggregator.processEvent({
+      type: "message.updated",
+      properties: {
+        info: {
+          id: "message-multipart-1",
+          sessionID: "session-1",
+          role: "assistant",
+          time: { created: Date.now() },
+        },
+      },
+    } as unknown as Event);
+
+    summaryAggregator.processEvent({
+      type: "message.part.updated",
+      properties: {
+        part: {
+          id: "part-a",
+          sessionID: "session-1",
+          messageID: "message-multipart-1",
+          type: "text",
+          text: "Hello ",
+          time: { start: Date.now() },
+        },
+      },
+    } as unknown as Event);
+
+    summaryAggregator.processEvent({
+      type: "message.part.updated",
+      properties: {
+        part: {
+          id: "part-b",
+          sessionID: "session-1",
+          messageID: "message-multipart-1",
+          type: "text",
+          text: "world",
+          time: { start: Date.now() },
+        },
+      },
+    } as unknown as Event);
+
+    summaryAggregator.processEvent({
+      type: "message.updated",
+      properties: {
+        info: {
+          id: "message-multipart-1",
+          sessionID: "session-1",
+          role: "assistant",
+          time: { created: Date.now(), completed: Date.now() },
+        },
+      },
+    } as unknown as Event);
+
+    expect(onPartial).toHaveBeenLastCalledWith("session-1", "message-multipart-1", "Hello world");
+    expect(onComplete).toHaveBeenCalledWith("session-1", "message-multipart-1", "Hello world");
+  });
+
+  it("starts optimistic partial streaming after second unknown text update", () => {
+    const onPartial = vi.fn();
+    summaryAggregator.setOnPartial(onPartial);
+    summaryAggregator.setSession("session-1");
+
+    summaryAggregator.processEvent({
+      type: "message.part.updated",
+      properties: {
+        part: {
+          id: "part-unknown-1",
+          sessionID: "session-1",
+          messageID: "message-unknown-1",
+          type: "text",
+          text: "H",
+          time: { start: Date.now() },
+        },
+      },
+    } as unknown as Event);
+
+    summaryAggregator.processEvent({
+      type: "message.part.updated",
+      properties: {
+        part: {
+          id: "part-unknown-2",
+          sessionID: "session-1",
+          messageID: "message-unknown-1",
+          type: "text",
+          text: "Hello",
+          time: { start: Date.now() },
+        },
+      },
+    } as unknown as Event);
+
+    expect(onPartial).toHaveBeenCalledTimes(1);
+    expect(onPartial).toHaveBeenCalledWith("session-1", "message-unknown-1", "Hello");
+  });
+
+  it("does not stream unknown text when only one update arrived", () => {
+    const onPartial = vi.fn();
+    summaryAggregator.setOnPartial(onPartial);
+    summaryAggregator.setSession("session-1");
+
+    summaryAggregator.processEvent({
+      type: "message.part.updated",
+      properties: {
+        part: {
+          id: "part-unknown-single",
+          sessionID: "session-1",
+          messageID: "message-unknown-single",
+          type: "text",
+          text: "Single update",
+          time: { start: Date.now() },
+        },
+      },
+    } as unknown as Event);
+
+    expect(onPartial).not.toHaveBeenCalled();
+  });
+
+  it("does not emit partial when pending text is attached on completed message", () => {
+    const onPartial = vi.fn();
+    const onComplete = vi.fn();
+    summaryAggregator.setOnPartial(onPartial);
+    summaryAggregator.setOnComplete(onComplete);
+    summaryAggregator.setSession("session-1");
+
+    summaryAggregator.processEvent({
+      type: "message.part.updated",
+      properties: {
+        part: {
+          id: "part-pending-complete",
+          sessionID: "session-1",
+          messageID: "message-pending-complete",
+          type: "text",
+          text: "Final text",
+          time: { start: Date.now() },
+        },
+      },
+    } as unknown as Event);
+
+    summaryAggregator.processEvent({
+      type: "message.updated",
+      properties: {
+        info: {
+          id: "message-pending-complete",
+          sessionID: "session-1",
+          role: "assistant",
+          time: { created: Date.now(), completed: Date.now() },
+        },
+      },
+    } as unknown as Event);
+
+    expect(onPartial).not.toHaveBeenCalled();
+    expect(onComplete).toHaveBeenCalledWith("session-1", "message-pending-complete", "Final text");
+  });
+
+  it("streams text from message.part.delta events", () => {
+    const onPartial = vi.fn();
+    summaryAggregator.setOnPartial(onPartial);
+    summaryAggregator.setSession("session-1");
+
+    summaryAggregator.processEvent({
+      type: "message.part.delta",
+      properties: {
+        part: {
+          id: "part-delta-1",
+          sessionID: "session-1",
+          messageID: "message-delta-1",
+          type: "text",
+        },
+        delta: "Hel",
+      },
+    } as unknown as Event);
+
+    summaryAggregator.processEvent({
+      type: "message.part.delta",
+      properties: {
+        part: {
+          id: "part-delta-1",
+          sessionID: "session-1",
+          messageID: "message-delta-1",
+          type: "text",
+        },
+        delta: "lo",
+      },
+    } as unknown as Event);
+
+    expect(onPartial).toHaveBeenNthCalledWith(1, "session-1", "message-delta-1", "Hel");
+    expect(onPartial).toHaveBeenNthCalledWith(2, "session-1", "message-delta-1", "Hello");
+  });
+
+  it("streams delta events even when part type is omitted", () => {
+    const onPartial = vi.fn();
+    summaryAggregator.setOnPartial(onPartial);
+    summaryAggregator.setSession("session-1");
+
+    summaryAggregator.processEvent({
+      type: "message.part.delta",
+      properties: {
+        part: {
+          id: "part-delta-unknown-type",
+          sessionID: "session-1",
+          messageID: "message-delta-unknown-type",
+        },
+        delta: "Hi",
+      },
+    } as unknown as Event);
+
+    expect(onPartial).toHaveBeenCalledWith("session-1", "message-delta-unknown-type", "Hi");
+  });
+
+  it("does not stream unknown delta part after reasoning started", () => {
+    const onPartial = vi.fn();
+    summaryAggregator.setOnPartial(onPartial);
+    summaryAggregator.setSession("session-1");
+
+    summaryAggregator.processEvent({
+      type: "message.part.updated",
+      properties: {
+        part: {
+          id: "reasoning-part-1",
+          sessionID: "session-1",
+          messageID: "message-reasoning-1",
+          type: "reasoning",
+          text: "thinking",
+          time: { start: Date.now() },
+        },
+      },
+    } as unknown as Event);
+
+    summaryAggregator.processEvent({
+      type: "message.part.delta",
+      properties: {
+        part: {
+          id: "unknown-part-after-reasoning",
+          sessionID: "session-1",
+          messageID: "message-reasoning-1",
+        },
+        delta: "internal thoughts",
+      },
+    } as unknown as Event);
+
+    expect(onPartial).not.toHaveBeenCalled();
   });
 
   it("does not send thinking callback when no reasoning part arrives", async () => {
