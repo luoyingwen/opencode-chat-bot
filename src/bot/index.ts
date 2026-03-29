@@ -133,7 +133,6 @@ function prepareStreamingPayload(messageText: string): StreamingMessagePayload |
 }
 
 const toolMessageBatcher = new ToolMessageBatcher({
-  intervalSeconds: 5,
   sendText: async (sessionId, text) => {
     if (!botInstance || !chatIdInstance) {
       return;
@@ -348,7 +347,6 @@ async function ensureEventSubscription(directory: string): Promise<void> {
     return;
   }
 
-  toolMessageBatcher.setIntervalSeconds(config.bot.serviceMessagesIntervalSec);
   summaryAggregator.setTypingIndicatorEnabled(true);
   summaryAggregator.setOnCleared(() => {
     toolMessageBatcher.clearAll("summary_aggregator_clear");
@@ -357,10 +355,6 @@ async function ensureEventSubscription(directory: string): Promise<void> {
   });
 
   summaryAggregator.setOnPartial((sessionId, messageId, messageText) => {
-    if (!config.bot.responseStreaming) {
-      return;
-    }
-
     if (!botInstance || !chatIdInstance) {
       return;
     }
@@ -404,7 +398,6 @@ async function ensureEventSubscription(directory: string): Promise<void> {
 
     try {
       await finalizeAssistantResponse({
-        responseStreaming: config.bot.responseStreaming,
         sessionId,
         messageId,
         messageText,
@@ -611,7 +604,6 @@ async function ensureEventSubscription(directory: string): Promise<void> {
     await toolCallStreamer.breakSession(sessionId, "thinking_started");
 
     deliverThinkingMessage(sessionId, toolMessageBatcher, {
-      responseStreaming: config.bot.responseStreaming,
       hideThinkingMessages: config.bot.hideThinkingMessages,
     });
 
@@ -793,10 +785,6 @@ async function ensureEventSubscription(directory: string): Promise<void> {
 
 export function createBot(): Bot<Context> {
   clearAllInteractionState("bot_startup");
-  toolMessageBatcher.setIntervalSeconds(config.bot.serviceMessagesIntervalSec);
-  logger.debug(
-    `[ToolBatcher] Service messages interval: ${config.bot.serviceMessagesIntervalSec}s`,
-  );
 
   const botOptions: ConstructorParameters<typeof Bot<Context>>[1] = {};
 

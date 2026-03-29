@@ -35,7 +35,6 @@ vi.mock("../../src/config.js", () => ({
       sessionsListLimit: 10,
       projectsListLimit: 10,
       locale: "en",
-      serviceMessagesIntervalSec: 5,
       hideThinkingMessages: false,
       hideToolCallMessages: false,
     },

@@ -32,24 +32,6 @@ function getOptionalPositiveIntEnvVar(key: string, defaultValue: number): number
   return parsedValue;
 }
 
-function getOptionalNonNegativeIntEnvVarFromKeys(keys: string[], defaultValue: number): number {
-  for (const key of keys) {
-    const value = getEnvVar(key, false);
-    if (!value) {
-      continue;
-    }
-
-    const parsedValue = Number.parseInt(value, 10);
-    if (Number.isNaN(parsedValue) || parsedValue < 0) {
-      return defaultValue;
-    }
-
-    return parsedValue;
-  }
-
-  return defaultValue;
-}
-
 function getOptionalLocaleEnvVar(key: string, defaultValue: Locale): Locale {
   const value = getEnvVar(key, false);
   return normalizeLocale(value, defaultValue);
@@ -117,13 +99,8 @@ export const config = {
     commandsListLimit: getOptionalPositiveIntEnvVar("COMMANDS_LIST_LIMIT", 10),
     taskLimit: getOptionalPositiveIntEnvVar("TASK_LIMIT", 10),
     locale: getOptionalLocaleEnvVar("BOT_LOCALE", "en"),
-    serviceMessagesIntervalSec: getOptionalNonNegativeIntEnvVarFromKeys(
-      ["SERVICE_MESSAGES_INTERVAL_SEC", "TOOL_MESSAGES_INTERVAL_SEC"],
-      5,
-    ),
     hideThinkingMessages: getOptionalBooleanEnvVar("HIDE_THINKING_MESSAGES", false),
     hideToolCallMessages: getOptionalBooleanEnvVar("HIDE_TOOL_CALL_MESSAGES", false),
-    responseStreaming: getOptionalBooleanEnvVar("RESPONSE_STREAMING", true),
     messageFormatMode: getOptionalMessageFormatModeEnvVar("MESSAGE_FORMAT_MODE", "markdown"),
   },
   files: {

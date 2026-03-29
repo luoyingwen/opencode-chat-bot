@@ -2,7 +2,7 @@ import { describe, expect, it, vi } from "vitest";
 import { finalizeAssistantResponse } from "../../../src/bot/utils/finalize-assistant-response.js";
 
 describe("bot/utils/finalize-assistant-response", () => {
-  it("uses the non-streaming send path when response streaming is disabled", async () => {
+  it("completes the response stream and sends final text when streamer reports not streamed", async () => {
     const responseStreamer = {
       complete: vi.fn().mockResolvedValue({ streamed: false, telegramMessageIds: [] }),
     };
@@ -11,21 +11,25 @@ describe("bot/utils/finalize-assistant-response", () => {
     const deleteMessages = vi.fn().mockResolvedValue(undefined);
 
     await finalizeAssistantResponse({
-      responseStreaming: false,
       sessionId: "s1",
       messageId: "m1",
       messageText: "final reply",
       responseStreamer,
       flushPendingServiceMessages,
-      prepareStreamingPayload: vi.fn(),
+      prepareStreamingPayload: vi.fn(() => ({ parts: ["final reply"], format: "raw" as const })),
       formatSummary: vi.fn(() => ["part 1", "part 2"]),
-      resolveFormat: vi.fn(() => "markdown_v2"),
+      resolveFormat: vi.fn(() => "markdown_v2" as const),
       getReplyKeyboard: vi.fn(() => ({ keyboard: [[{ text: "A" }]] })),
       sendText,
       deleteMessages,
     });
 
-    expect(responseStreamer.complete).not.toHaveBeenCalled();
+    expect(responseStreamer.complete).toHaveBeenCalledWith("s1", "m1", {
+      parts: ["final reply"],
+      format: "raw",
+      sendOptions: undefined,
+      editOptions: undefined,
+    });
     expect(flushPendingServiceMessages).toHaveBeenCalledTimes(1);
     expect(deleteMessages).not.toHaveBeenCalled();
     expect(sendText).toHaveBeenCalledTimes(2);
@@ -54,7 +58,6 @@ describe("bot/utils/finalize-assistant-response", () => {
     const keyboard = { keyboard: [[{ text: "ctx" }]] };
 
     await finalizeAssistantResponse({
-      responseStreaming: true,
       sessionId: "s1",
       messageId: "m1",
       messageText: "reply",
@@ -62,7 +65,7 @@ describe("bot/utils/finalize-assistant-response", () => {
       flushPendingServiceMessages,
       prepareStreamingPayload,
       formatSummary: vi.fn(() => ["reply"]),
-      resolveFormat: vi.fn(() => "raw"),
+      resolveFormat: vi.fn(() => "raw" as const),
       getReplyKeyboard: vi.fn(() => keyboard),
       sendText,
       deleteMessages,
@@ -90,7 +93,6 @@ describe("bot/utils/finalize-assistant-response", () => {
     const prepareStreamingPayload = vi.fn(() => ({ parts: ["reply"], format: "raw" as const }));
 
     await finalizeAssistantResponse({
-      responseStreaming: true,
       sessionId: "s1",
       messageId: "m1",
       messageText: "reply",
@@ -98,7 +100,7 @@ describe("bot/utils/finalize-assistant-response", () => {
       flushPendingServiceMessages,
       prepareStreamingPayload,
       formatSummary: vi.fn(() => ["reply"]),
-      resolveFormat: vi.fn(() => "raw"),
+      resolveFormat: vi.fn(() => "raw" as const),
       getReplyKeyboard: vi.fn(() => undefined),
       sendText,
       deleteMessages,

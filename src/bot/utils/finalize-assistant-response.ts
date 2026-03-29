@@ -3,7 +3,6 @@ import type { TelegramTextFormat } from "./telegram-text.js";
 import { logger } from "../../utils/logger.js";
 
 interface FinalizeAssistantResponseOptions {
-  responseStreaming: boolean;
   sessionId: string;
   messageId: string;
   messageText: string;
@@ -22,7 +21,6 @@ interface FinalizeAssistantResponseOptions {
 }
 
 export async function finalizeAssistantResponse({
-  responseStreaming,
   sessionId,
   messageId,
   messageText,
@@ -37,22 +35,20 @@ export async function finalizeAssistantResponse({
 }: FinalizeAssistantResponseOptions): Promise<boolean> {
   let streamedMessageIds: number[] = [];
 
-  if (responseStreaming) {
-    const preparedStreamPayload = prepareStreamingPayload(messageText);
-    if (preparedStreamPayload) {
-      preparedStreamPayload.sendOptions = undefined;
-      preparedStreamPayload.editOptions = undefined;
-    }
+  const preparedStreamPayload = prepareStreamingPayload(messageText);
+  if (preparedStreamPayload) {
+    preparedStreamPayload.sendOptions = undefined;
+    preparedStreamPayload.editOptions = undefined;
+  }
 
-    const result = await responseStreamer.complete(
-      sessionId,
-      messageId,
-      preparedStreamPayload ?? undefined,
-    );
+  const result = await responseStreamer.complete(
+    sessionId,
+    messageId,
+    preparedStreamPayload ?? undefined,
+  );
 
-    if (result.streamed) {
-      streamedMessageIds = result.telegramMessageIds;
-    }
+  if (result.streamed) {
+    streamedMessageIds = result.telegramMessageIds;
   }
 
   await flushPendingServiceMessages();
@@ -63,7 +59,10 @@ export async function finalizeAssistantResponse({
     try {
       await deleteMessages(streamedMessageIds);
     } catch (err) {
-      logger.warn("[FinalizeResponse] Failed to delete streamed messages, sending with keyboard anyway:", err);
+      logger.warn(
+        "[FinalizeResponse] Failed to delete streamed messages, sending with keyboard anyway:",
+        err,
+      );
     }
   }
 
