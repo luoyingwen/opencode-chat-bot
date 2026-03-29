@@ -10,21 +10,63 @@ import { getCurrentProject } from "../settings/manager.js";
 const TELEGRAM_MESSAGE_LIMIT = 4096;
 const MARKDOWN_V2_RESERVED_CHARS = /([_\*\[\]\(\)~`>#+\-=|{}.!\\])/g;
 
-function splitText(text: string, maxLength: number): string[] {
+interface SplitTextOptions {
+  avoidTrailingMarkdownEscape?: boolean;
+}
+
+function endsWithOddTrailingBackslashes(text: string, start: number, end: number): boolean {
+  let backslashCount = 0;
+
+  for (let index = end - 1; index >= start; index--) {
+    if (text[index] !== "\\") {
+      break;
+    }
+    backslashCount += 1;
+  }
+
+  return backslashCount % 2 === 1;
+}
+
+function resolveSplitEndIndex(
+  text: string,
+  currentIndex: number,
+  maxLength: number,
+  options?: SplitTextOptions,
+): number {
+  const hardLimit = Math.min(text.length, currentIndex + maxLength);
+  if (hardLimit >= text.length) {
+    return text.length;
+  }
+
+  let endIndex = hardLimit;
+  const breakPoint = text.lastIndexOf("\n", endIndex);
+  if (breakPoint > currentIndex) {
+    endIndex = breakPoint + 1;
+  }
+
+  if (!options?.avoidTrailingMarkdownEscape) {
+    return endIndex;
+  }
+
+  while (endIndex > currentIndex && endsWithOddTrailingBackslashes(text, currentIndex, endIndex)) {
+    endIndex -= 1;
+  }
+
+  return endIndex > currentIndex ? endIndex : hardLimit;
+}
+
+function splitText(text: string, maxLength: number, options?: SplitTextOptions): string[] {
   const parts: string[] = [];
   let currentIndex = 0;
 
   while (currentIndex < text.length) {
-    let endIndex = currentIndex + maxLength;
+    const endIndex = resolveSplitEndIndex(text, currentIndex, maxLength, options);
 
-    if (endIndex >= text.length) {
-      parts.push(text.slice(currentIndex));
-      break;
-    }
-
-    const breakPoint = text.lastIndexOf("\n", endIndex);
-    if (breakPoint > currentIndex) {
-      endIndex = breakPoint + 1;
+    if (endIndex <= currentIndex) {
+      const fallbackEnd = Math.min(text.length, currentIndex + 1);
+      parts.push(text.slice(currentIndex, fallbackEnd));
+      currentIndex = fallbackEnd;
+      continue;
     }
 
     parts.push(text.slice(currentIndex, endIndex));
@@ -252,7 +294,9 @@ export function formatSummaryWithMode(
 
     if (mode === "markdown") {
       const converted = formatMarkdownForTelegram(trimmed);
-      const convertedParts = splitText(converted, normalizedMaxLength);
+      const convertedParts = splitText(converted, normalizedMaxLength, {
+        avoidTrailingMarkdownEscape: true,
+      });
 
       for (const convertedPart of convertedParts) {
         const normalizedPart = convertedPart.trim();

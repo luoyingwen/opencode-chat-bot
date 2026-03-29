@@ -60,6 +60,13 @@ describe("summary/formatter", () => {
     expect(parts.every((part) => part.length <= 120)).toBe(true);
   });
 
+  it("does not split escaped markdown characters across parts", () => {
+    const parts = formatSummaryWithMode("a+b", "markdown", 2);
+
+    expect(parts).toEqual(["a", "\\+", "b"]);
+    expect(parts.some((part) => part.endsWith("\\"))).toBe(false);
+  });
+
   it("keeps raw code-block parts within the custom limit", () => {
     const parts = formatSummaryWithMode("a".repeat(300), "raw", 120);
 
