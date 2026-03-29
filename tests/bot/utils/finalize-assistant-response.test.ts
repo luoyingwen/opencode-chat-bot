@@ -27,7 +27,7 @@ describe("bot/utils/finalize-assistant-response", () => {
     expect(responseStreamer.complete).toHaveBeenCalledWith("s1", "m1", {
       parts: ["final reply"],
       format: "raw",
-      sendOptions: undefined,
+      sendOptions: { disable_notification: true },
       editOptions: undefined,
     });
     expect(flushPendingServiceMessages).toHaveBeenCalledTimes(1);
@@ -74,7 +74,7 @@ describe("bot/utils/finalize-assistant-response", () => {
     expect(responseStreamer.complete).toHaveBeenCalledWith("s1", "m1", {
       parts: ["reply"],
       format: "raw",
-      sendOptions: undefined,
+      sendOptions: { disable_notification: true },
       editOptions: undefined,
     });
     expect(flushPendingServiceMessages).toHaveBeenCalledTimes(1);

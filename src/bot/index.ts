@@ -369,7 +369,7 @@ async function ensureEventSubscription(directory: string): Promise<void> {
       return;
     }
 
-    preparedStreamPayload.sendOptions = undefined;
+    preparedStreamPayload.sendOptions = { disable_notification: true };
     preparedStreamPayload.editOptions = undefined;
 
     responseStreamer.enqueue(sessionId, messageId, preparedStreamPayload);

@@ -37,7 +37,7 @@ export async function finalizeAssistantResponse({
 
   const preparedStreamPayload = prepareStreamingPayload(messageText);
   if (preparedStreamPayload) {
-    preparedStreamPayload.sendOptions = undefined;
+    preparedStreamPayload.sendOptions = { disable_notification: true };
     preparedStreamPayload.editOptions = undefined;
   }
 
