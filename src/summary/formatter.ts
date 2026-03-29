@@ -428,7 +428,7 @@ export function formatToolInfo(toolInfo: ToolInfo): string | null {
     }>;
     const toolIcon = getToolIcon(tool);
     const todosList = formatTodos(todos);
-    return `${toolIcon} ${tool} (${todos.length})\n${todosList}`;
+    return `${toolIcon} ${tool} (${todos.length})\n\n${todosList}`;
   }
 
   let details = title || getToolDetails(tool, input);

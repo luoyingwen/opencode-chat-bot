@@ -131,7 +131,7 @@ describe("summary/formatter", () => {
       },
     });
 
-    expect(text).toBe("📝 todowrite (3)\n✅ Done item\n🔄 In progress item\n🔲 Pending item");
+    expect(text).toBe("📝 todowrite (3)\n\n✅ Done item\n🔄 In progress item\n🔲 Pending item");
   });
 
   it("formats write/edit tool details with line counters", () => {
