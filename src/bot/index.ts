@@ -129,7 +129,7 @@ function prepareStreamingPayload(messageText: string): StreamingMessagePayload |
 
   return {
     parts,
-    format: config.bot.messageFormatMode === "markdown" ? "markdown_v2" : "raw",
+    format: "raw",
   };
 }
 
@@ -410,13 +410,15 @@ async function ensureEventSubscription(directory: string): Promise<void> {
           ]).then(() => undefined),
         prepareStreamingPayload,
         formatSummary,
+        formatRawSummary: (text) => formatSummaryWithMode(text, "raw"),
         resolveFormat: () => (getAssistantParseMode() === "MarkdownV2" ? "markdown_v2" : "raw"),
         getReplyKeyboard: getCurrentReplyKeyboard,
-        sendText: async (text, options, format) => {
+        sendText: async (text, rawFallbackText, options, format) => {
           await sendBotText({
             api: botApi,
             chatId,
             text,
+            rawFallbackText,
             options: options as Parameters<typeof sendBotText>[0]["options"],
             format,
           });

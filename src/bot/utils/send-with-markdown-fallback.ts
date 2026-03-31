@@ -10,6 +10,7 @@ interface SendMessageWithMarkdownFallbackParams {
   api: SendMessageApi;
   chatId: Parameters<SendMessageApi["sendMessage"]>[0];
   text: string;
+  rawFallbackText?: string;
   options?: TelegramSendMessageOptions;
   parseMode?: "Markdown" | "MarkdownV2";
 }
@@ -19,6 +20,7 @@ interface EditMessageWithMarkdownFallbackParams {
   chatId: Parameters<EditMessageApi["editMessageText"]>[0];
   messageId: Parameters<EditMessageApi["editMessageText"]>[1];
   text: string;
+  rawFallbackText?: string;
   options?: TelegramEditMessageOptions;
   parseMode?: "Markdown" | "MarkdownV2";
 }
@@ -31,10 +33,56 @@ const MARKDOWN_PARSE_ERROR_MARKERS = [
   "bad request: can't parse",
 ];
 
-const MARKDOWN_V2_RESERVED_CHARS = /([_\*\[\]\(\)~`>#+\-=|{}.!\\])/g;
+const MARKDOWN_V2_RESERVED_CHARS = new Set([
+  "_",
+  "*",
+  "[",
+  "]",
+  "(",
+  ")",
+  "~",
+  "`",
+  ">",
+  "#",
+  "+",
+  "-",
+  "=",
+  "|",
+  "{",
+  "}",
+  ".",
+  "!",
+  "\\",
+]);
+const MARKDOWN_V2_ESCAPED_CHAR = /\\([_\*\[\]\(\)~`>#+\-=|{}.!\\])/g;
 
 function escapeTelegramMarkdownV2(text: string): string {
-  return text.replace(MARKDOWN_V2_RESERVED_CHARS, "\\$1");
+  let result = "";
+  let trailingBackslashes = 0;
+
+  for (const char of text) {
+    if (char === "\\") {
+      result += char;
+      trailingBackslashes += 1;
+      continue;
+    }
+
+    const isEscaped = trailingBackslashes % 2 === 1;
+    trailingBackslashes = 0;
+
+    if (MARKDOWN_V2_RESERVED_CHARS.has(char) && !isEscaped) {
+      result += `\\${char}`;
+      continue;
+    }
+
+    result += char;
+  }
+
+  return result;
+}
+
+function unescapeTelegramMarkdownV2(text: string): string {
+  return text.replace(MARKDOWN_V2_ESCAPED_CHAR, "$1");
 }
 
 function stripMarkdownFormattingOptions<
@@ -100,6 +148,7 @@ export async function sendMessageWithMarkdownFallback({
   api,
   chatId,
   text,
+  rawFallbackText,
   options,
   parseMode,
 }: SendMessageWithMarkdownFallbackParams): Promise<
@@ -113,6 +162,9 @@ export async function sendMessageWithMarkdownFallback({
     ...(options || {}),
     parse_mode: parseMode,
   };
+
+  const fallbackText =
+    rawFallbackText ?? (parseMode === "MarkdownV2" ? unescapeTelegramMarkdownV2(text) : text);
 
   try {
     return await api.sendMessage(chatId, text, markdownOptions);
@@ -140,13 +192,13 @@ export async function sendMessageWithMarkdownFallback({
             "[Bot] Escaped Markdown parse failed, retrying assistant message in raw mode",
             escapedError,
           );
-          return api.sendMessage(chatId, text, stripMarkdownFormattingOptions(options));
+          return api.sendMessage(chatId, fallbackText, stripMarkdownFormattingOptions(options));
         }
       }
     }
 
     logger.warn("[Bot] Markdown parse failed, retrying assistant message in raw mode", error);
-    return api.sendMessage(chatId, text, stripMarkdownFormattingOptions(options));
+    return api.sendMessage(chatId, fallbackText, stripMarkdownFormattingOptions(options));
   }
 }
 
@@ -155,6 +207,7 @@ export async function editMessageWithMarkdownFallback({
   chatId,
   messageId,
   text,
+  rawFallbackText,
   options,
   parseMode,
 }: EditMessageWithMarkdownFallbackParams): Promise<
@@ -168,6 +221,9 @@ export async function editMessageWithMarkdownFallback({
     ...(options || {}),
     parse_mode: parseMode,
   };
+
+  const fallbackText =
+    rawFallbackText ?? (parseMode === "MarkdownV2" ? unescapeTelegramMarkdownV2(text) : text);
 
   try {
     return await api.editMessageText(chatId, messageId, text, markdownOptions);
@@ -198,7 +254,7 @@ export async function editMessageWithMarkdownFallback({
           return api.editMessageText(
             chatId,
             messageId,
-            text,
+            fallbackText,
             stripMarkdownFormattingOptions(options),
           );
         }
@@ -206,6 +262,11 @@ export async function editMessageWithMarkdownFallback({
     }
 
     logger.warn("[Bot] Markdown parse failed, retrying edited message in raw mode", error);
-    return api.editMessageText(chatId, messageId, text, stripMarkdownFormattingOptions(options));
+    return api.editMessageText(
+      chatId,
+      messageId,
+      fallbackText,
+      stripMarkdownFormattingOptions(options),
+    );
   }
 }

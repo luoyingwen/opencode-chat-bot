@@ -10,10 +10,12 @@ interface FinalizeAssistantResponseOptions {
   flushPendingServiceMessages: () => Promise<void>;
   prepareStreamingPayload: (messageText: string) => StreamingMessagePayload | null;
   formatSummary: (messageText: string) => string[];
+  formatRawSummary: (messageText: string) => string[];
   resolveFormat: () => TelegramTextFormat;
   getReplyKeyboard: () => unknown;
   sendText: (
     text: string,
+    rawFallbackText: string | undefined,
     options: { reply_markup: unknown } | undefined,
     format: TelegramTextFormat,
   ) => Promise<void>;
@@ -28,6 +30,7 @@ export async function finalizeAssistantResponse({
   flushPendingServiceMessages,
   prepareStreamingPayload,
   formatSummary,
+  formatRawSummary,
   resolveFormat,
   getReplyKeyboard,
   sendText,
@@ -67,12 +70,15 @@ export async function finalizeAssistantResponse({
   }
 
   const parts = formatSummary(messageText);
+  const rawParts = formatRawSummary(messageText);
   const format = resolveFormat();
 
-  for (const part of parts) {
+  for (let partIndex = 0; partIndex < parts.length; partIndex++) {
+    const part = parts[partIndex];
+    const rawFallbackText = rawParts[partIndex];
     const keyboard = getReplyKeyboard();
     const options = keyboard ? { reply_markup: keyboard } : undefined;
-    await sendText(part, options, format);
+    await sendText(part, rawFallbackText, options, format);
   }
 
   return false;

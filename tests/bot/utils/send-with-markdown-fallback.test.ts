@@ -89,6 +89,47 @@ describe("bot/utils/send-with-markdown-fallback", () => {
     });
   });
 
+  it("uses explicit raw fallback text on send fallback", async () => {
+    const sendMessage = vi
+      .fn()
+      .mockRejectedValueOnce(
+        new Error("Bad Request: can't parse entities: Character '.' is reserved"),
+      )
+      .mockRejectedValueOnce(new Error("Bad Request: can't parse entities: unsupported start tag"))
+      .mockResolvedValueOnce(undefined);
+
+    await sendMessageWithMarkdownFallback({
+      api: { sendMessage },
+      chatId: 444,
+      text: "Done.",
+      rawFallbackText: "Done.",
+      parseMode: "MarkdownV2",
+    });
+
+    expect(sendMessage).toHaveBeenCalledTimes(3);
+    expect(sendMessage).toHaveBeenNthCalledWith(3, 444, "Done.", undefined);
+  });
+
+  it("unescapes MarkdownV2 text for raw send fallback when explicit fallback is not provided", async () => {
+    const sendMessage = vi
+      .fn()
+      .mockRejectedValueOnce(
+        new Error("Bad Request: can't parse entities: Character '.' is reserved"),
+      )
+      .mockRejectedValueOnce(new Error("Bad Request: can't parse entities: unsupported start tag"))
+      .mockResolvedValueOnce(undefined);
+
+    await sendMessageWithMarkdownFallback({
+      api: { sendMessage },
+      chatId: 445,
+      text: "Done.",
+      parseMode: "MarkdownV2",
+    });
+
+    expect(sendMessage).toHaveBeenCalledTimes(3);
+    expect(sendMessage).toHaveBeenNthCalledWith(3, 445, "Done.", undefined);
+  });
+
   it("retries with escaped MarkdownV2 for reserved parentheses", async () => {
     const sendMessage = vi
       .fn()
@@ -109,6 +150,30 @@ describe("bot/utils/send-with-markdown-fallback", () => {
       parse_mode: "MarkdownV2",
     });
     expect(sendMessage).toHaveBeenNthCalledWith(2, 888, "Cost \\(USD\\)", {
+      parse_mode: "MarkdownV2",
+    });
+  });
+
+  it("does not double-escape already escaped MarkdownV2 text on retry", async () => {
+    const sendMessage = vi
+      .fn()
+      .mockRejectedValueOnce(
+        new Error("Bad Request: can't parse entities: Character '.' is reserved"),
+      )
+      .mockResolvedValueOnce(undefined);
+
+    await sendMessageWithMarkdownFallback({
+      api: { sendMessage },
+      chatId: 889,
+      text: "Table \\| row \\| and dot .",
+      parseMode: "MarkdownV2",
+    });
+
+    expect(sendMessage).toHaveBeenCalledTimes(2);
+    expect(sendMessage).toHaveBeenNthCalledWith(1, 889, "Table \\| row \\| and dot .", {
+      parse_mode: "MarkdownV2",
+    });
+    expect(sendMessage).toHaveBeenNthCalledWith(2, 889, "Table \\| row \\| and dot \\.", {
       parse_mode: "MarkdownV2",
     });
   });
@@ -244,5 +309,48 @@ describe("bot/utils/send-with-markdown-fallback", () => {
     expect(editMessageText).toHaveBeenNthCalledWith(3, 501, 902, "a+b", {
       reply_markup: { inline_keyboard: [] },
     });
+  });
+
+  it("uses explicit raw fallback text on edit fallback", async () => {
+    const editMessageText = vi
+      .fn()
+      .mockRejectedValueOnce(
+        new Error("Bad Request: can't parse entities: Character '.' is reserved"),
+      )
+      .mockRejectedValueOnce(new Error("Bad Request: can't parse entities: unsupported start tag"))
+      .mockResolvedValueOnce(undefined);
+
+    await editMessageWithMarkdownFallback({
+      api: { editMessageText },
+      chatId: 111,
+      messageId: 222,
+      text: "Done.",
+      rawFallbackText: "Done.",
+      parseMode: "MarkdownV2",
+    });
+
+    expect(editMessageText).toHaveBeenCalledTimes(3);
+    expect(editMessageText).toHaveBeenNthCalledWith(3, 111, 222, "Done.", undefined);
+  });
+
+  it("unescapes MarkdownV2 text for raw edit fallback when explicit fallback is not provided", async () => {
+    const editMessageText = vi
+      .fn()
+      .mockRejectedValueOnce(
+        new Error("Bad Request: can't parse entities: Character '.' is reserved"),
+      )
+      .mockRejectedValueOnce(new Error("Bad Request: can't parse entities: unsupported start tag"))
+      .mockResolvedValueOnce(undefined);
+
+    await editMessageWithMarkdownFallback({
+      api: { editMessageText },
+      chatId: 112,
+      messageId: 223,
+      text: "Done.",
+      parseMode: "MarkdownV2",
+    });
+
+    expect(editMessageText).toHaveBeenCalledTimes(3);
+    expect(editMessageText).toHaveBeenNthCalledWith(3, 112, 223, "Done.", undefined);
   });
 });
