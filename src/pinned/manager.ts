@@ -36,6 +36,11 @@ class PinnedMessageManager {
   };
   private contextLimit: number | null = null;
   private onKeyboardUpdateCallback?: (tokensUsed: number, tokensLimit: number) => void;
+  private updateDebounceTimer: ReturnType<typeof setTimeout> | null = null;
+  private updateTask: Promise<void> | null = null;
+  private pendingUpdate = false;
+  private pendingForceUpdate = false;
+  private lastRenderedMessageText: string | null = null;
 
   /**
    * Initialize manager with bot API and chat ID
@@ -80,6 +85,9 @@ class PinnedMessageManager {
 
     // Reset changed files for new session
     this.state.changedFiles = [];
+    this.lastRenderedMessageText = null;
+    this.pendingUpdate = false;
+    this.pendingForceUpdate = false;
 
     // Unpin old message and create new one
     await this.unpinOldMessage();
@@ -224,13 +232,18 @@ class PinnedMessageManager {
    * Used at thinking time to push accumulated silent updates to Telegram.
    */
   async refresh(): Promise<void> {
-    await this.updatePinnedMessage();
+    await this.updatePinnedMessage(true);
   }
 
   /**
    * Called when cost info is received from SSE events
    */
   async onCostUpdate(cost: number): Promise<void> {
+    if (!Number.isFinite(cost) || cost === 0) {
+      logger.debug("[PinnedManager] Ignoring non-impacting cost update");
+      return;
+    }
+
     const currentCost = this.state.cost || 0;
     this.state.cost = currentCost + cost;
     logger.debug(
@@ -293,6 +306,12 @@ class PinnedMessageManager {
       logger.debug("[PinnedManager] Ignoring empty session.diff, keeping tool-collected data");
       return;
     }
+
+    if (this.areFileDiffsEqual(this.state.changedFiles, diffs)) {
+      logger.debug("[PinnedManager] Ignoring unchanged session.diff");
+      return;
+    }
+
     this.state.changedFiles = diffs;
     logger.debug(`[PinnedManager] Session diff updated: ${diffs.length} files`);
     await this.updatePinnedMessage();
@@ -317,16 +336,14 @@ class PinnedMessageManager {
     this.scheduleDebouncedUpdate();
   }
 
-  private updateDebounceTimer: ReturnType<typeof setTimeout> | null = null;
-
   private scheduleDebouncedUpdate(): void {
     if (this.updateDebounceTimer) {
       clearTimeout(this.updateDebounceTimer);
     }
     this.updateDebounceTimer = setTimeout(() => {
       this.updateDebounceTimer = null;
-      this.updatePinnedMessage();
-    }, 500);
+      void this.updatePinnedMessage();
+    }, 1000);
   }
 
   /**
@@ -547,6 +564,26 @@ class PinnedMessageManager {
     return ".../" + segments.slice(-3).join("/");
   }
 
+  private areFileDiffsEqual(current: FileChange[], next: FileChange[]): boolean {
+    if (current.length !== next.length) {
+      return false;
+    }
+
+    for (let index = 0; index < current.length; index++) {
+      const left = current[index];
+      const right = next[index];
+      if (
+        left.file !== right.file ||
+        left.additions !== right.additions ||
+        left.deletions !== right.deletions
+      ) {
+        return false;
+      }
+    }
+
+    return true;
+  }
+
   /**
    * Fetch context limit from current model configuration
    */
@@ -623,6 +660,7 @@ class PinnedMessageManager {
       this.state.messageId = sentMessage.message_id;
       this.state.chatId = this.chatId;
       this.state.lastUpdated = Date.now();
+      this.lastRenderedMessageText = text;
 
       // Save to settings for persistence
       setPinnedMessageId(sentMessage.message_id);
@@ -641,41 +679,81 @@ class PinnedMessageManager {
   /**
    * Update existing pinned message text
    */
-  private async updatePinnedMessage(): Promise<void> {
+  private async updatePinnedMessage(forceUpdate: boolean = false): Promise<void> {
     if (!this.api || !this.chatId || !this.state.messageId) {
       return;
     }
 
-    try {
+    this.pendingUpdate = true;
+    if (forceUpdate) {
+      this.pendingForceUpdate = true;
+    }
+
+    if (this.updateTask) {
+      await this.updateTask;
+      return;
+    }
+
+    this.updateTask = this.flushPendingPinnedUpdates().finally(() => {
+      this.updateTask = null;
+    });
+
+    await this.updateTask;
+  }
+
+  private async flushPendingPinnedUpdates(): Promise<void> {
+    while (this.pendingUpdate) {
+      this.pendingUpdate = false;
+      const shouldForceUpdate = this.pendingForceUpdate;
+      this.pendingForceUpdate = false;
+
+      if (!this.api || !this.chatId || !this.state.messageId) {
+        return;
+      }
+
       const text = this.formatMessage();
 
-      await this.api.editMessageText(this.chatId, this.state.messageId, text);
-      this.state.lastUpdated = Date.now();
-
-      logger.debug(`[PinnedManager] Updated pinned message: ${this.state.messageId}`);
-
-      // Trigger keyboard update callback
-      if (this.onKeyboardUpdateCallback && this.state.tokensLimit > 0) {
-        setImmediate(() => {
-          this.onKeyboardUpdateCallback!(this.state.tokensUsed, this.state.tokensLimit);
-        });
-      }
-    } catch (err: unknown) {
-      // Handle "message is not modified" error silently
-      if (err instanceof Error && err.message.includes("message is not modified")) {
-        return;
+      if (!shouldForceUpdate && text === this.lastRenderedMessageText) {
+        logger.debug("[PinnedManager] Skipping pinned update: message content unchanged");
+        continue;
       }
 
-      // Handle "message to edit not found" - recreate
-      if (err instanceof Error && err.message.includes("message to edit not found")) {
-        logger.warn("[PinnedManager] Pinned message was deleted, recreating...");
-        this.state.messageId = null;
-        clearPinnedMessageId();
-        await this.createPinnedMessage();
-        return;
-      }
+      try {
+        await this.api.editMessageText(this.chatId, this.state.messageId, text);
+        this.state.lastUpdated = Date.now();
+        this.lastRenderedMessageText = text;
 
-      logger.error("[PinnedManager] Error updating pinned message:", err);
+        logger.debug(`[PinnedManager] Updated pinned message: ${this.state.messageId}`);
+
+        // Trigger keyboard update callback
+        if (this.onKeyboardUpdateCallback && this.state.tokensLimit > 0) {
+          setImmediate(() => {
+            this.onKeyboardUpdateCallback!(this.state.tokensUsed, this.state.tokensLimit);
+          });
+        }
+      } catch (err: unknown) {
+        const errorMessage =
+          err instanceof Error ? err.message.toLowerCase() : String(err).toLowerCase();
+
+        // Handle "message is not modified" error silently
+        if (errorMessage.includes("message is not modified")) {
+          this.lastRenderedMessageText = text;
+          continue;
+        }
+
+        // Handle "message to edit not found" - recreate
+        if (errorMessage.includes("message to edit not found")) {
+          logger.warn("[PinnedManager] Pinned message was deleted, recreating...");
+          this.state.messageId = null;
+          this.lastRenderedMessageText = null;
+          this.pendingForceUpdate = false;
+          clearPinnedMessageId();
+          await this.createPinnedMessage();
+          continue;
+        }
+
+        logger.error("[PinnedManager] Error updating pinned message:", err);
+      }
     }
   }
 
@@ -692,6 +770,9 @@ class PinnedMessageManager {
       await this.api.unpinAllChatMessages(this.chatId).catch(() => {});
 
       this.state.messageId = null;
+      this.lastRenderedMessageText = null;
+      this.pendingUpdate = false;
+      this.pendingForceUpdate = false;
       clearPinnedMessageId();
 
       logger.debug("[PinnedManager] Unpinned old messages");
@@ -725,6 +806,9 @@ class PinnedMessageManager {
       this.state.tokensUsed = 0;
       this.state.tokensLimit = 0;
       this.state.changedFiles = [];
+      this.lastRenderedMessageText = null;
+      this.pendingUpdate = false;
+      this.pendingForceUpdate = false;
       clearPinnedMessageId();
       return;
     }
@@ -741,6 +825,9 @@ class PinnedMessageManager {
       this.state.tokensUsed = 0;
       this.state.tokensLimit = 0;
       this.state.changedFiles = [];
+      this.lastRenderedMessageText = null;
+      this.pendingUpdate = false;
+      this.pendingForceUpdate = false;
       clearPinnedMessageId();
 
       logger.info("[PinnedManager] Cleared pinned message state");

@@ -60,6 +60,7 @@ import { getCurrentSession } from "../session/manager.js";
 import { ingestSessionInfoForCache } from "../session/cache-manager.js";
 import { logger } from "../utils/logger.js";
 import { safeBackgroundTask } from "../utils/safe-background-task.js";
+import { withTelegramRateLimitRetry } from "../utils/telegram-rate-limit-retry.js";
 import { pinnedMessageManager } from "../pinned/manager.js";
 import { t } from "../i18n/index.js";
 import { processUserPrompt } from "./handlers/prompt.js";
@@ -87,7 +88,7 @@ let chatIdInstance: number | null = null;
 let commandsInitialized = false;
 
 const TELEGRAM_DOCUMENT_CAPTION_MAX_LENGTH = 1024;
-const RESPONSE_STREAM_THROTTLE_MS = 200;
+const RESPONSE_STREAM_THROTTLE_MS = config.bot.responseStreamThrottleMs;
 const RESPONSE_STREAM_TEXT_LIMIT = 3800;
 const SESSION_RETRY_PREFIX = "🔁";
 const SUBAGENT_STREAM_PREFIX = "🧩";
@@ -828,10 +829,22 @@ export function createBot(): Bot<Context> {
       const timeSinceLast = now - lastGetUpdatesTime;
       logger.debug(`[Bot API] getUpdates called (${timeSinceLast}ms since last)`);
       lastGetUpdatesTime = now;
-    } else if (method === "sendMessage") {
+      return prev(method, payload, signal);
+    }
+
+    if (method === "sendMessage") {
       logger.debug(`[Bot API] sendMessage to chat ${(payload as { chat_id?: number }).chat_id}`);
     }
-    return prev(method, payload, signal);
+
+    return withTelegramRateLimitRetry(() => prev(method, payload, signal), {
+      maxRetries: 5,
+      onRetry: ({ attempt, retryAfterMs, error }) => {
+        logger.warn(
+          `[Bot API] Telegram rate limit on ${method}, retrying in ${retryAfterMs}ms (attempt=${attempt})`,
+          error,
+        );
+      },
+    });
   });
 
   bot.use((ctx, next) => {
