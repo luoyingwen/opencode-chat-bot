@@ -18,6 +18,7 @@ describe("bot/utils/finalize-assistant-response", () => {
       flushPendingServiceMessages,
       prepareStreamingPayload: vi.fn(() => ({ parts: ["final reply"], format: "raw" as const })),
       formatSummary: vi.fn(() => ["part 1", "part 2"]),
+      formatRawSummary: vi.fn(() => ["part 1", "part 2"]),
       resolveFormat: vi.fn(() => "markdown_v2" as const),
       getReplyKeyboard: vi.fn(() => ({ keyboard: [[{ text: "A" }]] })),
       sendText,
@@ -36,11 +37,13 @@ describe("bot/utils/finalize-assistant-response", () => {
     expect(sendText).toHaveBeenNthCalledWith(
       1,
       "part 1",
+      "part 1",
       { reply_markup: { keyboard: [[{ text: "A" }]] } },
       "markdown_v2",
     );
     expect(sendText).toHaveBeenNthCalledWith(
       2,
+      "part 2",
       "part 2",
       { reply_markup: { keyboard: [[{ text: "A" }]] } },
       "markdown_v2",
@@ -65,6 +68,7 @@ describe("bot/utils/finalize-assistant-response", () => {
       flushPendingServiceMessages,
       prepareStreamingPayload,
       formatSummary: vi.fn(() => ["reply"]),
+      formatRawSummary: vi.fn(() => ["reply"]),
       resolveFormat: vi.fn(() => "raw" as const),
       getReplyKeyboard: vi.fn(() => keyboard),
       sendText,
@@ -80,7 +84,7 @@ describe("bot/utils/finalize-assistant-response", () => {
     expect(flushPendingServiceMessages).toHaveBeenCalledTimes(1);
     expect(deleteMessages).toHaveBeenCalledWith([101]);
     expect(sendText).toHaveBeenCalledTimes(1);
-    expect(sendText).toHaveBeenCalledWith("reply", { reply_markup: keyboard }, "raw");
+    expect(sendText).toHaveBeenCalledWith("reply", "reply", { reply_markup: keyboard }, "raw");
   });
 
   it("still sends with keyboard when streamer reports not streamed", async () => {
@@ -100,6 +104,7 @@ describe("bot/utils/finalize-assistant-response", () => {
       flushPendingServiceMessages,
       prepareStreamingPayload,
       formatSummary: vi.fn(() => ["reply"]),
+      formatRawSummary: vi.fn(() => ["reply"]),
       resolveFormat: vi.fn(() => "raw" as const),
       getReplyKeyboard: vi.fn(() => undefined),
       sendText,
@@ -108,6 +113,6 @@ describe("bot/utils/finalize-assistant-response", () => {
 
     expect(deleteMessages).not.toHaveBeenCalled();
     expect(sendText).toHaveBeenCalledTimes(1);
-    expect(sendText).toHaveBeenCalledWith("reply", undefined, "raw");
+    expect(sendText).toHaveBeenCalledWith("reply", "reply", undefined, "raw");
   });
 });
