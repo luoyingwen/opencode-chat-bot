@@ -11,7 +11,7 @@ export interface ProcessState {
 }
 
 /**
- * Result of process start/stop operations
+ * Result of process start and stop operations
  */
 export interface ProcessOperationResult {
   success: boolean;

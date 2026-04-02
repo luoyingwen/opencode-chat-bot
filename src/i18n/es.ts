@@ -6,6 +6,8 @@ export const es: I18nDictionary = {
   "cmd.description.stop": "Detener la acción actual",
   "cmd.description.sessions": "Listar sesiones",
   "cmd.description.projects": "Listar proyectos",
+  "cmd.description.task": "Crear tarea programada",
+  "cmd.description.tasklist": "Ver tareas programadas",
   "cmd.description.commands": "Comandos personalizados",
   "cmd.description.opencode_start": "Iniciar servidor OpenCode",
   "cmd.description.opencode_stop": "Detener servidor OpenCode",
@@ -48,7 +50,7 @@ export const es: I18nDictionary = {
   "common.unknown_error": "error desconocido",
 
   "start.welcome":
-    "👋 ¡Bienvenido a OpenCode Telegram Bot!\n\nUsa los comandos:\n/projects — seleccionar proyecto\n/sessions — lista de sesiones\n/new — sesión nueva\n/status — estado\n/help — ayuda\n\nUsa los botones inferiores para elegir modo, modelo y variante.",
+    "👋 ¡Bienvenido a OpenCode Telegram Bot!\n\nUsa los comandos:\n/projects — seleccionar proyecto\n/sessions — lista de sesiones\n/new — sesión nueva\n/task — tarea programada\n/tasklist — tareas programadas\n/status — estado\n/help — ayuda\n\nUsa los botones inferiores para elegir modo, modelo y variante.",
   "help.keyboard_hint":
     "💡 Usa los botones inferiores para modo del agente, modelo, variante y acciones de contexto.",
   "help.text":
@@ -62,13 +64,13 @@ export const es: I18nDictionary = {
     "🔴 No se pudo crear la sesión. Prueba /new o revisa el estado del servidor con /status.",
   "bot.session_created": "✅ Sesión creada: {title}",
   "bot.session_busy":
-    "⏳ El agente ya está ejecutando una tarea. Espera a que termine o usa /stop para interrumpir la ejecución actual.",
+    "⏳ El agente ya está ejecutando una tarea. Espera a que termine o usa /abort para interrumpir la ejecución actual.",
   "bot.session_reset_project_mismatch":
     "⚠️ La sesión activa no coincide con el proyecto seleccionado, así que se reinició. Usa /sessions para elegir una o /new para crear una nueva.",
   "bot.prompt_send_error": "No se pudo enviar la solicitud a OpenCode.",
   "bot.session_error": "🔴 OpenCode devolvió un error: {message}",
   "bot.session_retry":
-    "🔁 {message}\n\nEl proveedor devuelve el mismo error en intentos repetidos. Usa /stop para detenerlo.",
+    "🔁 {message}\n\nEl proveedor devuelve el mismo error en intentos repetidos. Usa /abort para detenerlo.",
   "bot.unknown_command":
     "⚠️ Comando desconocido: {command}. Usa /help para ver los comandos disponibles.",
   "bot.photo_downloading": "⏳ Descargando foto...",
@@ -84,23 +86,23 @@ export const es: I18nDictionary = {
   "bot.model_no_pdf": "⚠️ El modelo actual no admite entrada PDF. Enviaré solo texto.",
   "bot.text_file_too_large": "⚠️ El archivo de texto es demasiado grande (max {maxSizeKb}KB)",
 
-  "status.header_running": "🟢 **OpenCode Server está en ejecución**",
+  "status.header_running": "🟢 OpenCode Server está en ejecución",
   "status.health.healthy": "Saludable",
   "status.health.unhealthy": "No saludable",
   "status.line.health": "Estado: {health}",
   "status.line.version": "Versión: {version}",
-  "status.line.managed_yes": "Administrado por el bot: Sí",
-  "status.line.managed_no": "Administrado por el bot: No",
+  "status.line.managed_yes": "Iniciado por el bot: Sí",
+  "status.line.managed_no": "Iniciado por el bot: No",
   "status.line.pid": "PID: {pid}",
   "status.line.uptime_sec": "Tiempo activo: {seconds} s",
   "status.line.mode": "Modo: {mode}",
   "status.line.model": "Modelo: {model}",
   "status.agent_not_set": "no configurado",
-  "status.project_selected": "🏗 Proyecto: {project}",
-  "status.project_not_selected": "🏗 Proyecto: no seleccionado",
+  "status.project_selected": "Proyecto: {project}",
+  "status.project_not_selected": "Proyecto: no seleccionado",
   "status.project_hint": "Usa /projects para seleccionar un proyecto",
-  "status.session_selected": "📋 Sesión actual: {title}",
-  "status.session_not_selected": "📋 Sesión actual: no seleccionada",
+  "status.session_selected": "Sesión actual: {title}",
+  "status.session_not_selected": "Sesión actual: no seleccionada",
   "status.session_hint": "Usa /sessions para elegir una o /new para crear una",
   "status.server_unavailable":
     "🔴 OpenCode Server no está disponible\n\nUsa /opencode_start para iniciar el servidor.",
@@ -150,7 +152,7 @@ export const es: I18nDictionary = {
   "stop.in_progress":
     "🛑 Flujo de eventos detenido; enviando señal de aborto...\n\nEsperando a que el agente se detenga.",
   "stop.warn_unconfirmed":
-    "⚠️ Flujo de eventos detenido, pero el servidor no confirmó el aborto.\n\nRevisa /status y vuelve a intentar /stop en unos segundos.",
+    "⚠️ Flujo de eventos detenido, pero el servidor no confirmó el aborto.\n\nRevisa /status y vuelve a intentar /abort en unos segundos.",
   "stop.warn_maybe_finished":
     "⚠️ Flujo de eventos detenido, pero el agente podría haber terminado ya.",
   "stop.success":
@@ -158,11 +160,11 @@ export const es: I18nDictionary = {
   "stop.warn_still_busy":
     "⚠️ Señal enviada, pero el agente sigue ocupado.\n\nEl flujo de eventos ya está deshabilitado, así que no se enviarán mensajes intermedios.",
   "stop.warn_timeout":
-    "⚠️ Tiempo de espera agotado al solicitar el aborto.\n\nEl flujo de eventos ya está deshabilitado; vuelve a intentar /stop en unos segundos.",
+    "⚠️ Tiempo de espera agotado al solicitar el aborto.\n\nEl flujo de eventos ya está deshabilitado; vuelve a intentar /abort en unos segundos.",
   "stop.warn_local_only":
     "⚠️ Flujo de eventos detenido localmente, pero el aborto en el servidor falló.",
   "stop.error":
-    "🔴 No se pudo detener la acción.\n\nEl flujo de eventos está detenido; prueba /stop otra vez.",
+    "🔴 No se pudo detener la acción.\n\nEl flujo de eventos está detenido; prueba /abort otra vez.",
 
   "opencode_start.already_running_managed":
     "⚠️ OpenCode Server ya está en ejecución\n\nPID: {pid}\nTiempo activo: {seconds} segundos",
@@ -170,7 +172,7 @@ export const es: I18nDictionary = {
     "✅ OpenCode Server ya está en ejecución como un proceso externo\n\nVersión: {version}\n\nEste servidor no fue iniciado por el bot, por lo que /opencode-stop no puede detenerlo.",
   "opencode_start.starting": "🔄 Iniciando OpenCode Server...",
   "opencode_start.start_error":
-    "🔴 No se pudo iniciar OpenCode Server\n\nError: {error}\n\nRevisa que OpenCode CLI esté instalado y disponible en PATH:\n`opencode --version`\n`npm install -g @opencode-ai/cli`",
+    "🔴 No se pudo iniciar OpenCode Server\n\nError: {error}\n\nRevisa que OpenCode CLI esté instalado y disponible en PATH:\nopencode --version\nnpm install -g @opencode-ai/cli",
   "opencode_start.started_not_ready":
     "⚠️ OpenCode Server se inició, pero no responde\n\nPID: {pid}\n\nEl servidor puede estar iniciando. Prueba /status en unos segundos.",
   "opencode_start.success":
@@ -238,7 +240,7 @@ export const es: I18nDictionary = {
     "⚠️ Primero responde a la solicitud de permisos usando los botones de arriba.",
   "permission.blocked.command_not_allowed":
     "⚠️ Este comando no está disponible hasta que respondas a la solicitud de permisos.",
-  "permission.header": "{emoji} **Solicitud de permisos: {name}**\n\n",
+  "permission.header": "{emoji} Solicitud de permisos: {name}\n\n",
   "permission.button.allow": "✅ Permitir una vez",
   "permission.button.always": "🔓 Permitir siempre",
   "permission.button.reject": "❌ Rechazar",
@@ -253,6 +255,7 @@ export const es: I18nDictionary = {
   "permission.name.list": "Listar directorio",
   "permission.name.task": "Tarea",
   "permission.name.lsp": "LSP",
+  "permission.name.external_directory": "Directorio externo",
 
   "question.inactive_callback": "La encuesta está inactiva",
   "question.processing_error_callback": "Error de procesamiento",
@@ -264,7 +267,7 @@ export const es: I18nDictionary = {
   "question.no_active_project": "❌ No hay un proyecto activo",
   "question.no_active_request": "❌ No hay una solicitud activa",
   "question.send_answers_error": "❌ No se pudieron enviar las respuestas al agente",
-  "question.multi_hint": "\n*Puedes seleccionar varias opciones*",
+  "question.multi_hint": "\n(Puedes seleccionar varias opciones)",
   "question.button.submit": "✅ Listo",
   "question.button.custom": "🔤 Respuesta personalizada",
   "question.button.cancel": "❌ Cancelar",
@@ -286,6 +289,7 @@ export const es: I18nDictionary = {
   "pinned.line.project": "Proyecto: {project}",
   "pinned.line.model": "Modelo: {model}",
   "pinned.line.context": "Contexto: {used} / {limit} ({percent}%)",
+  "pinned.line.cost": "Costo: {cost} gastado",
   "pinned.files.title": "Archivos ({count}):",
   "pinned.files.item": "  {path}{diff}",
   "pinned.files.more": "  ... y {count} más",
@@ -310,6 +314,10 @@ export const es: I18nDictionary = {
   "runtime.wizard.user_id_invalid": "Introduce un entero positivo (> 0).\n",
   "runtime.wizard.ask_api_url":
     "Introduce la URL de la API de OpenCode (opcional).\nPulsa Enter para usar el valor por defecto: {defaultUrl}\n> ",
+  "runtime.wizard.ask_server_username":
+    "Introduce el nombre de usuario del servidor OpenCode (opcional).\nPulsa Enter para usar el valor por defecto: {defaultUsername}\n> ",
+  "runtime.wizard.ask_server_password":
+    "Introduce la contrasena del servidor OpenCode (opcional).\nPulsa Enter para dejarla vacia.\n> ",
   "runtime.wizard.api_url_invalid":
     "Introduce una URL válida (http/https) o pulsa Enter para usar el valor por defecto.\n",
   "runtime.wizard.start": "Configuración de OpenCode Telegram Bot.\n",
@@ -334,6 +342,52 @@ export const es: I18nDictionary = {
     "⚠️ Este comando no está disponible mientras el cambio de nombre espera un nuevo nombre.",
   "rename.button.cancel": "❌ Cancelar",
 
+  "task.prompt.schedule":
+    "⏰ Envía el horario de la tarea en lenguaje natural.\n\nEjemplos:\n- cada 5 minutos\n- cada día a las 17:00\n- mañana a las 12:00",
+  "task.schedule_empty": "⚠️ El horario no puede estar vacío.",
+  "task.parse.in_progress": "⏳ Analizando horario...",
+  "task.parse_error":
+    "🔴 No se pudo interpretar el horario.\n\n{message}\n\nEnvía el periodo otra vez de forma más clara.",
+  "task.schedule_preview":
+    "✅ Horario interpretado\n\nEntendido como: {summary}\n{cronLine}Zona horaria: {timezone}\nTipo: {kind}\nPróxima ejecución: {nextRunAt}",
+  "task.schedule_preview.cron": "Cron: {cron}",
+  "task.prompt.body": "📝 Ahora envía lo que el bot debe hacer según este horario.",
+  "task.prompt_empty": "⚠️ El texto de la tarea no puede estar vacío.",
+  "task.created":
+    "✅ Tarea programada creada\n\nTarea: {description}\nProyecto: {project}\nModelo: {model}\nHorario: {schedule}\n{cronLine}Próxima ejecución: {nextRunAt}",
+  "task.created.cron": "Cron: {cron}",
+  "task.button.retry_schedule": "🔁 Volver a introducir horario",
+  "task.button.cancel": "❌ Cancelar",
+  "task.retry_schedule_callback": "Volviendo a introducir el horario...",
+  "task.cancel_callback": "Cancelando...",
+  "task.cancelled": "❌ Creación de la tarea programada cancelada.",
+  "task.inactive_callback": "Este flujo de tarea programada ya no está activo",
+  "task.inactive": "⚠️ La creación de la tarea programada no está activa. Ejecuta /task otra vez.",
+  "task.blocked.expected_input":
+    "⚠️ Primero termina la configuración actual de la tarea programada: envía texto o usa el botón del mensaje del horario.",
+  "task.blocked.command_not_allowed":
+    "⚠️ Este comando no está disponible mientras la creación de la tarea programada está activa.",
+  "task.limit_reached":
+    "⚠️ Se alcanzó el límite de tareas ({limit}). Primero elimina una tarea programada existente.",
+  "task.schedule_too_frequent":
+    "El horario recurrente es demasiado frecuente. El intervalo mínimo permitido es una vez cada 5 minutos.",
+  "task.kind.cron": "recurrente",
+  "task.kind.once": "única",
+  "task.run.success": "⏰ Tarea programada completada: {description}",
+  "task.run.error": "🔴 La tarea programada falló: {description}\n\nError: {error}",
+
+  "tasklist.empty": "📭 Aún no hay tareas programadas.",
+  "tasklist.select": "Elige una tarea programada:",
+  "tasklist.details":
+    "⏰ Tarea programada\n\nTarea: {prompt}\nProyecto: {project}\nHorario: {schedule}\n{cronLine}Zona horaria: {timezone}\nPróxima ejecución: {nextRunAt}\nÚltima ejecución: {lastRunAt}\nNúmero de ejecuciones: {runCount}",
+  "tasklist.details.cron": "Cron: {cron}",
+  "tasklist.button.delete": "🗑 Eliminar",
+  "tasklist.button.cancel": "❌ Cancelar",
+  "tasklist.deleted_callback": "Eliminada",
+  "tasklist.cancelled_callback": "Cancelado",
+  "tasklist.inactive_callback": "Este menú de tareas programadas está inactivo",
+  "tasklist.load_error": "🔴 No se pudieron cargar las tareas programadas.",
+
   "commands.select": "Elige un comando de OpenCode:",
   "commands.empty": "📭 No hay comandos de OpenCode disponibles para este proyecto.",
   "commands.fetch_error": "🔴 No se pudieron cargar los comandos de OpenCode.",
@@ -349,6 +403,12 @@ export const es: I18nDictionary = {
   "commands.arguments_empty":
     "⚠️ Los argumentos no pueden estar vacíos. Envía texto o toca Ejecutar.",
   "commands.execute_error": "🔴 No se pudo ejecutar el comando de OpenCode.",
+  "commands.select_page": "Elige un comando de OpenCode (página {page}):",
+  "commands.button.prev_page": "⬅️ Anterior",
+  "commands.button.next_page": "Siguiente ➡️",
+  "commands.page_empty_callback": "No hay comandos en esta página",
+  "commands.page_load_error_callback":
+    "No se pudo cargar esta página. Por favor, inténtalo de nuevo.",
 
   "cmd.description.rename": "Renombrar la sesión actual",
 
@@ -369,7 +429,7 @@ export const es: I18nDictionary = {
   "legacy.models.fetch_error":
     "🔴 No se pudo obtener la lista de modelos. Revisa el estado del servidor con /status.",
   "legacy.models.empty": "📋 No hay modelos disponibles. Configura los proveedores en OpenCode.",
-  "legacy.models.header": "📋 **Modelos disponibles:**\n\n",
+  "legacy.models.header": "📋 Modelos disponibles:\n\n",
   "legacy.models.no_provider_models": "  ⚠️ No hay modelos disponibles\n",
   "legacy.models.env_hint": "💡 Para usar el modelo en .env:\n",
   "legacy.models.error": "🔴 Ocurrió un error al cargar la lista de modelos.",

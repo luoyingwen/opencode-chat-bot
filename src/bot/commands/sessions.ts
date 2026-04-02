@@ -12,6 +12,7 @@ import {
   ensureActiveInlineMenu,
   replyWithInlineMenu,
 } from "../handlers/inline-menu.js";
+import { isForegroundBusy, replyBusyBlocked } from "../utils/busy-guard.js";
 import { logger } from "../../utils/logger.js";
 import { safeBackgroundTask } from "../../utils/safe-background-task.js";
 import { config } from "../../config.js";
@@ -134,6 +135,11 @@ function buildSessionsKeyboard(pageData: SessionPage, pageSize: number): InlineK
 
 export async function sessionsCommand(ctx: CommandContext<Context>) {
   try {
+    if (isForegroundBusy()) {
+      await replyBusyBlocked(ctx);
+      return;
+    }
+
     const pageSize = config.bot.sessionsListLimit;
     const currentProject = getCurrentProject();
 
@@ -173,6 +179,11 @@ export async function handleSessionSelect(ctx: Context): Promise<boolean> {
   const callbackQuery = ctx.callbackQuery;
   if (!callbackQuery?.data || !callbackQuery.data.startsWith(SESSION_CALLBACK_PREFIX)) {
     return false;
+  }
+
+  if (isForegroundBusy()) {
+    await replyBusyBlocked(ctx);
+    return true;
   }
 
   const page = parseSessionPageCallback(callbackQuery.data);

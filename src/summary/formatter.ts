@@ -8,6 +8,7 @@ import { t } from "../i18n/index.js";
 import { getCurrentProject } from "../settings/manager.js";
 
 const TELEGRAM_MESSAGE_LIMIT = 4096;
+const MARKDOWN_V2_RESERVED_CHARS = /([_\*\[\]\(\)~`>#+\-=|{}.!\\])/g;
 
 function splitText(text: string, maxLength: number): string[] {
   const parts: string[] = [];
@@ -178,22 +179,69 @@ export function getAssistantParseMode(): "MarkdownV2" | undefined {
   return undefined;
 }
 
+export function escapePlainTextForTelegramMarkdownV2(text: string): string {
+  return text.replace(MARKDOWN_V2_RESERVED_CHARS, "\\$1");
+}
+
 function formatMarkdownForTelegram(text: string): string {
   try {
     const preprocessed = preprocessMarkdownForTelegram(text);
-    return convert(preprocessed, "keep");
+    return escapeMarkdownV2PipesOutsideCode(convert(preprocessed, "keep"));
   } catch (error) {
     logger.warn("[Formatter] Failed to convert markdown summary, falling back to raw text", error);
     return text;
   }
 }
 
-export function formatSummaryWithMode(text: string, mode: MessageFormatMode): string[] {
+function escapeMarkdownV2PipesOutsideCode(text: string): string {
+  let result = "";
+  let index = 0;
+  let inInlineCode = false;
+  let inCodeFence = false;
+
+  while (index < text.length) {
+    if (text.startsWith("```", index)) {
+      result += "```";
+      index += 3;
+      inCodeFence = !inCodeFence;
+      continue;
+    }
+
+    const char = text[index];
+
+    if (!inCodeFence && char === "`") {
+      inInlineCode = !inInlineCode;
+      result += char;
+      index += 1;
+      continue;
+    }
+
+    if (!inCodeFence && !inInlineCode && char === "|" && text[index - 1] !== "\\") {
+      result += "\\|";
+      index += 1;
+      continue;
+    }
+
+    result += char;
+    index += 1;
+  }
+
+  return result;
+}
+
+export function formatSummaryWithMode(
+  text: string,
+  mode: MessageFormatMode,
+  maxLength: number = TELEGRAM_MESSAGE_LIMIT,
+): string[] {
   if (!text || text.trim().length === 0) {
     return [];
   }
 
-  const parts = splitText(text, TELEGRAM_MESSAGE_LIMIT);
+  const normalizedMaxLength = Math.max(1, Math.floor(maxLength));
+  const rawTextLimit =
+    mode === "raw" ? Math.max(1, normalizedMaxLength - "```\n\n```".length) : normalizedMaxLength;
+  const parts = splitText(text, rawTextLimit);
   const formattedParts: string[] = [];
 
   for (const part of parts) {
@@ -204,7 +252,7 @@ export function formatSummaryWithMode(text: string, mode: MessageFormatMode): st
 
     if (mode === "markdown") {
       const converted = formatMarkdownForTelegram(trimmed);
-      const convertedParts = splitText(converted, TELEGRAM_MESSAGE_LIMIT);
+      const convertedParts = splitText(converted, normalizedMaxLength);
 
       for (const convertedPart of convertedParts) {
         const normalizedPart = convertedPart.trim();

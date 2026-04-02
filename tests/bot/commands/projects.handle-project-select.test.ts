@@ -2,6 +2,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { Context } from "grammy";
 import { t } from "../../../src/i18n/index.js";
 import { handleProjectSelect } from "../../../src/bot/commands/projects.js";
+import { foregroundSessionState } from "../../../src/scheduled-task/foreground-state.js";
 
 const mocked = vi.hoisted(() => ({
   getProjectsMock: vi.fn(),
@@ -34,6 +35,7 @@ function createCallbackContext(data: string): Context {
 
 describe("bot/commands/projects handleProjectSelect", () => {
   beforeEach(() => {
+    foregroundSessionState.__resetForTests();
     mocked.getProjectsMock.mockReset();
     mocked.ensureActiveInlineMenuMock.mockReset();
     mocked.clearAllInteractionStateMock.mockReset();
@@ -71,5 +73,18 @@ describe("bot/commands/projects handleProjectSelect", () => {
     expect(mocked.clearAllInteractionStateMock).toHaveBeenCalledWith("project_select_error");
     expect(ctx.answerCallbackQuery).toHaveBeenCalledWith();
     expect(ctx.reply).toHaveBeenCalledWith(t("projects.select_error"));
+  });
+
+  it("blocks project selection callback while foreground session is busy", async () => {
+    foregroundSessionState.markBusy("session-1");
+
+    const ctx = createCallbackContext("project:abc");
+    const handled = await handleProjectSelect(ctx);
+
+    expect(handled).toBe(true);
+    expect(mocked.getProjectsMock).not.toHaveBeenCalled();
+    expect(ctx.answerCallbackQuery).toHaveBeenCalledWith({
+      text: t("interaction.blocked.finish_current"),
+    });
   });
 });

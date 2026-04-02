@@ -11,11 +11,17 @@ import { getStoredAgent } from "../../agent/manager.js";
 import { getStoredModel } from "../../model/manager.js";
 import { formatVariantForButton } from "../../variant/manager.js";
 import { createMainKeyboard } from "../utils/keyboard.js";
+import { isForegroundBusy, replyBusyBlocked } from "../utils/busy-guard.js";
 import { logger } from "../../utils/logger.js";
 import { t } from "../../i18n/index.js";
 
 export async function newCommand(ctx: CommandContext<Context>) {
   try {
+    if (isForegroundBusy()) {
+      await replyBusyBlocked(ctx);
+      return;
+    }
+
     const currentProject = getCurrentProject();
 
     if (!currentProject) {
