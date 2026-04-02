@@ -2,7 +2,6 @@ import type { ToolMessageBatcher } from "../../summary/tool-message-batcher.js";
 import { t } from "../../i18n/index.js";
 
 interface ThinkingMessageOptions {
-  responseStreaming: boolean;
   hideThinkingMessages: boolean;
 }
 
@@ -18,6 +17,5 @@ export function deliverThinkingMessage(
   }
 
   const message = t("bot.thinking");
-  void options.responseStreaming;
   batcher.sendTextNow(sessionId, message, "thinking_started");
 }

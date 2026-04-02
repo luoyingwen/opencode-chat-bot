@@ -1,4 +1,4 @@
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { ToolMessageBatcher } from "../../src/summary/tool-message-batcher.js";
 
 function createFileData(name: string) {
@@ -9,19 +9,23 @@ function createFileData(name: string) {
   };
 }
 
-describe("summary/tool-message-batcher", () => {
-  afterEach(() => {
-    vi.useRealTimers();
+function createDeferred() {
+  let resolve: (() => void) | null = null;
+  const promise = new Promise<void>((res) => {
+    resolve = res;
   });
 
-  it("sends text message immediately when interval is zero", async () => {
+  return {
+    promise,
+    resolve: () => resolve?.(),
+  };
+}
+
+describe("summary/tool-message-batcher", () => {
+  it("sends text message immediately when enqueued", async () => {
     const sendText = vi.fn().mockResolvedValue(undefined);
     const sendFile = vi.fn().mockResolvedValue(undefined);
-    const batcher = new ToolMessageBatcher({
-      intervalSeconds: 0,
-      sendText,
-      sendFile,
-    });
+    const batcher = new ToolMessageBatcher({ sendText, sendFile });
 
     batcher.enqueue("s1", "tool message");
 
@@ -35,11 +39,7 @@ describe("summary/tool-message-batcher", () => {
   it("sends text immediately outside the queue when requested", async () => {
     const sendText = vi.fn().mockResolvedValue(undefined);
     const sendFile = vi.fn().mockResolvedValue(undefined);
-    const batcher = new ToolMessageBatcher({
-      intervalSeconds: 5,
-      sendText,
-      sendFile,
-    });
+    const batcher = new ToolMessageBatcher({ sendText, sendFile });
 
     batcher.sendTextNow("s1", "thinking", "thinking_started_streaming");
 
@@ -50,14 +50,10 @@ describe("summary/tool-message-batcher", () => {
     expect(sendFile).not.toHaveBeenCalled();
   });
 
-  it("sends file immediately when interval is zero", async () => {
+  it("sends file immediately when enqueued", async () => {
     const sendText = vi.fn().mockResolvedValue(undefined);
     const sendFile = vi.fn().mockResolvedValue(undefined);
-    const batcher = new ToolMessageBatcher({
-      intervalSeconds: 0,
-      sendText,
-      sendFile,
-    });
+    const batcher = new ToolMessageBatcher({ sendText, sendFile });
 
     const fileData = createFileData("edit_a.ts.txt");
     batcher.enqueueFile("s1", fileData);
@@ -69,194 +65,56 @@ describe("summary/tool-message-batcher", () => {
     expect(sendText).not.toHaveBeenCalled();
   });
 
-  it("batches text messages and flushes by interval", async () => {
-    vi.useFakeTimers();
-
-    const sendText = vi.fn().mockResolvedValue(undefined);
+  it("flushSession waits for in-flight sends", async () => {
+    const deferred = createDeferred();
+    const sendText = vi.fn(() => deferred.promise);
     const sendFile = vi.fn().mockResolvedValue(undefined);
-    const batcher = new ToolMessageBatcher({
-      intervalSeconds: 5,
-      sendText,
-      sendFile,
-    });
+    const batcher = new ToolMessageBatcher({ sendText, sendFile });
 
-    batcher.enqueue("s1", "first");
-    batcher.enqueue("s1", "second");
-
-    await vi.advanceTimersByTimeAsync(4999);
-    expect(sendText).not.toHaveBeenCalled();
-
-    await vi.advanceTimersByTimeAsync(1);
-    expect(sendText).toHaveBeenCalledTimes(1);
-    expect(sendText).toHaveBeenCalledWith("s1", "first\n\nsecond");
-    expect(sendFile).not.toHaveBeenCalled();
-  });
-
-  it("keeps only one queued retry message by prefix and updates it", async () => {
-    vi.useFakeTimers();
-
-    const sendText = vi.fn().mockResolvedValue(undefined);
-    const sendFile = vi.fn().mockResolvedValue(undefined);
-    const batcher = new ToolMessageBatcher({
-      intervalSeconds: 5,
-      sendText,
-      sendFile,
-    });
-
-    batcher.enqueueUniqueByPrefix("s1", "🔁 Retry attempt 1", "🔁");
-    batcher.enqueueUniqueByPrefix("s1", "🔁 Retry attempt 2", "🔁");
-
-    await vi.advanceTimersByTimeAsync(5000);
-
-    expect(sendText).toHaveBeenCalledTimes(1);
-    expect(sendText).toHaveBeenCalledWith("s1", "🔁 Retry attempt 2");
-    expect(sendFile).not.toHaveBeenCalled();
-  });
-
-  it("flushes session queue immediately and cancels timer", async () => {
-    vi.useFakeTimers();
-
-    const sendText = vi.fn().mockResolvedValue(undefined);
-    const sendFile = vi.fn().mockResolvedValue(undefined);
-    const batcher = new ToolMessageBatcher({
-      intervalSeconds: 10,
-      sendText,
-      sendFile,
-    });
-
-    batcher.enqueue("s1", "one");
-    batcher.enqueue("s1", "two");
-
-    await batcher.flushSession("s1", "test_flush");
-
-    expect(sendText).toHaveBeenCalledTimes(1);
-    expect(sendText).toHaveBeenCalledWith("s1", "one\n\ntwo");
-
-    await vi.advanceTimersByTimeAsync(20000);
-    expect(sendText).toHaveBeenCalledTimes(1);
-    expect(sendFile).not.toHaveBeenCalled();
-  });
-
-  it("clears all queues and timers without sending", async () => {
-    vi.useFakeTimers();
-
-    const sendText = vi.fn().mockResolvedValue(undefined);
-    const sendFile = vi.fn().mockResolvedValue(undefined);
-    const batcher = new ToolMessageBatcher({
-      intervalSeconds: 5,
-      sendText,
-      sendFile,
-    });
-
-    batcher.enqueue("s1", "one");
-    batcher.enqueueFile("s2", createFileData("edit_b.ts.txt"));
-    batcher.clearAll("test_clear");
-
-    await vi.advanceTimersByTimeAsync(10000);
-    expect(sendText).not.toHaveBeenCalled();
-    expect(sendFile).not.toHaveBeenCalled();
-  });
-
-  it("splits oversized batch into multiple Telegram-safe text messages", async () => {
-    vi.useFakeTimers();
-
-    const sendText = vi.fn().mockResolvedValue(undefined);
-    const sendFile = vi.fn().mockResolvedValue(undefined);
-    const batcher = new ToolMessageBatcher({
-      intervalSeconds: 5,
-      sendText,
-      sendFile,
-    });
-
-    const first = "a".repeat(3000);
-    const second = "b".repeat(3000);
-    batcher.enqueue("s1", first);
-    batcher.enqueue("s1", second);
-
-    await vi.advanceTimersByTimeAsync(5000);
-
-    expect(sendText).toHaveBeenCalledTimes(2);
-    for (const call of sendText.mock.calls) {
-      expect((call[1] as string).length).toBeLessThanOrEqual(4096);
-    }
-    expect(sendFile).not.toHaveBeenCalled();
-  });
-
-  it("flushes queued messages immediately when interval switches to zero", async () => {
-    vi.useFakeTimers();
-
-    const sendText = vi.fn().mockResolvedValue(undefined);
-    const sendFile = vi.fn().mockResolvedValue(undefined);
-    const batcher = new ToolMessageBatcher({
-      intervalSeconds: 5,
-      sendText,
-      sendFile,
-    });
-
-    batcher.enqueue("s1", "first");
-    batcher.enqueue("s1", "second");
-
-    batcher.setIntervalSeconds(0);
+    batcher.sendTextNow("s1", "thinking", "thinking_started");
 
     await vi.waitFor(() => {
       expect(sendText).toHaveBeenCalledTimes(1);
     });
-    expect(sendText).toHaveBeenCalledWith("s1", "first\n\nsecond");
-    expect(sendFile).not.toHaveBeenCalled();
-  });
 
-  it("restarts pending timers when interval is changed", async () => {
-    vi.useFakeTimers();
-
-    const sendText = vi.fn().mockResolvedValue(undefined);
-    const sendFile = vi.fn().mockResolvedValue(undefined);
-    const batcher = new ToolMessageBatcher({
-      intervalSeconds: 5,
-      sendText,
-      sendFile,
+    const flushPromise = batcher.flushSession("s1", "assistant_message_completed");
+    let flushed = false;
+    void flushPromise.then(() => {
+      flushed = true;
     });
 
-    batcher.enqueue("s1", "message");
+    await Promise.resolve();
+    expect(flushed).toBe(false);
 
-    await vi.advanceTimersByTimeAsync(3000);
-    batcher.setIntervalSeconds(10);
-
-    await vi.advanceTimersByTimeAsync(5000);
-    expect(sendText).not.toHaveBeenCalled();
-
-    await vi.advanceTimersByTimeAsync(5000);
-    expect(sendText).toHaveBeenCalledTimes(1);
-    expect(sendFile).not.toHaveBeenCalled();
+    deferred.resolve();
+    await flushPromise;
+    expect(flushed).toBe(true);
   });
 
-  it("flushes text and files in original queue order", async () => {
-    vi.useFakeTimers();
-
-    const sendText = vi.fn().mockResolvedValue(undefined);
+  it("drops pending sends for a cleared session", async () => {
+    const firstDeferred = createDeferred();
+    const sendOrder: string[] = [];
+    const sendText = vi.fn(async (_sessionId: string, text: string) => {
+      sendOrder.push(text);
+      if (text === "first") {
+        await firstDeferred.promise;
+      }
+    });
     const sendFile = vi.fn().mockResolvedValue(undefined);
-    const batcher = new ToolMessageBatcher({
-      intervalSeconds: 5,
-      sendText,
-      sendFile,
+    const batcher = new ToolMessageBatcher({ sendText, sendFile });
+
+    batcher.enqueue("s1", "first");
+    batcher.enqueue("s1", "second");
+
+    await vi.waitFor(() => {
+      expect(sendText).toHaveBeenCalledTimes(1);
     });
 
-    const fileData = createFileData("edit_c.ts.txt");
+    batcher.clearSession("s1", "test_clear");
+    firstDeferred.resolve();
 
-    batcher.enqueue("s1", "before");
-    batcher.enqueueFile("s1", fileData);
-    batcher.enqueue("s1", "after");
-
-    await vi.advanceTimersByTimeAsync(5000);
-
-    expect(sendText).toHaveBeenCalledTimes(2);
-    expect(sendFile).toHaveBeenCalledTimes(1);
-
-    expect(sendText.mock.invocationCallOrder[0]).toBeLessThan(sendFile.mock.invocationCallOrder[0]);
-    expect(sendFile.mock.invocationCallOrder[0]).toBeLessThan(sendText.mock.invocationCallOrder[1]);
-
-    expect(sendText.mock.calls[0]).toEqual(["s1", "before"]);
-    expect(sendFile.mock.calls[0]).toEqual(["s1", fileData]);
-    expect(sendText.mock.calls[1]).toEqual(["s1", "after"]);
+    await batcher.flushSession("s1", "after_clear");
+    expect(sendOrder).toEqual(["first"]);
   });
 
   it("preserves order for immediate mixed sends", async () => {
@@ -267,11 +125,7 @@ describe("summary/tool-message-batcher", () => {
     const sendFile = vi.fn(async (_sessionId: string, fileData: { filename: string }) => {
       sendOrder.push(`file:${fileData.filename}`);
     });
-    const batcher = new ToolMessageBatcher({
-      intervalSeconds: 0,
-      sendText,
-      sendFile,
-    });
+    const batcher = new ToolMessageBatcher({ sendText, sendFile });
 
     batcher.enqueue("s1", "first");
     batcher.enqueueFile("s1", createFileData("edit_d.ts.txt"));
