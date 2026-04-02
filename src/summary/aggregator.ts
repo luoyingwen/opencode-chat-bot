@@ -15,7 +15,27 @@ export interface SummaryInfo {
   lastUpdated: number;
 }
 
-type MessageCompleteCallback = (sessionId: string, messageText: string) => void;
+type MessageCompleteCallback = (sessionId: string, messageId: string, messageText: string) => void;
+
+type MessagePartialCallback = (sessionId: string, messageId: string, messageText: string) => void;
+
+interface MessagePartDeltaEventRaw {
+  type: "message.part.delta";
+  properties: {
+    part?: {
+      id?: string;
+      sessionID?: string;
+      messageID?: string;
+      type?: string;
+      text?: string;
+    };
+    sessionID?: string;
+    messageID?: string;
+    partID?: string;
+    type?: string;
+    delta?: string;
+  };
+}
 
 export interface ToolInfo {
   sessionId: string;
@@ -54,6 +74,8 @@ export interface TokensInfo {
 
 type TokensCallback = (tokens: TokensInfo) => void;
 
+type CostCallback = (cost: number) => void;
+
 type SessionCompactedCallback = (sessionId: string, directory: string) => void;
 
 type SessionErrorCallback = (sessionId: string, message: string) => void;
@@ -80,6 +102,12 @@ type ClearedCallback = () => void;
 interface PreparedToolFileContext {
   fileData: CodeFileData | null;
   fileChange: FileChange | null;
+}
+
+interface TextMessageState {
+  orderedPartIds: string[];
+  partTexts: Map<string, string>;
+  optimisticUpdateCount: number;
 }
 
 function extractFirstUpdatedFileFromTitle(title: string): string {
@@ -112,18 +140,19 @@ function countDiffChangesFromText(text: string): { additions: number; deletions:
 
 class SummaryAggregator {
   private currentSessionId: string | null = null;
-  private currentMessageParts: Map<string, string[]> = new Map();
-  private pendingParts: Map<string, string[]> = new Map();
+  private textMessageStates: Map<string, TextMessageState> = new Map();
   private messages: Map<string, { role: string }> = new Map();
   private messageCount = 0;
   private lastUpdated = 0;
   private onCompleteCallback: MessageCompleteCallback | null = null;
+  private onPartialCallback: MessagePartialCallback | null = null;
   private onToolCallback: ToolCallback | null = null;
   private onToolFileCallback: ToolFileCallback | null = null;
   private onQuestionCallback: QuestionCallback | null = null;
   private onQuestionErrorCallback: QuestionErrorCallback | null = null;
   private onThinkingCallback: ThinkingCallback | null = null;
   private onTokensCallback: TokensCallback | null = null;
+  private onCostCallback: CostCallback | null = null;
   private onSessionCompactedCallback: SessionCompactedCallback | null = null;
   private onSessionErrorCallback: SessionErrorCallback | null = null;
   private onSessionRetryCallback: SessionRetryCallback | null = null;
@@ -134,9 +163,11 @@ class SummaryAggregator {
   private onClearedCallback: ClearedCallback | null = null;
   private processedToolStates: Set<string> = new Set();
   private thinkingFiredForMessages: Set<string> = new Set();
+  private knownTextPartIds: Map<string, Set<string>> = new Map();
   private bot: Bot | null = null;
   private chatId: number | null = null;
   private typingTimer: ReturnType<typeof setInterval> | null = null;
+  private typingIndicatorEnabled = true;
   private partHashes: Map<string, Set<string>> = new Map();
 
   setBotAndChatId(bot: Bot, chatId: number): void {
@@ -146,6 +177,10 @@ class SummaryAggregator {
 
   setOnComplete(callback: MessageCompleteCallback): void {
     this.onCompleteCallback = callback;
+  }
+
+  setOnPartial(callback: MessagePartialCallback): void {
+    this.onPartialCallback = callback;
   }
 
   setOnTool(callback: ToolCallback): void {
@@ -170,6 +205,10 @@ class SummaryAggregator {
 
   setOnTokens(callback: TokensCallback): void {
     this.onTokensCallback = callback;
+  }
+
+  setOnCost(callback: CostCallback): void {
+    this.onCostCallback = callback;
   }
 
   setOnSessionCompacted(callback: SessionCompactedCallback): void {
@@ -204,7 +243,19 @@ class SummaryAggregator {
     this.onClearedCallback = callback;
   }
 
+  setTypingIndicatorEnabled(enabled: boolean): void {
+    this.typingIndicatorEnabled = enabled;
+
+    if (!enabled) {
+      this.stopTypingIndicator();
+    }
+  }
+
   private startTypingIndicator(): void {
+    if (!this.typingIndicatorEnabled) {
+      return;
+    }
+
     if (this.typingTimer) {
       return;
     }
@@ -229,6 +280,13 @@ class SummaryAggregator {
   }
 
   processEvent(event: Event): void {
+    const eventType = (event as unknown as { type: string }).type;
+
+    if (eventType === "message.part.delta") {
+      this.handleMessagePartDelta(event as unknown as MessagePartDeltaEventRaw);
+      return;
+    }
+
     // Log all question-related events for debugging
     if (event.type.startsWith("question.")) {
       logger.info(
@@ -297,10 +355,10 @@ class SummaryAggregator {
   clear(): void {
     this.stopTypingIndicator();
     this.currentSessionId = null;
-    this.currentMessageParts.clear();
-    this.pendingParts.clear();
+    this.textMessageStates.clear();
     this.messages.clear();
     this.partHashes.clear();
+    this.knownTextPartIds.clear();
     this.processedToolStates.clear();
     this.thinkingFiredForMessages.clear();
     this.messageCount = 0;
@@ -331,26 +389,32 @@ class SummaryAggregator {
     this.messages.set(messageID, { role: info.role });
 
     if (info.role === "assistant") {
-      if (!this.currentMessageParts.has(messageID)) {
-        this.currentMessageParts.set(messageID, []);
+      if (!this.textMessageStates.has(messageID)) {
+        this.textMessageStates.set(messageID, {
+          orderedPartIds: [],
+          partTexts: new Map(),
+          optimisticUpdateCount: 0,
+        });
         this.messageCount++;
         this.startTypingIndicator();
       }
 
-      const pending = this.pendingParts.get(messageID) || [];
-      const current = this.currentMessageParts.get(messageID) || [];
-      this.currentMessageParts.set(messageID, [...current, ...pending]);
-      this.pendingParts.delete(messageID);
+      const textState = this.getOrCreateTextMessageState(messageID);
 
       const assistantMessage = info as { time?: { created: number; completed?: number } };
       const time = assistantMessage.time;
+      const isCompleted = Boolean(time?.completed);
+      const messageText = this.getCombinedMessageText(messageID);
 
-      if (time?.completed) {
-        const parts = this.currentMessageParts.get(messageID) || [];
-        const lastPart = parts[parts.length - 1] || "";
+      if (!isCompleted && textState.optimisticUpdateCount === 1) {
+        this.emitPartialText(info.sessionID, messageID, messageText);
+      }
+
+      if (isCompleted) {
+        const finalText = messageText;
 
         logger.debug(
-          `[Aggregator] Message part completed: messageId=${messageID}, textLength=${lastPart.length}, totalParts=${parts.length}, session=${this.currentSessionId}`,
+          `[Aggregator] Message part completed: messageId=${messageID}, textLength=${finalText.length}, totalParts=${textState.orderedPartIds.length}, session=${this.currentSessionId}`,
         );
 
         // Extract and report tokens BEFORE onComplete so keyboard context is updated
@@ -361,6 +425,7 @@ class SummaryAggregator {
             reasoning: number;
             cache: { read: number; write: number };
           };
+          cost?: number;
         };
 
         if (this.onTokensCallback && assistantInfo.tokens) {
@@ -378,19 +443,26 @@ class SummaryAggregator {
           this.onTokensCallback(tokens);
         }
 
-        if (this.onCompleteCallback && lastPart.length > 0) {
-          this.onCompleteCallback(this.currentSessionId!, lastPart);
+        // Extract and report cost
+        if (this.onCostCallback && assistantInfo.cost !== undefined) {
+          logger.debug(`[Aggregator] Cost: $${assistantInfo.cost.toFixed(2)}`);
+          this.onCostCallback(assistantInfo.cost);
         }
 
-        this.currentMessageParts.delete(messageID);
+        if (this.onCompleteCallback && finalText.length > 0) {
+          this.onCompleteCallback(this.currentSessionId!, messageID, finalText);
+        }
+
+        this.textMessageStates.delete(messageID);
         this.messages.delete(messageID);
         this.partHashes.delete(messageID);
+        this.knownTextPartIds.delete(messageID);
 
         logger.debug(
-          `[Aggregator] Message completed cleanup: remaining messages=${this.currentMessageParts.size}`,
+          `[Aggregator] Message completed cleanup: remaining messages=${this.textMessageStates.size}`,
         );
 
-        if (this.currentMessageParts.size === 0) {
+        if (this.textMessageStates.size === 0) {
           logger.debug("[Aggregator] No more active messages, stopping typing indicator");
           this.stopTypingIndicator();
         }
@@ -414,6 +486,22 @@ class SummaryAggregator {
     const messageID = part.messageID;
     const messageInfo = this.messages.get(messageID);
 
+    if (part.type === "text") {
+      this.registerKnownTextPart(messageID, part.id);
+      this.registerTextPart(messageID, part.id);
+    }
+
+    const deltaFromUpdated = (event.properties as { delta?: unknown }).delta;
+    if (
+      part.type === "text" &&
+      typeof deltaFromUpdated === "string" &&
+      deltaFromUpdated.length > 0
+    ) {
+      this.applyTextDelta(part.sessionID, messageID, part.id, deltaFromUpdated, part.text);
+      this.lastUpdated = Date.now();
+      return;
+    }
+
     if (part.type === "reasoning") {
       // Fire the thinking callback once per message on the first reasoning part.
       // This is the signal that the model is actually doing extended thinking.
@@ -428,35 +516,26 @@ class SummaryAggregator {
         });
       }
     } else if (part.type === "text" && "text" in part && part.text) {
-      const partHash = this.hashString(part.text);
-
-      if (!this.partHashes.has(messageID)) {
-        this.partHashes.set(messageID, new Set());
-      }
-
-      const hashes = this.partHashes.get(messageID)!;
-
-      if (hashes.has(partHash)) {
+      const wasUpdated =
+        messageInfo && messageInfo.role === "assistant"
+          ? this.setTextPartSnapshot(messageID, part.id, part.text)
+          : this.setOptimisticTextSnapshot(messageID, part.id, part.text);
+      if (!wasUpdated) {
         return;
       }
 
-      hashes.add(partHash);
+      const fullText = this.getCombinedMessageText(messageID);
 
       if (messageInfo && messageInfo.role === "assistant") {
-        if (!this.currentMessageParts.has(messageID)) {
-          this.currentMessageParts.set(messageID, []);
-          this.startTypingIndicator();
-        }
-
-        const parts = this.currentMessageParts.get(messageID)!;
-        parts.push(part.text);
+        this.startTypingIndicator();
+        this.emitPartialText(part.sessionID, messageID, fullText);
       } else {
-        if (!this.pendingParts.has(messageID)) {
-          this.pendingParts.set(messageID, []);
-        }
+        const state = this.getOrCreateTextMessageState(messageID);
+        state.optimisticUpdateCount++;
 
-        const pending = this.pendingParts.get(messageID)!;
-        pending.push(part.text);
+        if (state.optimisticUpdateCount >= 2) {
+          this.emitPartialText(part.sessionID, messageID, fullText);
+        }
       }
     } else if (part.type === "tool") {
       const state = part.state;
@@ -545,6 +624,159 @@ class SummaryAggregator {
     }
 
     this.lastUpdated = Date.now();
+  }
+
+  private handleMessagePartDelta(event: MessagePartDeltaEventRaw): void {
+    const part = event.properties.part;
+    const sessionID = part?.sessionID || event.properties.sessionID;
+    const messageID = part?.messageID || event.properties.messageID;
+    const partID = part?.id || event.properties.partID || "text";
+    const partType = part?.type || event.properties.type;
+    const delta = event.properties.delta;
+
+    if (!sessionID || !messageID || typeof delta !== "string" || delta.length === 0) {
+      return;
+    }
+
+    if (partType && partType !== "text") {
+      return;
+    }
+
+    if (partType === "text") {
+      this.registerKnownTextPart(messageID, partID);
+      this.registerTextPart(messageID, partID);
+    } else {
+      const knownTextIds = this.knownTextPartIds.get(messageID);
+      const isKnownTextPart = knownTextIds?.has(partID) ?? false;
+      const thinkingFired = this.thinkingFiredForMessages.has(messageID);
+
+      if (thinkingFired && !isKnownTextPart) {
+        return;
+      }
+
+      if (!thinkingFired && !isKnownTextPart) {
+        this.registerKnownTextPart(messageID, partID);
+        this.registerTextPart(messageID, partID);
+      }
+    }
+
+    this.applyTextDelta(sessionID, messageID, partID, delta, part?.text);
+  }
+
+  private applyTextDelta(
+    sessionID: string,
+    messageID: string,
+    partID: string,
+    delta: string,
+    fullTextHint?: string,
+  ): void {
+    if (sessionID !== this.currentSessionId) {
+      return;
+    }
+
+    this.registerTextPart(messageID, partID);
+
+    const state = this.getOrCreateTextMessageState(messageID);
+    const previous = state.partTexts.get(partID) || "";
+    let accumulated = `${previous}${delta}`;
+
+    if (typeof fullTextHint === "string" && fullTextHint.length > accumulated.length) {
+      accumulated = fullTextHint;
+    }
+
+    state.partTexts.set(partID, accumulated);
+
+    const combined = this.getCombinedMessageText(messageID);
+    if (!combined.trim()) {
+      return;
+    }
+
+    this.startTypingIndicator();
+    this.emitPartialText(sessionID, messageID, combined);
+  }
+
+  private emitPartialText(sessionId: string, messageId: string, messageText: string): void {
+    if (!this.onPartialCallback || !messageText.trim()) {
+      return;
+    }
+
+    try {
+      this.onPartialCallback(sessionId, messageId, messageText);
+    } catch (err) {
+      logger.error("[Aggregator] Error in partial callback:", err);
+    }
+  }
+
+  private getOrCreateTextMessageState(messageID: string): TextMessageState {
+    const existing = this.textMessageStates.get(messageID);
+    if (existing) {
+      return existing;
+    }
+
+    const state: TextMessageState = {
+      orderedPartIds: [],
+      partTexts: new Map(),
+      optimisticUpdateCount: 0,
+    };
+    this.textMessageStates.set(messageID, state);
+    return state;
+  }
+
+  private registerKnownTextPart(messageID: string, partID: string): void {
+    if (!this.knownTextPartIds.has(messageID)) {
+      this.knownTextPartIds.set(messageID, new Set());
+    }
+
+    this.knownTextPartIds.get(messageID)!.add(partID);
+  }
+
+  private registerTextPart(messageID: string, partID: string): void {
+    const state = this.getOrCreateTextMessageState(messageID);
+    if (!state.orderedPartIds.includes(partID)) {
+      state.orderedPartIds.push(partID);
+    }
+  }
+
+  private setTextPartSnapshot(messageID: string, partID: string, text: string): boolean {
+    const normalized = text;
+    const partHash = this.hashString(`${partID}\n${normalized}`);
+
+    if (!this.partHashes.has(messageID)) {
+      this.partHashes.set(messageID, new Set());
+    }
+
+    const hashes = this.partHashes.get(messageID)!;
+    if (hashes.has(partHash)) {
+      return false;
+    }
+
+    hashes.add(partHash);
+
+    this.registerTextPart(messageID, partID);
+    const state = this.getOrCreateTextMessageState(messageID);
+    state.partTexts.set(partID, normalized);
+    return true;
+  }
+
+  private setOptimisticTextSnapshot(messageID: string, partID: string, text: string): boolean {
+    const wasUpdated = this.setTextPartSnapshot(messageID, partID, text);
+    if (!wasUpdated) {
+      return false;
+    }
+
+    const state = this.getOrCreateTextMessageState(messageID);
+    state.orderedPartIds = [partID];
+    state.partTexts = new Map([[partID, text]]);
+    return true;
+  }
+
+  private getCombinedMessageText(messageID: string): string {
+    const state = this.textMessageStates.get(messageID);
+    if (!state) {
+      return "";
+    }
+
+    return state.orderedPartIds.map((partID) => state.partTexts.get(partID) || "").join("");
   }
 
   private prepareToolFileContext(

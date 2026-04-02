@@ -6,15 +6,20 @@ import { clearAllInteractionState } from "../../interaction/cleanup.js";
 import { summaryAggregator } from "../../summary/aggregator.js";
 import { logger } from "../../utils/logger.js";
 import { t } from "../../i18n/index.js";
+import { foregroundSessionState } from "../../scheduled-task/foreground-state.js";
 
 type SessionState = "idle" | "busy" | "not-found";
 
+interface AbortCurrentOperationOptions {
+  notifyUser?: boolean;
+}
+
 const sleep = (ms: number) => new Promise<void>((resolve) => setTimeout(resolve, ms));
 
-function stopLocalStreaming(): void {
+function abortLocalStreaming(): void {
   stopEventListening();
   summaryAggregator.clear();
-  clearAllInteractionState("stop_command");
+  clearAllInteractionState("abort_command");
 }
 
 async function pollSessionStatus(
@@ -48,7 +53,7 @@ async function pollSessionStatus(
 
       await sleep(pollIntervalMs);
     } catch (error) {
-      logger.warn("[Stop] Failed to poll session status:", error);
+      logger.warn("[Abort] Failed to poll session status:", error);
       break;
     }
   }
@@ -56,18 +61,37 @@ async function pollSessionStatus(
   return "busy";
 }
 
-export async function stopCommand(ctx: CommandContext<Context>) {
+export async function abortCurrentOperation(
+  ctx: Context,
+  options: AbortCurrentOperationOptions = {},
+): Promise<void> {
+  const notifyUser = options.notifyUser ?? true;
+
   try {
-    stopLocalStreaming();
+    abortLocalStreaming();
 
     const currentSession = getCurrentSession();
 
     if (!currentSession) {
-      await ctx.reply(t("stop.no_active_session"));
+      if (notifyUser) {
+        await ctx.reply(t("stop.no_active_session"));
+      }
       return;
     }
 
-    const waitingMessage = await ctx.reply(t("stop.in_progress"));
+    let waitingMessageId: number | null = null;
+    let chatId: number | null = null;
+
+    if (notifyUser) {
+      const waitingMessage = await ctx.reply(t("stop.in_progress"));
+      waitingMessageId = waitingMessage.message_id;
+      chatId = ctx.chat?.id ?? null;
+
+      if (!chatId) {
+        logger.warn("[Abort] Chat context is missing while aborting active session");
+        return;
+      }
+    }
 
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 5000);
@@ -84,21 +108,17 @@ export async function stopCommand(ctx: CommandContext<Context>) {
       clearTimeout(timeoutId);
 
       if (abortError) {
-        logger.warn("[Stop] Abort request failed:", abortError);
-        await ctx.api.editMessageText(
-          ctx.chat.id,
-          waitingMessage.message_id,
-          t("stop.warn_unconfirmed"),
-        );
+        logger.warn("[Abort] Abort request failed:", abortError);
+        if (notifyUser && chatId !== null && waitingMessageId !== null) {
+          await ctx.api.editMessageText(chatId, waitingMessageId, t("stop.warn_unconfirmed"));
+        }
         return;
       }
 
       if (abortResult !== true) {
-        await ctx.api.editMessageText(
-          ctx.chat.id,
-          waitingMessage.message_id,
-          t("stop.warn_maybe_finished"),
-        );
+        if (notifyUser && chatId !== null && waitingMessageId !== null) {
+          await ctx.api.editMessageText(chatId, waitingMessageId, t("stop.warn_maybe_finished"));
+        }
         return;
       }
 
@@ -109,34 +129,35 @@ export async function stopCommand(ctx: CommandContext<Context>) {
       );
 
       if (finalStatus === "idle" || finalStatus === "not-found") {
-        await ctx.api.editMessageText(ctx.chat.id, waitingMessage.message_id, t("stop.success"));
+        foregroundSessionState.markIdle(currentSession.id);
+        if (notifyUser && chatId !== null && waitingMessageId !== null) {
+          await ctx.api.editMessageText(chatId, waitingMessageId, t("stop.success"));
+        }
       } else {
-        await ctx.api.editMessageText(
-          ctx.chat.id,
-          waitingMessage.message_id,
-          t("stop.warn_still_busy"),
-        );
+        if (notifyUser && chatId !== null && waitingMessageId !== null) {
+          await ctx.api.editMessageText(chatId, waitingMessageId, t("stop.warn_still_busy"));
+        }
       }
     } catch (error) {
       clearTimeout(timeoutId);
 
       if (error instanceof Error && error.name === "AbortError") {
-        await ctx.api.editMessageText(
-          ctx.chat.id,
-          waitingMessage.message_id,
-          t("stop.warn_timeout"),
-        );
+        if (notifyUser && chatId !== null && waitingMessageId !== null) {
+          await ctx.api.editMessageText(chatId, waitingMessageId, t("stop.warn_timeout"));
+        }
       } else {
-        logger.error("[Stop] Error while aborting session:", error);
-        await ctx.api.editMessageText(
-          ctx.chat.id,
-          waitingMessage.message_id,
-          t("stop.warn_local_only"),
-        );
+        logger.error("[Abort] Error while aborting session:", error);
+        if (notifyUser && chatId !== null && waitingMessageId !== null) {
+          await ctx.api.editMessageText(chatId, waitingMessageId, t("stop.warn_local_only"));
+        }
       }
     }
   } catch (error) {
-    logger.error("[Stop] Unexpected error:", error);
+    logger.error("[Abort] Unexpected error:", error);
     await ctx.reply(t("stop.error"));
   }
+}
+
+export async function abortCommand(ctx: CommandContext<Context>): Promise<void> {
+  await abortCurrentOperation(ctx);
 }

@@ -89,6 +89,21 @@ export class ToolMessageBatcher {
     this.enqueueTextInternal(sessionId, message);
   }
 
+  sendTextNow(sessionId: string, message: string, reason: string): void {
+    const normalizedMessage = message.trim();
+    if (!sessionId || normalizedMessage.length === 0) {
+      return;
+    }
+
+    const expectedGeneration = this.generation;
+    logger.debug(
+      `[ToolBatcher] Sending immediate text message outside queue: session=${sessionId}, reason=${reason}`,
+    );
+    void this.enqueueTask(sessionId, () =>
+      this.sendTextSafe(sessionId, normalizedMessage, reason, expectedGeneration),
+    );
+  }
+
   enqueueUniqueByPrefix(sessionId: string, message: string, prefix: string): void {
     this.enqueueTextInternal(sessionId, message, prefix);
   }

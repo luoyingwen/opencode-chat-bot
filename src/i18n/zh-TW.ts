@@ -6,10 +6,13 @@ export const zhTW: I18nDictionary = {
   "cmd.description.stop": "停止目前操作",
   "cmd.description.sessions": "列出工作階段",
   "cmd.description.projects": "列出專案",
+  "cmd.description.task": "建立排程任務",
+  "cmd.description.tasklist": "列出排程任務",
   "cmd.description.commands": "自訂命令",
   "cmd.description.opencode_start": "啟動 OpenCode 伺服器",
   "cmd.description.opencode_stop": "停止 OpenCode 伺服器",
   "cmd.description.help": "說明",
+  "cmd.description.rename": "重新命名目前工作階段",
 
   "callback.unknown_command": "未知命令",
   "callback.processing_error": "處理錯誤",
@@ -220,6 +223,7 @@ export const zhTW: I18nDictionary = {
   "permission.name.list": "列出目錄",
   "permission.name.task": "任務",
   "permission.name.lsp": "LSP",
+  "permission.name.external_directory": "外部目錄",
 
   "question.inactive_callback": "投票已失效",
   "question.processing_error_callback": "處理錯誤",
@@ -252,6 +256,7 @@ export const zhTW: I18nDictionary = {
   "pinned.line.project": "專案：{project}",
   "pinned.line.model": "模型：{model}",
   "pinned.line.context": "上下文：{used} / {limit} ({percent}%)",
+  "pinned.line.cost": "成本：已花費 {cost}",
   "pinned.files.title": "檔案（{count}）：",
   "pinned.files.item": "  {path}{diff}",
   "pinned.files.more": "  ... 還有 {count} 個",
@@ -274,6 +279,10 @@ export const zhTW: I18nDictionary = {
   "runtime.wizard.ask_api_url":
     "請輸入 OpenCode API URL（選填）。\n按 Enter 使用預設值：{defaultUrl}\n> ",
   "runtime.wizard.api_url_invalid": "請輸入有效 URL（http/https），或按 Enter 使用預設值。\n",
+  "runtime.wizard.ask_server_username":
+    "請輸入 OpenCode 伺服器使用者名稱（選填）。\n按 Enter 使用預設值：{defaultUsername}\n> ",
+  "runtime.wizard.ask_server_password":
+    "請輸入 OpenCode 伺服器密碼（選填）。\n按 Enter 保持空白。\n> ",
   "runtime.wizard.start": "OpenCode Telegram Bot 設定。\n",
   "runtime.wizard.saved": "設定已儲存：\n- {envPath}\n- {settingsPath}\n",
   "runtime.wizard.not_configured_starting": "應用程式尚未設定。正在啟動精靈...\n",
@@ -292,6 +301,47 @@ export const zhTW: I18nDictionary = {
   "rename.blocked.command_not_allowed": "⚠️ 重新命名等待新名稱期間無法使用此命令。",
   "rename.button.cancel": "❌ 取消",
 
+  "task.prompt.schedule":
+    "⏰ 以自然語言傳送任務排程。\n\n範例：\n- 每 5 分鐘\n- 每天 17:00\n- 明天 12:00",
+  "task.schedule_empty": "⚠️ 排程不可為空。",
+  "task.parse.in_progress": "⏳ 正在解析排程...",
+  "task.parse_error": "🔴 解析排程失敗。\n\n{message}\n\n請以更清楚的形式重新傳送排程。",
+  "task.schedule_preview":
+    "✅ 排程已解析\n\n我的理解：{summary}\n{cronLine}時區：{timezone}\n類型：{kind}\n下次執行：{nextRunAt}",
+  "task.schedule_preview.cron": "Cron：{cron}",
+  "task.prompt.body": "📝 現在傳送排程時機器人應該執行的內容。",
+  "task.prompt_empty": "⚠️ 任務文字不可為空。",
+  "task.created":
+    "✅ 排程任務已建立\n\n任務：{description}\n專案：{project}\n模型：{model}\n排程：{schedule}\n{cronLine}下次執行：{nextRunAt}",
+  "task.created.cron": "Cron：{cron}",
+  "task.button.retry_schedule": "🔁 重試排程",
+  "task.button.cancel": "❌ 取消",
+  "task.retry_schedule_callback": "正在重試排程...",
+  "task.cancel_callback": "取消中...",
+  "task.cancelled": "❌ 排程任務建立已取消。",
+  "task.inactive_callback": "此排程任務流程已失效",
+  "task.inactive": "⚠️ 排程任務建立未啟用。請再次執行 /task。",
+  "task.blocked.expected_input": "⚠️ 請先完成目前的排程任務設定，傳送文字或使用排程訊息中的按鈕。",
+  "task.blocked.command_not_allowed": "⚠️ 排程任務建立啟用期間無法使用此命令。",
+  "task.limit_reached": "⚠️ 已達任務上限（{limit}）。請先刪除現有的排程任務。",
+  "task.schedule_too_frequent": "循環排程太頻繁。允許的最小間隔為每 5 分鐘一次。",
+  "task.kind.cron": "循環",
+  "task.kind.once": "一次性",
+  "task.run.success": "⏰ 排程任務完成：{description}",
+  "task.run.error": "🔴 排程任務失敗：{description}\n\n錯誤：{error}",
+
+  "tasklist.empty": "📭 目前沒有排程任務。",
+  "tasklist.select": "請選擇一個排程任務：",
+  "tasklist.details":
+    "⏰ 排程任務\n\n任務：{prompt}\n專案：{project}\n排程：{schedule}\n{cronLine}時區：{timezone}\n下次執行：{nextRunAt}\n上次執行：{lastRunAt}\n執行次數：{runCount}",
+  "tasklist.details.cron": "Cron：{cron}",
+  "tasklist.button.delete": "🗑 刪除",
+  "tasklist.button.cancel": "❌ 取消",
+  "tasklist.deleted_callback": "已刪除",
+  "tasklist.cancelled_callback": "已取消",
+  "tasklist.inactive_callback": "此排程任務選單已失效",
+  "tasklist.load_error": "🔴 載入排程任務失敗。",
+
   "commands.select": "請選擇一個 OpenCode 命令：",
   "commands.empty": "📭 目前專案沒有可用的 OpenCode 命令。",
   "commands.fetch_error": "🔴 載入 OpenCode 命令失敗。",
@@ -305,8 +355,11 @@ export const zhTW: I18nDictionary = {
   "commands.executing_prefix": "⚡ 執行命令：",
   "commands.arguments_empty": "⚠️ 參數不可為空。請傳送文字或點選執行。",
   "commands.execute_error": "🔴 執行 OpenCode 命令失敗。",
-
-  "cmd.description.rename": "重新命名目前工作階段",
+  "commands.select_page": "請選擇一個 OpenCode 命令（第 {page} 頁）：",
+  "commands.button.prev_page": "⬅️ 上一頁",
+  "commands.button.next_page": "下一頁 ➡️",
+  "commands.page_empty_callback": "此頁沒有命令",
+  "commands.page_load_error_callback": "無法載入此頁面。請重試。",
 
   "cli.usage":
     "用法：\n  opencode-telegram [start] [--mode sources|installed]\n  opencode-telegram status\n  opencode-telegram stop\n  opencode-telegram config\n\n說明：\n  - 不帶命令時預設執行 `start`\n  - `--mode` 目前僅支援 `start` 命令",
