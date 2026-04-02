@@ -9,8 +9,15 @@ import {
   clearPinnedMessageId,
 } from "../settings/manager.js";
 import { getStoredModel } from "../model/manager.js";
+import { getModelContextLimit } from "../model/context-limit.js";
 import type { FileChange, PinnedMessageState, TokensInfo } from "./types.js";
 import { t } from "../i18n/index.js";
+import {
+  DEFAULT_CONTEXT_LIMIT,
+  formatContextLine,
+  formatCostLine,
+  formatModelDisplayName,
+} from "./format.js";
 
 class PinnedMessageManager {
   private api: Api | null = null;
@@ -29,6 +36,11 @@ class PinnedMessageManager {
   };
   private contextLimit: number | null = null;
   private onKeyboardUpdateCallback?: (tokensUsed: number, tokensLimit: number) => void;
+  private updateDebounceTimer: ReturnType<typeof setTimeout> | null = null;
+  private updateTask: Promise<void> | null = null;
+  private pendingUpdate = false;
+  private pendingForceUpdate = false;
+  private lastRenderedMessageText: string | null = null;
 
   /**
    * Initialize manager with bot API and chat ID
@@ -73,6 +85,9 @@ class PinnedMessageManager {
 
     // Reset changed files for new session
     this.state.changedFiles = [];
+    this.lastRenderedMessageText = null;
+    this.pendingUpdate = false;
+    this.pendingForceUpdate = false;
 
     // Unpin old message and create new one
     await this.unpinOldMessage();
@@ -201,9 +216,34 @@ class PinnedMessageManager {
   }
 
   /**
+   * Update tokens in memory without triggering an API call.
+   * Used for intermediate (non-completed) message.updated events
+   * to keep pinned state in sync with keyboardManager.
+   */
+  updateTokensSilent(tokens: TokensInfo): void {
+    this.state.tokensUsed = tokens.input + tokens.cacheRead;
+    logger.debug(
+      `[PinnedManager] Tokens updated (silent): ${this.state.tokensUsed}/${this.state.tokensLimit}`,
+    );
+  }
+
+  /**
+   * Refresh the pinned message with current in-memory state.
+   * Used at thinking time to push accumulated silent updates to Telegram.
+   */
+  async refresh(): Promise<void> {
+    await this.updatePinnedMessage(true);
+  }
+
+  /**
    * Called when cost info is received from SSE events
    */
   async onCostUpdate(cost: number): Promise<void> {
+    if (!Number.isFinite(cost) || cost === 0) {
+      logger.debug("[PinnedManager] Ignoring non-impacting cost update");
+      return;
+    }
+
     const currentCost = this.state.cost || 0;
     this.state.cost = currentCost + cost;
     logger.debug(
@@ -218,6 +258,13 @@ class PinnedMessageManager {
   setOnKeyboardUpdate(callback: (tokensUsed: number, tokensLimit: number) => void): void {
     this.onKeyboardUpdateCallback = callback;
     logger.debug("[PinnedManager] Keyboard update callback registered");
+
+    // Fire immediately with current state to fix race condition:
+    // onSessionChange may have already run before this callback was registered.
+    const limit = this.state.tokensLimit > 0 ? this.state.tokensLimit : this.contextLimit || 0;
+    if (limit > 0) {
+      callback(this.state.tokensUsed, limit);
+    }
   }
 
   /**
@@ -259,6 +306,12 @@ class PinnedMessageManager {
       logger.debug("[PinnedManager] Ignoring empty session.diff, keeping tool-collected data");
       return;
     }
+
+    if (this.areFileDiffsEqual(this.state.changedFiles, diffs)) {
+      logger.debug("[PinnedManager] Ignoring unchanged session.diff");
+      return;
+    }
+
     this.state.changedFiles = diffs;
     logger.debug(`[PinnedManager] Session diff updated: ${diffs.length} files`);
     await this.updatePinnedMessage();
@@ -283,16 +336,14 @@ class PinnedMessageManager {
     this.scheduleDebouncedUpdate();
   }
 
-  private updateDebounceTimer: ReturnType<typeof setTimeout> | null = null;
-
   private scheduleDebouncedUpdate(): void {
     if (this.updateDebounceTimer) {
       clearTimeout(this.updateDebounceTimer);
     }
     this.updateDebounceTimer = setTimeout(() => {
       this.updateDebounceTimer = null;
-      this.updatePinnedMessage();
-    }, 500);
+      void this.updatePinnedMessage();
+    }, 1000);
   }
 
   /**
@@ -513,47 +564,38 @@ class PinnedMessageManager {
     return ".../" + segments.slice(-3).join("/");
   }
 
+  private areFileDiffsEqual(current: FileChange[], next: FileChange[]): boolean {
+    if (current.length !== next.length) {
+      return false;
+    }
+
+    for (let index = 0; index < current.length; index++) {
+      const left = current[index];
+      const right = next[index];
+      if (
+        left.file !== right.file ||
+        left.additions !== right.additions ||
+        left.deletions !== right.deletions
+      ) {
+        return false;
+      }
+    }
+
+    return true;
+  }
+
   /**
    * Fetch context limit from current model configuration
    */
   private async fetchContextLimit(): Promise<void> {
     try {
       const model = getStoredModel();
-      if (!model.providerID || !model.modelID) {
-        logger.warn("[PinnedManager] No model configured, using default limit");
-        this.contextLimit = 200000;
-        this.state.tokensLimit = this.contextLimit;
-        return;
-      }
-
-      const { data: providersData, error } = await opencodeClient.config.providers();
-
-      if (error || !providersData) {
-        logger.warn("[PinnedManager] Failed to fetch providers, using default limit");
-        this.contextLimit = 200000;
-        this.state.tokensLimit = this.contextLimit;
-        return;
-      }
-
-      // Find the model in providers
-      for (const provider of providersData.providers) {
-        if (provider.id === model.providerID) {
-          const modelInfo = provider.models[model.modelID];
-          if (modelInfo?.limit?.context) {
-            this.contextLimit = modelInfo.limit.context;
-            this.state.tokensLimit = this.contextLimit;
-            logger.debug(`[PinnedManager] Context limit: ${this.contextLimit}`);
-            return;
-          }
-        }
-      }
-
-      logger.warn("[PinnedManager] Model not found in providers, using default limit");
-      this.contextLimit = 200000;
+      this.contextLimit = await getModelContextLimit(model.providerID, model.modelID);
       this.state.tokensLimit = this.contextLimit;
+      logger.debug(`[PinnedManager] Context limit: ${this.contextLimit}`);
     } catch (err) {
       logger.error("[PinnedManager] Error fetching context limit:", err);
-      this.contextLimit = 200000;
+      this.contextLimit = DEFAULT_CONTEXT_LIMIT;
       this.state.tokensLimit = this.contextLimit;
     }
   }
@@ -562,34 +604,18 @@ class PinnedMessageManager {
    * Format the pinned message text
    */
   private formatMessage(): string {
-    const percentage =
-      this.state.tokensLimit > 0
-        ? Math.round((this.state.tokensUsed / this.state.tokensLimit) * 100)
-        : 0;
-
-    const tokensFormatted = this.formatTokenCount(this.state.tokensUsed);
-    const limitFormatted = this.formatTokenCount(this.state.tokensLimit);
-
-    // Get current model info
     const currentModel = getStoredModel();
-    const modelName =
-      currentModel.providerID && currentModel.modelID
-        ? `${currentModel.providerID}/${currentModel.modelID}`
-        : t("pinned.unknown");
+    const modelName = formatModelDisplayName(currentModel.providerID, currentModel.modelID);
 
     const lines = [
       `${this.state.sessionTitle}`,
       t("pinned.line.project", { project: this.state.projectName }),
       t("pinned.line.model", { model: modelName }),
-      t("pinned.line.context", {
-        used: tokensFormatted,
-        limit: limitFormatted,
-        percent: percentage,
-      }),
+      formatContextLine(this.state.tokensUsed, this.state.tokensLimit),
     ];
 
     if (this.state.cost !== undefined && this.state.cost !== null) {
-      lines.push(t("pinned.line.cost", { cost: `$${this.state.cost.toFixed(2)}` }));
+      lines.push(formatCostLine(this.state.cost));
     }
 
     if (this.state.changedFiles.length > 0) {
@@ -616,19 +642,6 @@ class PinnedMessageManager {
 
     return lines.join("\n");
   }
-
-  /**
-   * Format token count (e.g., 150000 -> "150K")
-   */
-  private formatTokenCount(count: number): string {
-    if (count >= 1000000) {
-      return `${(count / 1000000).toFixed(1)}M`;
-    } else if (count >= 1000) {
-      return `${Math.round(count / 1000)}K`;
-    }
-    return count.toString();
-  }
-
   /**
    * Create and pin a new status message
    */
@@ -647,6 +660,7 @@ class PinnedMessageManager {
       this.state.messageId = sentMessage.message_id;
       this.state.chatId = this.chatId;
       this.state.lastUpdated = Date.now();
+      this.lastRenderedMessageText = text;
 
       // Save to settings for persistence
       setPinnedMessageId(sentMessage.message_id);
@@ -665,41 +679,81 @@ class PinnedMessageManager {
   /**
    * Update existing pinned message text
    */
-  private async updatePinnedMessage(): Promise<void> {
+  private async updatePinnedMessage(forceUpdate: boolean = false): Promise<void> {
     if (!this.api || !this.chatId || !this.state.messageId) {
       return;
     }
 
-    try {
+    this.pendingUpdate = true;
+    if (forceUpdate) {
+      this.pendingForceUpdate = true;
+    }
+
+    if (this.updateTask) {
+      await this.updateTask;
+      return;
+    }
+
+    this.updateTask = this.flushPendingPinnedUpdates().finally(() => {
+      this.updateTask = null;
+    });
+
+    await this.updateTask;
+  }
+
+  private async flushPendingPinnedUpdates(): Promise<void> {
+    while (this.pendingUpdate) {
+      this.pendingUpdate = false;
+      const shouldForceUpdate = this.pendingForceUpdate;
+      this.pendingForceUpdate = false;
+
+      if (!this.api || !this.chatId || !this.state.messageId) {
+        return;
+      }
+
       const text = this.formatMessage();
 
-      await this.api.editMessageText(this.chatId, this.state.messageId, text);
-      this.state.lastUpdated = Date.now();
-
-      logger.debug(`[PinnedManager] Updated pinned message: ${this.state.messageId}`);
-
-      // Trigger keyboard update callback
-      if (this.onKeyboardUpdateCallback && this.state.tokensLimit > 0) {
-        setImmediate(() => {
-          this.onKeyboardUpdateCallback!(this.state.tokensUsed, this.state.tokensLimit);
-        });
-      }
-    } catch (err: unknown) {
-      // Handle "message is not modified" error silently
-      if (err instanceof Error && err.message.includes("message is not modified")) {
-        return;
+      if (!shouldForceUpdate && text === this.lastRenderedMessageText) {
+        logger.debug("[PinnedManager] Skipping pinned update: message content unchanged");
+        continue;
       }
 
-      // Handle "message to edit not found" - recreate
-      if (err instanceof Error && err.message.includes("message to edit not found")) {
-        logger.warn("[PinnedManager] Pinned message was deleted, recreating...");
-        this.state.messageId = null;
-        clearPinnedMessageId();
-        await this.createPinnedMessage();
-        return;
-      }
+      try {
+        await this.api.editMessageText(this.chatId, this.state.messageId, text);
+        this.state.lastUpdated = Date.now();
+        this.lastRenderedMessageText = text;
 
-      logger.error("[PinnedManager] Error updating pinned message:", err);
+        logger.debug(`[PinnedManager] Updated pinned message: ${this.state.messageId}`);
+
+        // Trigger keyboard update callback
+        if (this.onKeyboardUpdateCallback && this.state.tokensLimit > 0) {
+          setImmediate(() => {
+            this.onKeyboardUpdateCallback!(this.state.tokensUsed, this.state.tokensLimit);
+          });
+        }
+      } catch (err: unknown) {
+        const errorMessage =
+          err instanceof Error ? err.message.toLowerCase() : String(err).toLowerCase();
+
+        // Handle "message is not modified" error silently
+        if (errorMessage.includes("message is not modified")) {
+          this.lastRenderedMessageText = text;
+          continue;
+        }
+
+        // Handle "message to edit not found" - recreate
+        if (errorMessage.includes("message to edit not found")) {
+          logger.warn("[PinnedManager] Pinned message was deleted, recreating...");
+          this.state.messageId = null;
+          this.lastRenderedMessageText = null;
+          this.pendingForceUpdate = false;
+          clearPinnedMessageId();
+          await this.createPinnedMessage();
+          continue;
+        }
+
+        logger.error("[PinnedManager] Error updating pinned message:", err);
+      }
     }
   }
 
@@ -716,6 +770,9 @@ class PinnedMessageManager {
       await this.api.unpinAllChatMessages(this.chatId).catch(() => {});
 
       this.state.messageId = null;
+      this.lastRenderedMessageText = null;
+      this.pendingUpdate = false;
+      this.pendingForceUpdate = false;
       clearPinnedMessageId();
 
       logger.debug("[PinnedManager] Unpinned old messages");
@@ -749,6 +806,9 @@ class PinnedMessageManager {
       this.state.tokensUsed = 0;
       this.state.tokensLimit = 0;
       this.state.changedFiles = [];
+      this.lastRenderedMessageText = null;
+      this.pendingUpdate = false;
+      this.pendingForceUpdate = false;
       clearPinnedMessageId();
       return;
     }
@@ -765,6 +825,9 @@ class PinnedMessageManager {
       this.state.tokensUsed = 0;
       this.state.tokensLimit = 0;
       this.state.changedFiles = [];
+      this.lastRenderedMessageText = null;
+      this.pendingUpdate = false;
+      this.pendingForceUpdate = false;
       clearPinnedMessageId();
 
       logger.info("[PinnedManager] Cleared pinned message state");

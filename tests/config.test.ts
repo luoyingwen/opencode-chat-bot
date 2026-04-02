@@ -17,13 +17,11 @@ describe("config boolean env parsing", () => {
   it("uses false defaults for hide service message flags", async () => {
     vi.stubEnv("HIDE_THINKING_MESSAGES", "");
     vi.stubEnv("HIDE_TOOL_CALL_MESSAGES", "");
-    vi.stubEnv("RESPONSE_STREAMING", "");
 
     const config = await loadConfig();
 
     expect(config.bot.hideThinkingMessages).toBe(false);
     expect(config.bot.hideToolCallMessages).toBe(false);
-    expect(config.bot.responseStreaming).toBe(true);
   });
 
   it("parses truthy values for hide service message flags", async () => {
@@ -49,21 +47,11 @@ describe("config boolean env parsing", () => {
   it("falls back to defaults on invalid values", async () => {
     vi.stubEnv("HIDE_THINKING_MESSAGES", "banana");
     vi.stubEnv("HIDE_TOOL_CALL_MESSAGES", "nope");
-    vi.stubEnv("RESPONSE_STREAMING", "not-a-bool");
 
     const config = await loadConfig();
 
     expect(config.bot.hideThinkingMessages).toBe(false);
     expect(config.bot.hideToolCallMessages).toBe(false);
-    expect(config.bot.responseStreaming).toBe(true);
-  });
-
-  it("allows disabling response streaming via env", async () => {
-    vi.stubEnv("RESPONSE_STREAMING", "0");
-
-    const config = await loadConfig();
-
-    expect(config.bot.responseStreaming).toBe(false);
   });
 
   it("uses markdown as default message format mode", async () => {
@@ -136,5 +124,77 @@ describe("config boolean env parsing", () => {
     const config = await loadConfig();
 
     expect(config.bot.locale).toBe("zh");
+  });
+
+  it("uses default response stream throttle when RESPONSE_STREAM_THROTTLE_MS is missing", async () => {
+    vi.stubEnv("RESPONSE_STREAM_THROTTLE_MS", "");
+
+    const config = await loadConfig();
+
+    expect(config.bot.responseStreamThrottleMs).toBe(500);
+  });
+
+  it("parses RESPONSE_STREAM_THROTTLE_MS as a positive integer", async () => {
+    vi.stubEnv("RESPONSE_STREAM_THROTTLE_MS", "750");
+
+    const config = await loadConfig();
+
+    expect(config.bot.responseStreamThrottleMs).toBe(750);
+  });
+
+  it("falls back to default response stream throttle on invalid value", async () => {
+    vi.stubEnv("RESPONSE_STREAM_THROTTLE_MS", "zero");
+
+    const config = await loadConfig();
+
+    expect(config.bot.responseStreamThrottleMs).toBe(500);
+  });
+
+  it("parses TASK_LIMIT as a positive integer", async () => {
+    vi.stubEnv("TASK_LIMIT", "25");
+
+    const config = await loadConfig();
+
+    expect(config.bot.taskLimit).toBe(25);
+  });
+
+  it("resolves zh to Simplified Chinese, not Traditional", async () => {
+    vi.stubEnv("BOT_LOCALE", "zh");
+
+    const config = await loadConfig();
+
+    expect(config.bot.locale).toBe("zh");
+  });
+
+  it("uses default response stream throttle when RESPONSE_STREAM_THROTTLE_MS is missing", async () => {
+    vi.stubEnv("RESPONSE_STREAM_THROTTLE_MS", "");
+
+    const config = await loadConfig();
+
+    expect(config.bot.responseStreamThrottleMs).toBe(500);
+  });
+
+  it("parses RESPONSE_STREAM_THROTTLE_MS as a positive integer", async () => {
+    vi.stubEnv("RESPONSE_STREAM_THROTTLE_MS", "750");
+
+    const config = await loadConfig();
+
+    expect(config.bot.responseStreamThrottleMs).toBe(750);
+  });
+
+  it("falls back to default response stream throttle on invalid value", async () => {
+    vi.stubEnv("RESPONSE_STREAM_THROTTLE_MS", "zero");
+
+    const config = await loadConfig();
+
+    expect(config.bot.responseStreamThrottleMs).toBe(500);
+  });
+
+  it("parses TASK_LIMIT as a positive integer", async () => {
+    vi.stubEnv("TASK_LIMIT", "25");
+
+    const config = await loadConfig();
+
+    expect(config.bot.locale).toBe("zh-TW");
   });
 });
