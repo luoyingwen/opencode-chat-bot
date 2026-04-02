@@ -195,6 +195,6 @@ describe("config boolean env parsing", () => {
 
     const config = await loadConfig();
 
-    expect(config.bot.locale).toBe("zh-TW");
+    expect(config.bot.taskLimit).toBe(25);
   });
 });
