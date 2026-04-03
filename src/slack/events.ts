@@ -109,7 +109,7 @@ async function updateMessage(channel: string, ts: string, text: string): Promise
 // skip Telegram.  If Slack is NOT active, call the original Telegram callback.
 
 interface OriginalCallbacks {
-  onComplete: ((sessionId: string, messageText: string) => void) | null;
+  onComplete: ((sessionId: string, _messageId: string, messageText: string) => void) | null;
   onTool: ((toolInfo: ToolInfo) => void) | null;
   onThinking: ((sessionId: string) => void) | null;
   onTokens: ((tokens: TokensInfo) => void) | null;
@@ -223,7 +223,7 @@ function patchAggregatorCallback<K extends keyof OriginalCallbacks>(
 
 // ─── Slack-specific event handlers ──────────────────────────────────────
 
-function handleSlackComplete(sessionId: string, messageText: string): void {
+function handleSlackComplete(sessionId: string, _messageId: string, messageText: string): void {
   const target = activeTarget;
   if (!target) return;
 
