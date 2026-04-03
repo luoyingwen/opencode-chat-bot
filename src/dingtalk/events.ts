@@ -41,7 +41,7 @@ export function setDingTalkClient(client: DingTalkClient): void {
 }
 
 interface OriginalCallbacks {
-  onComplete: ((sessionId: string, messageText: string) => void) | null;
+  onComplete: ((sessionId: string, _messageId: string, messageText: string) => void) | null;
   onTool: ((toolInfo: ToolInfo) => void) | null;
   onThinking: ((sessionId: string) => void) | null;
   onTokens: ((tokens: TokensInfo) => void) | null;
@@ -161,7 +161,7 @@ async function sendMessage(userId: string, text: string): Promise<void> {
   }
 }
 
-function handleDingTalkComplete(sessionId: string, messageText: string): void {
+function handleDingTalkComplete(sessionId: string, _messageId: string, messageText: string): void {
   const target = activeTarget;
   if (!target) return;
 
