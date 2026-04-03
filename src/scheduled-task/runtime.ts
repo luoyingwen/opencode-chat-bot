@@ -25,6 +25,20 @@ const TELEGRAM_MESSAGE_LIMIT = 4096;
 const TASK_DESCRIPTION_PREVIEW_LENGTH = 64;
 const RESTART_INTERRUPTED_ERROR = "Interrupted by bot restart during scheduled task execution.";
 
+// DingTalk notification callback
+type DingTalkNotificationCallback = (text: string) => Promise<void>;
+let dingTalkNotificationCallback: DingTalkNotificationCallback | null = null;
+
+export function setDingTalkNotificationCallback(callback: DingTalkNotificationCallback): void {
+  dingTalkNotificationCallback = callback;
+  logger.info("[ScheduledTaskRuntime] DingTalk notification callback registered");
+}
+
+export function clearDingTalkNotificationCallback(): void {
+  dingTalkNotificationCallback = null;
+  logger.info("[ScheduledTaskRuntime] DingTalk notification callback cleared");
+}
+
 function getScheduledTaskDeliveryFormat(): "raw" | "markdown_v2" {
   return config.bot.messageFormatMode === "markdown" ? "markdown_v2" : "raw";
 }
@@ -109,15 +123,19 @@ export class ScheduledTaskRuntime {
   private deliveryQueue: QueuedScheduledTaskDelivery[] = [];
   private flushInProgress = false;
 
-  async initialize(bot: Bot<Context>): Promise<void> {
-    this.botApi = bot.api;
-    this.chatId = config.telegram.allowedUserId;
-
+  async initialize(bot?: Bot<Context>): Promise<void> {
     if (this.initialized) {
       return;
     }
 
+    // Set Telegram bot API if provided
+    if (bot) {
+      this.botApi = bot.api;
+      this.chatId = config.telegram.allowedUserId;
+    }
+
     this.initialized = true;
+    logger.info("[ScheduledTaskRuntime] Initialized");
     await this.recoverTasksOnStartup();
     await this.flushDeferredDeliveries();
   }
@@ -451,34 +469,56 @@ export class ScheduledTaskRuntime {
   }
 
   private async sendDelivery(delivery: QueuedScheduledTaskDelivery): Promise<boolean> {
-    if (!this.botApi || this.chatId === null) {
-      return false;
-    }
+    let telegramSuccess = false;
+    let dingTalkSuccess = false;
 
-    try {
-      const messageParts =
-        delivery.status === "success"
-          ? buildScheduledTaskSuccessMessageParts(delivery)
-          : [delivery.notificationText];
-      const format = delivery.status === "success" ? getScheduledTaskDeliveryFormat() : "raw";
+    // Send to Telegram if available
+    if (this.botApi && this.chatId !== null) {
+      try {
+        const messageParts =
+          delivery.status === "success"
+            ? buildScheduledTaskSuccessMessageParts(delivery)
+            : [delivery.notificationText];
+        const format = delivery.status === "success" ? getScheduledTaskDeliveryFormat() : "raw";
 
-      for (const part of messageParts) {
-        await sendBotText({
-          api: this.botApi,
-          chatId: this.chatId,
-          text: part,
-          format,
-        });
+        for (const part of messageParts) {
+          await sendBotText({
+            api: this.botApi,
+            chatId: this.chatId,
+            text: part,
+            format,
+          });
+        }
+        telegramSuccess = true;
+      } catch (error) {
+        logger.error(
+          `[ScheduledTaskRuntime] Failed to send delivery to Telegram: id=${delivery.taskId}, status=${delivery.status}`,
+          error,
+        );
       }
-
-      return true;
-    } catch (error) {
-      logger.error(
-        `[ScheduledTaskRuntime] Failed to send delivery: id=${delivery.taskId}, status=${delivery.status}`,
-        error,
-      );
-      return false;
     }
+
+    // Send to DingTalk if callback is registered
+    if (dingTalkNotificationCallback) {
+      try {
+        const messageParts =
+          delivery.status === "success"
+            ? buildScheduledTaskSuccessMessageParts(delivery)
+            : [delivery.notificationText];
+
+        for (const part of messageParts) {
+          await dingTalkNotificationCallback(part);
+        }
+        dingTalkSuccess = true;
+      } catch (error) {
+        logger.error(
+          `[ScheduledTaskRuntime] Failed to send delivery to DingTalk: id=${delivery.taskId}, status=${delivery.status}`,
+          error,
+        );
+      }
+    }
+
+    return telegramSuccess || dingTalkSuccess;
   }
 }
 

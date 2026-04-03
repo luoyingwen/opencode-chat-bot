@@ -9,6 +9,7 @@ import { logger } from "../utils/logger.js";
 import { config } from "../config.js";
 import { opencodeClient } from "../opencode/client.js";
 import { getProjects } from "../project/manager.js";
+import { scheduledTaskRuntime } from "../scheduled-task/runtime.js";
 
 async function getBotVersion(): Promise<string> {
   try {
@@ -104,8 +105,26 @@ export async function startBotApp(): Promise<void> {
         logger.info(`Bot @${botInfo.username} started!`);
       },
     });
+
+    // Initialize scheduled task runtime with Telegram bot
+    try {
+      await scheduledTaskRuntime.initialize(bot);
+      logger.info("[App] Scheduled task runtime initialized with Telegram");
+    } catch (err) {
+      logger.error("[App] Failed to initialize scheduled task runtime:", err);
+    }
   } else {
     logger.info("[App] Telegram not configured, skipping");
+  }
+
+  // Initialize scheduled task runtime without Telegram (for DingTalk-only mode)
+  if (!hasTelegram) {
+    try {
+      await scheduledTaskRuntime.initialize();
+      logger.info("[App] Scheduled task runtime initialized");
+    } catch (err) {
+      logger.error("[App] Failed to initialize scheduled task runtime:", err);
+    }
   }
 
   // ─── Start Slack bot (if configured) ───────────────────────────────
