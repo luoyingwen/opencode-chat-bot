@@ -803,7 +803,7 @@ function processMessage(userId: string, text: string, sessionWebhook: string): v
     void handleOpencodeStartCommand(userId);
   } else if (text.startsWith("/opencode_stop")) {
     void handleOpencodeStopCommand(userId);
-  } else if (text.startsWith("/help")) {
+  } else if (text.startsWith("/help") || text === "help" || text === "帮助" || text === "/帮助") {
     void handleHelpCommand(userId);
   } else {
     logger.info(
