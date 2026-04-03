@@ -13,6 +13,7 @@ export const zhTW: I18nDictionary = {
   "cmd.description.opencode_stop": "停止 OpenCode 伺服器",
   "cmd.description.help": "說明",
   "cmd.description.rename": "重新命名目前工作階段",
+  "cmd.description.tts": "切換語音回覆",
 
   "callback.unknown_command": "未知命令",
   "callback.processing_error": "處理錯誤",
@@ -77,6 +78,9 @@ export const zhTW: I18nDictionary = {
   "status.health.unhealthy": "不健康",
   "status.line.health": "狀態：{health}",
   "status.line.version": "版本：{version}",
+  "status.line.tts": "TTS 回覆：{tts}",
+  "status.tts.on": "開啟",
+  "status.tts.off": "關閉",
   "status.line.managed_yes": "由機器人管理：是",
   "status.line.managed_no": "由機器人管理：否",
   "status.line.pid": "PID：{pid}",
@@ -400,4 +404,9 @@ export const zhTW: I18nDictionary = {
     "🎤 語音辨識尚未設定。\n\n在 .env 中設定 STT_API_URL 和 STT_API_KEY 以啟用。",
   "stt.error": "🔴 辨識音訊失敗：{error}",
   "stt.empty_result": "🎤 音訊訊息中未偵測到語音。",
+
+  "tts.enabled": "🔊 已全域啟用語音回覆。",
+  "tts.not_configured": "⚠️ 語音回覆暫不可用。請先設定 `TTS_API_URL` 和 `TTS_API_KEY`。",
+  "tts.disabled": "🔇 已全域關閉語音回覆。",
+  "tts.failed": "⚠️ 生成語音回覆失敗。",
 };
