@@ -1,4 +1,6 @@
 import type { Api } from "grammy";
+import { readFile, stat } from "node:fs/promises";
+import path from "node:path";
 import { logger } from "../utils/logger.js";
 import { opencodeClient } from "../opencode/client.js";
 import { getCurrentSession } from "../session/manager.js";
@@ -28,6 +30,7 @@ class PinnedMessageManager {
     sessionId: null,
     sessionTitle: t("pinned.default_session_title"),
     projectName: "",
+    projectBranch: null,
     tokensUsed: 0,
     tokensLimit: 0,
     lastUpdated: 0,
@@ -71,9 +74,7 @@ class PinnedMessageManager {
     this.state.sessionId = sessionId;
     this.state.sessionTitle = sessionTitle || t("pinned.default_session_title");
 
-    const project = getCurrentProject();
-    this.state.projectName =
-      project?.name || this.extractProjectName(project?.worktree) || t("pinned.unknown");
+    await this.refreshProjectMetadata();
 
     // Fetch context limit for current model
     await this.fetchContextLimit();
@@ -232,6 +233,7 @@ class PinnedMessageManager {
    * Used at thinking time to push accumulated silent updates to Telegram.
    */
   async refresh(): Promise<void> {
+    await this.refreshProjectMetadata();
     await this.updatePinnedMessage(true);
   }
 
@@ -530,6 +532,69 @@ class PinnedMessageManager {
   }
 
   /**
+   * Refresh current project name and git branch.
+   */
+  private async refreshProjectMetadata(): Promise<void> {
+    const project = getCurrentProject();
+    this.state.projectName =
+      project?.name || this.extractProjectName(project?.worktree) || t("pinned.unknown");
+    this.state.projectBranch = await this.getGitBranchName(project?.worktree);
+  }
+
+  /**
+   * Resolve current git branch for a project worktree.
+   */
+  private async getGitBranchName(worktree: string | undefined): Promise<string | null> {
+    if (!worktree) {
+      return null;
+    }
+
+    try {
+      const gitDir = await this.resolveGitDir(worktree);
+      if (!gitDir) {
+        return null;
+      }
+
+      const headPath = path.join(gitDir, "HEAD");
+      const headContent = (await readFile(headPath, "utf-8")).trim();
+      const match = headContent.match(/^ref:\s+refs\/heads\/(.+)$/);
+      return match?.[1] || null;
+    } catch (err) {
+      logger.debug("[PinnedManager] Could not resolve git branch:", err);
+      return null;
+    }
+  }
+
+  /**
+   * Resolve git directory for a normal repository or linked worktree.
+   */
+  private async resolveGitDir(worktree: string): Promise<string | null> {
+    const gitPath = path.join(worktree, ".git");
+
+    try {
+      const gitStat = await stat(gitPath);
+
+      if (gitStat.isDirectory()) {
+        return gitPath;
+      }
+
+      if (!gitStat.isFile()) {
+        return null;
+      }
+
+      const gitPointer = (await readFile(gitPath, "utf-8")).trim();
+      const match = gitPointer.match(/^gitdir:\s*(.+)$/i);
+      if (!match) {
+        return null;
+      }
+
+      return path.resolve(worktree, match[1].trim());
+    } catch {
+      return null;
+    }
+  }
+
+  /**
    * Extract project name from worktree path
    */
   private extractProjectName(worktree: string | undefined): string {
@@ -606,10 +671,13 @@ class PinnedMessageManager {
   private formatMessage(): string {
     const currentModel = getStoredModel();
     const modelName = formatModelDisplayName(currentModel.providerID, currentModel.modelID);
+    const projectDisplayName = this.state.projectBranch
+      ? `${this.state.projectName}: ${this.state.projectBranch}`
+      : this.state.projectName;
 
     const lines = [
       `${this.state.sessionTitle}`,
-      t("pinned.line.project", { project: this.state.projectName }),
+      t("pinned.line.project", { project: projectDisplayName }),
       t("pinned.line.model", { model: modelName }),
       formatContextLine(this.state.tokensUsed, this.state.tokensLimit),
     ];
@@ -805,6 +873,7 @@ class PinnedMessageManager {
       this.state.sessionId = null;
       this.state.tokensUsed = 0;
       this.state.tokensLimit = 0;
+      this.state.projectBranch = null;
       this.state.changedFiles = [];
       this.lastRenderedMessageText = null;
       this.pendingUpdate = false;
@@ -822,6 +891,7 @@ class PinnedMessageManager {
       this.state.sessionId = null;
       this.state.sessionTitle = t("pinned.default_session_title");
       this.state.projectName = "";
+      this.state.projectBranch = null;
       this.state.tokensUsed = 0;
       this.state.tokensLimit = 0;
       this.state.changedFiles = [];
