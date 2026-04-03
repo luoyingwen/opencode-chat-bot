@@ -27,6 +27,12 @@ import { clearAllInteractionState } from "../interaction/cleanup.js";
 import { processManager } from "../process/manager.js";
 import { logger } from "../utils/logger.js";
 import { t } from "../i18n/index.js";
+import { handleTaskCommand, handleTaskTextInput, isUserInTaskFlow } from "./task.js";
+import {
+  handleTaskListCommand,
+  handleTaskListTextInput,
+  isUserInTaskListFlow,
+} from "./tasklist.js";
 
 function isUserAllowed(userId: string): boolean {
   const allowed = config.dingtalk.allowedUserId;
@@ -611,6 +617,8 @@ function getLocalizedBotCommandsDingTalk(): { command: string; description: stri
     { command: "projects", description: t("cmd.description.projects") },
     { command: "project <number>", description: "Select a project by number" },
     { command: "rename", description: t("cmd.description.rename") },
+    { command: "task", description: t("cmd.description.task") },
+    { command: "tasklist", description: t("cmd.description.tasklist") },
     { command: "commands", description: t("cmd.description.commands") },
     { command: "opencode_start", description: t("cmd.description.opencode_start") },
     { command: "opencode_stop", description: t("cmd.description.opencode_stop") },
@@ -622,6 +630,24 @@ async function handleTextMessage(userId: string, text: string): Promise<void> {
   logger.info(
     `[DingTalk] handleTextMessage called: userId=${userId}, text="${text.substring(0, 50)}..."`,
   );
+
+  // Check if user is in task creation flow
+  if (isUserInTaskFlow(userId)) {
+    const response = await handleTaskTextInput(userId, text);
+    if (response !== null) {
+      await sendDingTalkMessage(userId, response);
+      return;
+    }
+  }
+
+  // Check if user is in task list flow
+  if (isUserInTaskListFlow(userId)) {
+    const response = await handleTaskListTextInput(userId, text);
+    if (response !== null) {
+      await sendDingTalkMessage(userId, response);
+      return;
+    }
+  }
 
   try {
     const currentProject = getCurrentProject();
@@ -803,6 +829,16 @@ function processMessage(userId: string, text: string, sessionWebhook: string): v
     void handleOpencodeStartCommand(userId);
   } else if (text.startsWith("/opencode_stop")) {
     void handleOpencodeStopCommand(userId);
+  } else if (text.startsWith("/tasklist")) {
+    void (async () => {
+      const message = await handleTaskListCommand(userId);
+      await sendDingTalkMessage(userId, message);
+    })();
+  } else if (text.startsWith("/task")) {
+    void (async () => {
+      const message = await handleTaskCommand(userId);
+      await sendDingTalkMessage(userId, message);
+    })();
   } else if (text.startsWith("/help") || text === "help" || text === "帮助" || text === "/帮助") {
     void handleHelpCommand(userId);
   } else {
