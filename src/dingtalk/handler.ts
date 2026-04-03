@@ -320,20 +320,99 @@ async function handleSessionsCommand(userId: string): Promise<void> {
     const currentSession = getCurrentSession();
 
     let message = `# Sessions (${displayed.length}/${sessions.length})\n\n`;
-    for (const session of displayed) {
+    for (let i = 0; i < displayed.length; i++) {
+      const session = displayed[i];
       const isActive = currentSession?.id === session.id;
       const marker = isActive ? " ✅" : "";
-      message += `• \`${session.title || session.id}\`${marker}\n`;
+      message += `${i + 1}. **${session.title || session.id}**${marker}\n`;
     }
 
     if (sessions.length > limit) {
       message += `\n_…and ${sessions.length - limit} more_`;
     }
 
+    message += "\n\nUse `/session <number>` to select a session.";
+
     await sendDingTalkMessage(userId, message);
   } catch (err) {
     logger.error("[DingTalk] Error in sessions command:", err);
     await sendDingTalkMessage(userId, "❌ Failed to load sessions.");
+  }
+}
+
+async function handleSessionCommand(userId: string, arg: string): Promise<void> {
+  const index = parseInt(arg, 10);
+  if (isNaN(index) || index < 1) {
+    await sendDingTalkMessage(
+      userId,
+      "❌ Please provide a valid session number. Use `/sessions` to see the list.",
+    );
+    return;
+  }
+
+  try {
+    const currentProject = getCurrentProject();
+    if (!currentProject) {
+      await sendDingTalkMessage(userId, "❌ No project selected. Use `/projects` first.");
+      return;
+    }
+
+    const { data: sessions, error } = await opencodeClient.session.list({
+      directory: currentProject.worktree,
+    });
+
+    if (error || !sessions) {
+      await sendDingTalkMessage(userId, "❌ Failed to load sessions.");
+      return;
+    }
+
+    const sorted = [...sessions].sort((a, b) => {
+      const timeA = a.time?.updated ?? a.time?.created ?? 0;
+      const timeB = b.time?.updated ?? b.time?.created ?? 0;
+      return timeB - timeA;
+    });
+
+    if (index > sorted.length) {
+      await sendDingTalkMessage(
+        userId,
+        `❌ Session #${index} not found. Only ${sorted.length} sessions available.`,
+      );
+      return;
+    }
+
+    const selected = sorted[index - 1];
+
+    // Fetch full session details
+    const { data: session, error: sessionError } = await opencodeClient.session.get({
+      sessionID: selected.id,
+      directory: currentProject.worktree,
+    });
+
+    if (sessionError || !session) {
+      await sendDingTalkMessage(userId, "❌ Failed to get session details.");
+      return;
+    }
+
+    logger.info(
+      `[DingTalk] Session selected: id=${session.id}, title="${session.title}", project=${currentProject.worktree}`,
+    );
+
+    const sessionInfo = {
+      id: session.id,
+      title: session.title,
+      directory: currentProject.worktree,
+    };
+
+    setCurrentSession(sessionInfo);
+    summaryAggregator.clear();
+    clearAllInteractionState("dingtalk_session_switch");
+
+    await sendDingTalkMessage(userId, `✅ Session selected: **${session.title}**`);
+
+    logger.info(`[DingTalk] Session selected: ${session.title}`);
+  } catch (err) {
+    logger.error("[DingTalk] Error in session command:", err);
+    await sendDingTalkMessage(userId, "❌ Failed to select session.");
   }
 }
 
@@ -499,7 +578,7 @@ async function handleHelpCommand(userId: string): Promise<void> {
   const commands = getLocalizedBotCommandsDingTalk();
   const lines = commands.map((item) => `/${item.command} - ${item.description}`);
   // DingTalk markdown needs double newlines for line breaks
-  const message = `📖 **Commands**\n\n${lines.join("\n\n")}\n\n_Tip: Select a project with \`/projects\` and \`/project <number>\`_`;
+  const message = `📖 **Commands**\n\n${lines.join("\n\n")}\n\n_Tip: Use \`/projects\` and \`/project <number>\` to select a project, then \`/sessions\` and \`/session <number>\` to select a session._`;
   await sendDingTalkMessage(userId, message);
 }
 
@@ -528,7 +607,9 @@ function getLocalizedBotCommandsDingTalk(): { command: string; description: stri
     { command: "new", description: t("cmd.description.new") },
     { command: "stop", description: t("cmd.description.stop") },
     { command: "sessions", description: t("cmd.description.sessions") },
+    { command: "session <number>", description: "Select a session by number" },
     { command: "projects", description: t("cmd.description.projects") },
+    { command: "project <number>", description: "Select a project by number" },
     { command: "rename", description: t("cmd.description.rename") },
     { command: "commands", description: t("cmd.description.commands") },
     { command: "opencode_start", description: t("cmd.description.opencode_start") },
@@ -711,6 +792,9 @@ function processMessage(userId: string, text: string, sessionWebhook: string): v
     void handleProjectCommand(userId, arg);
   } else if (text.startsWith("/sessions")) {
     void handleSessionsCommand(userId);
+  } else if (text.startsWith("/session ")) {
+    const arg = text.slice(9).trim();
+    void handleSessionCommand(userId, arg);
   } else if (text.startsWith("/rename")) {
     void handleRenameCommand(userId);
   } else if (text.startsWith("/commands")) {
