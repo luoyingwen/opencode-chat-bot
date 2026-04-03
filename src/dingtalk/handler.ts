@@ -33,6 +33,7 @@ import {
   handleTaskListTextInput,
   isUserInTaskListFlow,
 } from "./tasklist.js";
+import { setDingTalkNotificationCallback } from "../scheduled-task/runtime.js";
 
 function isUserAllowed(userId: string): boolean {
   const allowed = config.dingtalk.allowedUserId;
@@ -864,6 +865,34 @@ export async function initializeDingTalkHandler(): Promise<void> {
 
   const client = initDingTalkClient({ appKey, appSecret });
   setDingTalkClient(client);
+
+  // Register DingTalk notification callback for scheduled tasks
+  setDingTalkNotificationCallback(async (text: string) => {
+    const userId = config.dingtalk.allowedUserId;
+    if (!userId) {
+      logger.warn(
+        "[DingTalk Task Notification] No allowed user ID configured, cannot send notification",
+      );
+      return;
+    }
+
+    const sessionWebhook = getUserSessionWebhook(userId);
+    if (!sessionWebhook) {
+      logger.warn(
+        `[DingTalk Task Notification] No session webhook available for user ${userId}. ` +
+          "User needs to send a message first to establish a webhook connection.",
+      );
+      return;
+    }
+
+    try {
+      const client = getDingTalkClient();
+      await client.sendMarkdownMessage(sessionWebhook, userId, "OpenCode Task", text);
+      logger.info(`[DingTalk Task Notification] Successfully sent to user ${userId}`);
+    } catch (err) {
+      logger.error("[DingTalk Task Notification] Failed to send message:", err);
+    }
+  });
 
   client.onConnectionStatus(({ connected, registered, reconnecting }) => {
     if (connected && registered && !reconnecting) {
