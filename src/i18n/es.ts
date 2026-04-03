@@ -5,6 +5,7 @@ export const es: I18nDictionary = {
   "cmd.description.new": "Crear una sesión nueva",
   "cmd.description.stop": "Detener la acción actual",
   "cmd.description.sessions": "Listar sesiones",
+  "cmd.description.tts": "Alternar respuestas de audio",
   "cmd.description.projects": "Listar proyectos",
   "cmd.description.task": "Crear tarea programada",
   "cmd.description.tasklist": "Ver tareas programadas",
@@ -97,6 +98,9 @@ export const es: I18nDictionary = {
   "status.line.uptime_sec": "Tiempo activo: {seconds} s",
   "status.line.mode": "Modo: {mode}",
   "status.line.model": "Modelo: {model}",
+  "status.line.tts": "Respuestas TTS: {tts}",
+  "status.tts.on": "Activadas",
+  "status.tts.off": "Desactivadas",
   "status.agent_not_set": "no configurado",
   "status.project_selected": "Proyecto: {project}",
   "status.project_not_selected": "Proyecto: no seleccionado",
@@ -106,6 +110,12 @@ export const es: I18nDictionary = {
   "status.session_hint": "Usa /sessions para elegir una o /new para crear una",
   "status.server_unavailable":
     "🔴 OpenCode Server no está disponible\n\nUsa /opencode_start para iniciar el servidor.",
+
+  "tts.enabled": "🔊 Respuestas de audio activadas globalmente.",
+  "tts.not_configured":
+    "⚠️ Las respuestas de audio no estan disponibles. Configura primero `TTS_API_URL` y `TTS_API_KEY`.",
+  "tts.disabled": "🔇 Respuestas de audio desactivadas globalmente.",
+  "tts.failed": "⚠️ No se pudo generar la respuesta de audio.",
 
   "projects.empty":
     "📭 No se encontraron proyectos.\n\nAbre un directorio en OpenCode y crea al menos una sesión; entonces aparecerá aquí.",
