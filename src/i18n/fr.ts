@@ -51,9 +51,9 @@ export const fr: I18nDictionary = {
   "common.unknown_error": "erreur inconnue",
 
   "start.welcome":
-    "👋 Bienvenue dans OpenCode Telegram Bot !\n\nUtilisez les commandes :\n/projects — sélectionner un projet\n/sessions — liste des sessions\n/new — nouvelle session\n/task — tâche planifiée\n/tasklist — tâches planifiées\n/status — statut\n/help — aide\n\nUtilisez les boutons du bas pour choisir le mode d'agent, le modèle et la variante.",
+    "👋 Bienvenue dans OpenCode Telegram Bot !\n\nUtilisez les commandes :\n/projects — sélectionner un projet\n/sessions — liste des sessions\n/new — nouvelle session\n/task — tâche planifiée\n/tasklist — tâches planifiées\n/status — statut\n/help — aide\n\nUtilisez les boutons du bas pour choisir l'agent, le modèle et la variante.",
   "help.keyboard_hint":
-    "💡 Utilisez les boutons du bas pour le mode d'agent, le modèle, la variante et les actions de contexte.",
+    "💡 Utilisez les boutons du bas pour l'agent, le modèle, la variante et les actions de contexte.",
   "help.text":
     "📖 **Aide**\n\n/status - Vérifier l'état du serveur\n/sessions - Liste des sessions\n/new - Créer une nouvelle session\n/help - Aide",
 
@@ -97,7 +97,7 @@ export const fr: I18nDictionary = {
   "status.line.managed_no": "Démarré par le bot : Non",
   "status.line.pid": "PID : {pid}",
   "status.line.uptime_sec": "Temps de fonctionnement : {seconds} sec",
-  "status.line.mode": "Mode : {mode}",
+  "status.line.mode": "Agent : {mode}",
   "status.line.model": "Modèle : {model}",
   "status.line.tts": "Réponses TTS : {tts}",
   "status.tts.on": "Activées",
@@ -199,11 +199,11 @@ export const fr: I18nDictionary = {
   "opencode_stop.error":
     "🔴 Une erreur s'est produite lors de l'arrêt du serveur.\n\nConsultez les logs de l'application pour plus de détails.",
 
-  "agent.changed_callback": "Mode modifié : {name}",
-  "agent.changed_message": "✅ Mode défini sur : {name}",
-  "agent.change_error_callback": "Impossible de modifier le mode",
-  "agent.menu.current": "Mode actuel : {name}\n\nSélectionnez un mode :",
-  "agent.menu.select": "Sélectionnez un mode de travail :",
+  "agent.changed_callback": "Agent modifié : {name}",
+  "agent.changed_message": "✅ Agent défini sur : {name}",
+  "agent.change_error_callback": "Impossible de modifier l'agent",
+  "agent.menu.current": "Agent actuel : {name}\n\nSélectionnez un agent :",
+  "agent.menu.select": "Sélectionnez un agent :",
   "agent.menu.empty": "⚠️ Aucun mode disponible",
   "agent.menu.error": "🔴 Impossible de récupérer la liste des modes",
 
@@ -289,7 +289,7 @@ export const fr: I18nDictionary = {
   "question.summary.question": "Question {index} :\n{question}\n\n",
   "question.summary.answer": "Réponse :\n{answer}\n\n",
 
-  "keyboard.agent_mode": "{emoji} Mode {name}",
+  "keyboard.agent_mode": "{emoji} {name} Agent",
   "keyboard.context": "📊 {used} / {limit} ({percent}%)",
   "keyboard.context_empty": "📊 0",
   "keyboard.variant": "💭 {name}",

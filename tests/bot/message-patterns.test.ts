@@ -25,6 +25,10 @@ describe("bot/message-patterns", () => {
     expect("🤖 cliproxyapi2/gpt-5.3-codex").toMatch(MODEL_BUTTON_TEXT_PATTERN);
   });
 
+  it("does not treat custom agent labels as model buttons", () => {
+    expect("🤖 Reviewer Agent").not.toMatch(MODEL_BUTTON_TEXT_PATTERN);
+  });
+
   it("matches current and legacy variant button prefixes", () => {
     const keyboard = createMainKeyboard("build", {
       providerID: "openrouter",
@@ -42,8 +46,9 @@ describe("bot/message-patterns", () => {
     expect("Create a migration plan").not.toMatch(VARIANT_BUTTON_TEXT_PATTERN);
   });
 
-  it("matches agent mode labels with extra descriptors", () => {
+  it("matches current and legacy agent button labels with extra descriptors", () => {
+    expect("🤖 Sisyphus (Ultraworker) Agent").toMatch(AGENT_MODE_BUTTON_TEXT_PATTERN);
     expect("🤖 Sisyphus (Ultraworker) Mode").toMatch(AGENT_MODE_BUTTON_TEXT_PATTERN);
-    expect("🤖 Sisyphus (Ultraworker) Mode").not.toMatch(MODEL_BUTTON_TEXT_PATTERN);
+    expect("🤖 Sisyphus (Ultraworker) Agent").not.toMatch(MODEL_BUTTON_TEXT_PATTERN);
   });
 });

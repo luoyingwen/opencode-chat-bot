@@ -1,5 +1,5 @@
 import { Keyboard } from "grammy";
-import { getAgentDisplayName } from "../../agent/types.js";
+import { getAgentButtonLabel } from "../../agent/types.js";
 import { formatModelForButton } from "../../model/types.js";
 import type { ModelInfo } from "../../model/types.js";
 import type { ContextInfo } from "../../keyboard/types.js";
@@ -42,7 +42,7 @@ export function createMainKeyboard(
   variantName?: string,
 ): Keyboard {
   const keyboard = new Keyboard();
-  const agentText = getAgentDisplayName(currentAgent);
+  const agentText = getAgentButtonLabel(currentAgent);
 
   // Format model with compact provider/model text and icon
   const modelText = formatModelForButton(currentModel.providerID, currentModel.modelID);
@@ -65,16 +65,16 @@ export function createMainKeyboard(
 }
 
 /**
- * Create Reply Keyboard with agent mode indicator
+ * Create Reply Keyboard with agent indicator
  * @param currentAgent Current agent name (e.g., "build", "plan")
- * @returns Reply Keyboard with single button showing current mode
+ * @returns Reply Keyboard with single button showing current agent
  * @deprecated Use createMainKeyboard instead
  */
 export function createAgentKeyboard(currentAgent: string): Keyboard {
   const keyboard = new Keyboard();
-  const displayName = getAgentDisplayName(currentAgent);
+  const displayName = getAgentButtonLabel(currentAgent);
 
-  // Single button with current agent mode
+  // Single button with current agent
   keyboard.text(displayName).row();
 
   return keyboard.resized().persistent();

@@ -51,9 +51,9 @@ export const es: I18nDictionary = {
   "common.unknown_error": "error desconocido",
 
   "start.welcome":
-    "👋 ¡Bienvenido a OpenCode Telegram Bot!\n\nUsa los comandos:\n/projects — seleccionar proyecto\n/sessions — lista de sesiones\n/new — sesión nueva\n/task — tarea programada\n/tasklist — tareas programadas\n/status — estado\n/help — ayuda\n\nUsa los botones inferiores para elegir modo, modelo y variante.",
+    "👋 ¡Bienvenido a OpenCode Telegram Bot!\n\nUsa los comandos:\n/projects — seleccionar proyecto\n/sessions — lista de sesiones\n/new — sesión nueva\n/task — tarea programada\n/tasklist — tareas programadas\n/status — estado\n/help — ayuda\n\nUsa los botones inferiores para elegir agente, modelo y variante.",
   "help.keyboard_hint":
-    "💡 Usa los botones inferiores para modo del agente, modelo, variante y acciones de contexto.",
+    "💡 Usa los botones inferiores para agente, modelo, variante y acciones de contexto.",
   "help.text":
     "📖 **Ayuda**\n\n/status - Ver estado del servidor\n/sessions - Lista de sesiones\n/new - Crear una sesión nueva\n/help - Ayuda",
 
@@ -96,7 +96,7 @@ export const es: I18nDictionary = {
   "status.line.managed_no": "Iniciado por el bot: No",
   "status.line.pid": "PID: {pid}",
   "status.line.uptime_sec": "Tiempo activo: {seconds} s",
-  "status.line.mode": "Modo: {mode}",
+  "status.line.mode": "Agente: {mode}",
   "status.line.model": "Modelo: {model}",
   "status.line.tts": "Respuestas TTS: {tts}",
   "status.tts.on": "Activadas",
@@ -198,11 +198,11 @@ export const es: I18nDictionary = {
   "opencode_stop.error":
     "🔴 Ocurrió un error al detener el servidor.\n\nRevisa los logs de la aplicación para más detalles.",
 
-  "agent.changed_callback": "Modo cambiado: {name}",
-  "agent.changed_message": "✅ Modo cambiado a: {name}",
-  "agent.change_error_callback": "No se pudo cambiar el modo",
-  "agent.menu.current": "Modo actual: {name}\n\nSelecciona el modo:",
-  "agent.menu.select": "Selecciona el modo de trabajo:",
+  "agent.changed_callback": "Agente cambiado: {name}",
+  "agent.changed_message": "✅ Agente cambiado a: {name}",
+  "agent.change_error_callback": "No se pudo cambiar el agente",
+  "agent.menu.current": "Agente actual: {name}\n\nSelecciona el agente:",
+  "agent.menu.select": "Selecciona el agente:",
   "agent.menu.empty": "⚠️ No hay agentes disponibles",
   "agent.menu.error": "🔴 No se pudo obtener la lista de agentes",
 
@@ -287,7 +287,7 @@ export const es: I18nDictionary = {
   "question.summary.question": "Pregunta {index}:\n{question}\n\n",
   "question.summary.answer": "Respuesta:\n{answer}\n\n",
 
-  "keyboard.agent_mode": "{emoji} Modo {name}",
+  "keyboard.agent_mode": "{emoji} {name} Agent",
   "keyboard.context": "📊 {used} / {limit} ({percent}%)",
   "keyboard.context_empty": "📊 0",
   "keyboard.variant": "💭 {name}",

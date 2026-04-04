@@ -48,9 +48,9 @@ export const ru: I18nDictionary = {
   "common.unknown_error": "неизвестная ошибка",
 
   "start.welcome":
-    "👋 Добро пожаловать в OpenCode Telegram Bot!\n\nИспользуйте команды:\n/projects — выбрать проект\n/sessions — список сессий\n/new — новая сессия\n/task — задача по расписанию\n/tasklist — список задач по расписанию\n/status — статус\n/help — справка\n\nРежим, модель и вариант выбираются кнопками внизу.",
+    "👋 Добро пожаловать в OpenCode Telegram Bot!\n\nИспользуйте команды:\n/projects — выбрать проект\n/sessions — список сессий\n/new — новая сессия\n/task — задача по расписанию\n/tasklist — список задач по расписанию\n/status — статус\n/help — справка\n\nАгент, модель и вариант выбираются кнопками внизу.",
   "help.keyboard_hint":
-    "💡 Режим, модель, вариант и действия с контекстом доступны через нижние кнопки клавиатуры.",
+    "💡 Агент, модель, вариант и действия с контекстом доступны через нижние кнопки клавиатуры.",
   "help.text":
     "📖 **Справка**\n\n/status - Проверить статус сервера\n/sessions - Список сессий\n/new - Создать новую сессию\n/help - Справка",
 
@@ -90,7 +90,7 @@ export const ru: I18nDictionary = {
   "status.line.managed_no": "Запущен ботом: Нет",
   "status.line.pid": "PID: {pid}",
   "status.line.uptime_sec": "Uptime: {seconds} сек",
-  "status.line.mode": "Режим: {mode}",
+  "status.line.mode": "Агент: {mode}",
   "status.line.model": "Модель: {model}",
   "status.line.tts": "TTS-ответы: {tts}",
   "status.tts.on": "Вкл",
@@ -189,11 +189,11 @@ export const ru: I18nDictionary = {
   "opencode_stop.error":
     "🔴 Произошла ошибка при остановке сервера.\n\nПроверьте логи приложения для подробностей.",
 
-  "agent.changed_callback": "Режим изменен: {name}",
-  "agent.changed_message": "✅ Режим изменен на: {name}",
-  "agent.change_error_callback": "Ошибка при смене режима",
-  "agent.menu.current": "Текущий режим: {name}\n\nВыберите режим:",
-  "agent.menu.select": "Выберите режим работы:",
+  "agent.changed_callback": "Агент изменен: {name}",
+  "agent.changed_message": "✅ Агент изменен на: {name}",
+  "agent.change_error_callback": "Ошибка при смене агента",
+  "agent.menu.current": "Текущий агент: {name}\n\nВыберите агента:",
+  "agent.menu.select": "Выберите агента:",
   "agent.menu.empty": "⚠️ Нет доступных агентов",
   "agent.menu.error": "🔴 Не удалось получить список агентов",
 
@@ -277,7 +277,7 @@ export const ru: I18nDictionary = {
   "question.summary.question": "Вопрос {index}:\n{question}\n\n",
   "question.summary.answer": "Ответ:\n{answer}\n\n",
 
-  "keyboard.agent_mode": "{emoji} {name} Mode",
+  "keyboard.agent_mode": "{emoji} {name} Agent",
   "keyboard.context": "📊 {used} / {limit} ({percent}%)",
   "keyboard.context_empty": "📊 0",
   "keyboard.variant": "💭 {name}",

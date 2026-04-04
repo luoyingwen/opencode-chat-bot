@@ -1,5 +1,10 @@
 import { describe, expect, it } from "vitest";
-import { AGENT_EMOJI, getAgentDisplayName, getAgentEmoji } from "../../src/agent/types.js";
+import {
+  AGENT_EMOJI,
+  getAgentButtonLabel,
+  getAgentDisplayName,
+  getAgentEmoji,
+} from "../../src/agent/types.js";
 
 describe("agent/types", () => {
   it("returns mapped emoji for known agents", () => {
@@ -12,8 +17,13 @@ describe("agent/types", () => {
     expect(getAgentEmoji("custom-agent")).toBe("🤖");
   });
 
-  it("builds display name with emoji and capitalized mode", () => {
-    expect(getAgentDisplayName("build")).toBe("🛠️ Build Mode");
-    expect(getAgentDisplayName("customAgent")).toBe("🤖 CustomAgent Mode");
+  it("builds display name with emoji and capitalized agent name", () => {
+    expect(getAgentDisplayName("build")).toBe("🛠️ Build");
+    expect(getAgentDisplayName("customAgent")).toBe("🤖 CustomAgent");
+  });
+
+  it("builds reply keyboard agent label with Agent suffix", () => {
+    expect(getAgentButtonLabel("build")).toBe("🛠️ Build Agent");
+    expect(getAgentButtonLabel("customAgent")).toBe("🤖 CustomAgent Agent");
   });
 });

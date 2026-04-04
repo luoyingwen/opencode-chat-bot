@@ -16,7 +16,7 @@ describe("bot/utils/keyboard", () => {
       modelID: "openai/gpt-4o",
     });
 
-    expect(getButtonText(keyboard.keyboard[0][0])).toBe("🛠️ Build Mode");
+    expect(getButtonText(keyboard.keyboard[0][0])).toBe("🛠️ Build Agent");
     expect(getButtonText(keyboard.keyboard[0][1])).toBe("📊 0");
     expect(getButtonText(keyboard.keyboard[1][0])).toBe("🤖 openrouter\nopenai/gpt-4o");
     expect(getButtonText(keyboard.keyboard[1][1])).toBe("💡 Default");
@@ -38,7 +38,7 @@ describe("bot/utils/keyboard", () => {
       "⚡ Fast",
     );
 
-    expect(getButtonText(keyboard.keyboard[0][0])).toBe("📋 Plan Mode");
+    expect(getButtonText(keyboard.keyboard[0][0])).toBe("📋 Plan Agent");
     expect(getButtonText(keyboard.keyboard[0][1])).toBe("📊 150K / 1.5M (10%)");
     expect(getButtonText(keyboard.keyboard[1][1])).toBe("⚡ Fast");
   });
@@ -47,7 +47,7 @@ describe("bot/utils/keyboard", () => {
     const keyboard = createAgentKeyboard("custom");
     const nonEmptyRows = keyboard.keyboard.filter((row) => row.length > 0);
 
-    expect(nonEmptyRows).toEqual([[{ text: "🤖 Custom Mode" }]]);
+    expect(nonEmptyRows).toEqual([[{ text: "🤖 Custom Agent" }]]);
     expect(keyboard.resize_keyboard).toBe(true);
     expect(keyboard.is_persistent).toBe(true);
 

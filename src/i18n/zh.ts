@@ -44,8 +44,8 @@ export const zh: I18nDictionary = {
   "common.unknown_error": "未知错误",
 
   "start.welcome":
-    "👋 欢迎使用 OpenCode Telegram Bot！\n\n可用命令：\n/projects — 选择项目\n/sessions — 会话列表\n/new — 新建会话\n/task — 定时任务\n/tasklist — 定时任务列表\n/status — 状态\n/help — 帮助\n\n请使用底部按钮选择模式、模型和变体。",
-  "help.keyboard_hint": "💡 代理模式、模型、变体和上下文操作请使用底部键盘按钮。",
+    "👋 欢迎使用 OpenCode Telegram Bot！\n\n可用命令：\n/projects — 选择项目\n/sessions — 会话列表\n/new — 新建会话\n/task — 定时任务\n/tasklist — 定时任务列表\n/status — 状态\n/help — 帮助\n\n请使用底部按钮选择 Agent、模型和变体。",
+  "help.keyboard_hint": "💡 Agent、模型、变体和上下文操作请使用底部键盘按钮。",
   "help.text":
     "📖 **帮助**\n\n/status - 查看服务器状态\n/sessions - 会话列表\n/new - 创建新会话\n/help - 帮助",
 
@@ -81,7 +81,7 @@ export const zh: I18nDictionary = {
   "status.line.managed_no": "由机器人启动：否",
   "status.line.pid": "PID：{pid}",
   "status.line.uptime_sec": "运行时间：{seconds} 秒",
-  "status.line.mode": "模式：{mode}",
+  "status.line.mode": "Agent：{mode}",
   "status.line.model": "模型：{model}",
   "status.line.tts": "TTS 回复：{tts}",
   "status.tts.on": "开启",
@@ -165,11 +165,11 @@ export const zh: I18nDictionary = {
   "opencode_stop.success": "✅ OpenCode 服务器已成功停止",
   "opencode_stop.error": "🔴 停止服务器时发生错误。\n\n请查看应用日志了解详情。",
 
-  "agent.changed_callback": "模式已更改：{name}",
-  "agent.changed_message": "✅ 模式已切换为：{name}",
-  "agent.change_error_callback": "切换模式失败",
-  "agent.menu.current": "当前模式：{name}\n\n请选择模式：",
-  "agent.menu.select": "请选择工作模式：",
+  "agent.changed_callback": "Agent 已更改：{name}",
+  "agent.changed_message": "✅ Agent 已切换为：{name}",
+  "agent.change_error_callback": "切换 Agent 失败",
+  "agent.menu.current": "当前 Agent：{name}\n\n请选择 Agent：",
+  "agent.menu.select": "请选择 Agent：",
   "agent.menu.empty": "⚠️ 没有可用的代理",
   "agent.menu.error": "🔴 获取代理列表失败",
 
@@ -250,7 +250,7 @@ export const zh: I18nDictionary = {
   "question.summary.question": "问题 {index}：\n{question}\n\n",
   "question.summary.answer": "回答：\n{answer}\n\n",
 
-  "keyboard.agent_mode": "{emoji} {name} 模式",
+  "keyboard.agent_mode": "{emoji} {name} Agent",
   "keyboard.context": "📊 {used} / {limit} ({percent}%)",
   "keyboard.context_empty": "📊 0",
   "keyboard.variant": "💭 {name}",
