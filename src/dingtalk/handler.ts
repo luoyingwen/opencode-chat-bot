@@ -876,21 +876,56 @@ export async function initializeDingTalkHandler(): Promise<void> {
       return;
     }
 
+    const client = getDingTalkClient();
     const sessionWebhook = getUserSessionWebhook(userId);
-    if (!sessionWebhook) {
+
+    // Try sessionWebhook first
+    if (sessionWebhook) {
+      try {
+        await client.sendMarkdownMessage(sessionWebhook, userId, "OpenCode Task", text);
+        logger.info(`[DingTalk Task Notification] Sent via webhook to user ${userId}`);
+        return;
+      } catch (err) {
+        const errorMessage = err instanceof Error ? err.message : String(err);
+        if (
+          errorMessage.includes("400502") ||
+          errorMessage.includes("400014") ||
+          errorMessage.includes("session") ||
+          errorMessage.includes("webhook") ||
+          errorMessage.includes("expired") ||
+          errorMessage.includes("invalid")
+        ) {
+          logger.warn(
+            `[DingTalk Task Notification] Webhook expired for user ${userId}, falling back to proactive API...`,
+          );
+        } else {
+          logger.error("[DingTalk Task Notification] Failed to send via webhook:", err);
+          return;
+        }
+      }
+    }
+
+    // Check proactive risk cooldown
+    if (client.hasProactiveRisk(userId)) {
       logger.warn(
-        `[DingTalk Task Notification] No session webhook available for user ${userId}. ` +
-          "User needs to send a message first to establish a webhook connection.",
+        `[DingTalk Task Notification] Skipping proactive send to ${userId} due to recent permission error. User needs to send a message first.`,
       );
       return;
     }
 
-    try {
-      const client = getDingTalkClient();
-      await client.sendMarkdownMessage(sessionWebhook, userId, "OpenCode Task", text);
-      logger.info(`[DingTalk Task Notification] Successfully sent to user ${userId}`);
-    } catch (err) {
-      logger.error("[DingTalk Task Notification] Failed to send message:", err);
+    // Use proactive API
+    logger.info(`[DingTalk Task Notification] Using proactive API to send to user ${userId}`);
+    const result = await client.sendProactiveMarkdownMessage(userId, "OpenCode Task", text);
+
+    if (!result.ok) {
+      logger.error(`[DingTalk Task Notification] Proactive message failed: ${result.error}`);
+      if (client.hasProactiveRisk(userId)) {
+        logger.warn(
+          `[DingTalk Task Notification] Proactive API permission error for ${userId}. Check DingTalk app permissions.`,
+        );
+      }
+    } else {
+      logger.info(`[DingTalk Task Notification] Proactive message sent successfully to ${userId}`);
     }
   });
 
