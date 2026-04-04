@@ -974,9 +974,9 @@ export function createBot(): Bot<Context> {
     }
   });
 
-  // Handle Reply Keyboard button press (agent mode indicator)
+  // Handle Reply Keyboard button press (agent indicator)
   bot.hears(AGENT_MODE_BUTTON_TEXT_PATTERN, async (ctx) => {
-    logger.debug(`[Bot] Agent mode button pressed: ${ctx.message?.text}`);
+    logger.debug(`[Bot] Agent button pressed: ${ctx.message?.text}`);
 
     try {
       if (await blockMenuWhileInteractionActive(ctx)) {
