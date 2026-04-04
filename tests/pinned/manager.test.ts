@@ -207,11 +207,13 @@ describe("pinned/manager", () => {
         isFile: () => filePath.endsWith(".git"),
       }));
       mocked.readFile.mockImplementation(async (filePath: string) => {
+        const normalizedPath = filePath.replace(/\\/g, "/");
+
         if (filePath.endsWith(".git")) {
           return "gitdir: ../.git/worktrees/repo-feature\n";
         }
 
-        if (filePath.includes(".git\\worktrees\\repo-feature\\HEAD")) {
+        if (normalizedPath.includes(".git/worktrees/repo-feature/HEAD")) {
           return "ref: refs/heads/feature/worktree\n";
         }
 
