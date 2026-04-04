@@ -1,6 +1,9 @@
 import { logger } from "../../utils/logger.js";
 
 const TELEGRAM_MESSAGE_SAFE_LENGTH = 4000;
+const DEFAULT_STREAM_KEY = "default";
+
+export type ToolStreamKey = "default" | "subagent" | "todo";
 
 interface ToolCallStreamerOptions {
   throttleMs: number;
@@ -15,6 +18,7 @@ interface StreamEntry {
 }
 
 interface StreamState {
+  key: ToolStreamKey;
   sessionId: string;
   entries: StreamEntry[];
   latestParts: string[];
@@ -114,26 +118,31 @@ export class ToolCallStreamer {
     this.deleteText = options.deleteText;
   }
 
-  append(sessionId: string, text: string): void {
+  append(sessionId: string, text: string, streamKey: ToolStreamKey = DEFAULT_STREAM_KEY): void {
     const normalizedText = text.trim();
     if (!sessionId || !normalizedText) {
       return;
     }
 
-    const state = this.getOrCreateState(sessionId);
+    const state = this.getOrCreateState(sessionId, streamKey);
     state.entries.push({ text: normalizedText });
     state.latestParts = buildParts(state.entries);
     this.ensureTimer(state);
   }
 
-  replaceByPrefix(sessionId: string, prefix: string, text: string): void {
+  replaceByPrefix(
+    sessionId: string,
+    prefix: string,
+    text: string,
+    streamKey: ToolStreamKey = DEFAULT_STREAM_KEY,
+  ): void {
     const normalizedPrefix = prefix.trim();
     const normalizedText = text.trim();
     if (!sessionId || !normalizedPrefix || !normalizedText) {
       return;
     }
 
-    const state = this.getOrCreateState(sessionId);
+    const state = this.getOrCreateState(sessionId, streamKey);
     const existingEntry = state.entries.find((entry) => entry.prefix === normalizedPrefix);
     if (existingEntry) {
       existingEntry.text = normalizedText;
@@ -146,27 +155,24 @@ export class ToolCallStreamer {
   }
 
   async flushSession(sessionId: string, reason: string): Promise<void> {
-    const state = this.states.get(sessionId);
-    if (!state) {
-      return;
-    }
-
-    this.clearTimer(state);
-    await this.enqueueTask(state, () => this.syncState(state, reason));
+    const states = this.getStatesForSession(sessionId);
+    await Promise.all(
+      states.map(async (state) => {
+        this.clearTimer(state);
+        await this.enqueueTask(state, () => this.syncState(state, reason));
+      }),
+    );
   }
 
   async breakSession(sessionId: string, reason: string): Promise<void> {
-    const state = this.states.get(sessionId);
-    if (!state) {
-      return;
+    const states = this.getStatesForSession(sessionId);
+    for (const state of states) {
+      state.isBreaking = true;
+      this.clearTimer(state);
+      await this.enqueueTask(state, () => this.syncState(state, reason));
+      this.cancelState(state);
+      this.removeState(state);
     }
-
-    state.isBreaking = true;
-    this.getOrCreateState(sessionId);
-    this.clearTimer(state);
-    await this.enqueueTask(state, () => this.syncState(state, reason));
-    this.cancelState(state);
-    this.removeState(state);
     logger.debug(`[ToolCallStreamer] Broke session stream: session=${sessionId}, reason=${reason}`);
   }
 
@@ -202,8 +208,20 @@ export class ToolCallStreamer {
     }
   }
 
-  private getOrCreateState(sessionId: string): StreamState {
-    const existing = this.states.get(sessionId);
+  private getStateId(sessionId: string, streamKey: ToolStreamKey): string {
+    return `${sessionId}:${streamKey}`;
+  }
+
+  private getStatesForSession(sessionId: string): StreamState[] {
+    return Array.from(this.allStates).filter((state) => state.sessionId === sessionId);
+  }
+
+  private getOrCreateState(
+    sessionId: string,
+    streamKey: ToolStreamKey = DEFAULT_STREAM_KEY,
+  ): StreamState {
+    const stateId = this.getStateId(sessionId, streamKey);
+    const existing = this.states.get(stateId);
     if (existing && !existing.isBroken && !existing.cancelled && !existing.isBreaking) {
       return existing;
     }
@@ -214,6 +232,7 @@ export class ToolCallStreamer {
     }
 
     const state: StreamState = {
+      key: streamKey,
       sessionId,
       entries: [],
       latestParts: [],
@@ -228,7 +247,7 @@ export class ToolCallStreamer {
       fatalErrorLogged: false,
     };
 
-    this.states.set(sessionId, state);
+    this.states.set(stateId, state);
     this.allStates.add(state);
     return state;
   }
@@ -279,8 +298,9 @@ export class ToolCallStreamer {
   }
 
   private removeState(state: StreamState): void {
-    if (this.states.get(state.sessionId) === state) {
-      this.states.delete(state.sessionId);
+    const stateId = this.getStateId(state.sessionId, state.key);
+    if (this.states.get(stateId) === state) {
+      this.states.delete(stateId);
     }
 
     this.allStates.delete(state);

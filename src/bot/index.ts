@@ -79,7 +79,7 @@ import { foregroundSessionState } from "../scheduled-task/foreground-state.js";
 import { scheduledTaskRuntime } from "../scheduled-task/runtime.js";
 import { ResponseStreamer } from "./streaming/response-streamer.js";
 import type { StreamingMessagePayload } from "./streaming/response-streamer.js";
-import { ToolCallStreamer } from "./streaming/tool-call-streamer.js";
+import { ToolCallStreamer, type ToolStreamKey } from "./streaming/tool-call-streamer.js";
 import {
   editMessageWithMarkdownFallback,
   sendMessageWithMarkdownFallback,
@@ -315,6 +315,14 @@ const toolCallStreamer = new ToolCallStreamer({
   },
 });
 
+function getToolStreamKey(tool: string): ToolStreamKey {
+  if (tool === "todowrite") {
+    return "todo";
+  }
+
+  return "default";
+}
+
 async function ensureCommandsInitialized(ctx: Context, next: NextFunction): Promise<void> {
   if (commandsInitialized || !ctx.from || ctx.from.id !== config.telegram.allowedUserId) {
     await next();
@@ -482,7 +490,7 @@ async function ensureEventSubscription(directory: string): Promise<void> {
     try {
       const message = formatToolInfo(toolInfo);
       if (message) {
-        toolCallStreamer.append(toolInfo.sessionId, message);
+        toolCallStreamer.append(toolInfo.sessionId, message, getToolStreamKey(toolInfo.tool));
       }
     } catch (err) {
       logger.error("Failed to send tool notification to Telegram:", err);
@@ -509,7 +517,12 @@ async function ensureEventSubscription(directory: string): Promise<void> {
         return;
       }
 
-      toolCallStreamer.replaceByPrefix(sessionId, SUBAGENT_STREAM_PREFIX, renderedCards);
+      toolCallStreamer.replaceByPrefix(
+        sessionId,
+        SUBAGENT_STREAM_PREFIX,
+        renderedCards,
+        "subagent",
+      );
     } catch (err) {
       logger.error("Failed to render subagent activity for Telegram:", err);
     }

@@ -57,6 +57,72 @@ describe("bot/streaming/tool-call-streamer", () => {
     expect(editText).toHaveBeenCalledWith("s1", 10, "first\n\nsecond");
   });
 
+  it("keeps todo updates in a separate message stream", async () => {
+    vi.useFakeTimers();
+
+    const sendText = vi.fn().mockResolvedValueOnce(10).mockResolvedValueOnce(11);
+    const editText = vi.fn().mockResolvedValue(undefined);
+    const deleteText = vi.fn().mockResolvedValue(undefined);
+    const streamer = new ToolCallStreamer({
+      throttleMs: 0,
+      sendText,
+      editText,
+      deleteText,
+    });
+
+    streamer.append("s1", "regular tool");
+    await vi.waitFor(() => {
+      expect(sendText).toHaveBeenCalledTimes(1);
+    });
+
+    streamer.append("s1", "todo tool", "todo");
+    await vi.waitFor(() => {
+      expect(sendText).toHaveBeenCalledTimes(2);
+    });
+
+    streamer.append("s1", "regular tool update");
+    await vi.waitFor(() => {
+      expect(editText).toHaveBeenCalledTimes(1);
+    });
+
+    expect(sendText).toHaveBeenNthCalledWith(1, "s1", "regular tool");
+    expect(sendText).toHaveBeenNthCalledWith(2, "s1", "todo tool");
+    expect(editText).toHaveBeenCalledWith("s1", 10, "regular tool\n\nregular tool update");
+  });
+
+  it("keeps subagent updates in a separate replace-by-prefix stream", async () => {
+    vi.useFakeTimers();
+
+    const sendText = vi.fn().mockResolvedValueOnce(20).mockResolvedValueOnce(21);
+    const editText = vi.fn().mockResolvedValue(undefined);
+    const deleteText = vi.fn().mockResolvedValue(undefined);
+    const streamer = new ToolCallStreamer({
+      throttleMs: 0,
+      sendText,
+      editText,
+      deleteText,
+    });
+
+    streamer.append("s1", "regular tool");
+    await vi.waitFor(() => {
+      expect(sendText).toHaveBeenCalledTimes(1);
+    });
+
+    streamer.replaceByPrefix("s1", "subagent", "subagent card", "subagent");
+    await vi.waitFor(() => {
+      expect(sendText).toHaveBeenCalledTimes(2);
+    });
+
+    streamer.replaceByPrefix("s1", "subagent", "subagent card updated", "subagent");
+    await vi.waitFor(() => {
+      expect(editText).toHaveBeenCalledTimes(1);
+    });
+
+    expect(sendText).toHaveBeenNthCalledWith(1, "s1", "regular tool");
+    expect(sendText).toHaveBeenNthCalledWith(2, "s1", "subagent card");
+    expect(editText).toHaveBeenCalledWith("s1", 21, "subagent card updated");
+  });
+
   it("creates continuation messages when the stream exceeds Telegram limits", async () => {
     vi.useFakeTimers();
 
@@ -148,6 +214,29 @@ describe("bot/streaming/tool-call-streamer", () => {
     expect(editText).not.toHaveBeenCalled();
     expect(deleteText).not.toHaveBeenCalled();
     expect(sendText).toHaveBeenNthCalledWith(2, "s1", "after file");
+  });
+
+  it("flushes all stream keys for the same session", async () => {
+    vi.useFakeTimers();
+
+    const sendText = vi.fn().mockResolvedValueOnce(30).mockResolvedValueOnce(31);
+    const editText = vi.fn().mockResolvedValue(undefined);
+    const deleteText = vi.fn().mockResolvedValue(undefined);
+    const streamer = new ToolCallStreamer({
+      throttleMs: 200,
+      sendText,
+      editText,
+      deleteText,
+    });
+
+    streamer.append("s1", "regular tool");
+    streamer.append("s1", "todo tool", "todo");
+
+    await streamer.flushSession("s1", "manual_flush");
+
+    expect(sendText).toHaveBeenCalledTimes(2);
+    expect(sendText).toHaveBeenNthCalledWith(1, "s1", "regular tool");
+    expect(sendText).toHaveBeenNthCalledWith(2, "s1", "todo tool");
   });
 
   it("cancels throttled tool sends when clearing all streams", async () => {
