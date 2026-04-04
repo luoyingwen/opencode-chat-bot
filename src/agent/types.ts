@@ -36,5 +36,12 @@ export function getAgentEmoji(agentName: string): string {
 export function getAgentDisplayName(agentName: string): string {
   const emoji = getAgentEmoji(agentName);
   const capitalizedName = agentName.charAt(0).toUpperCase() + agentName.slice(1);
-  return `${emoji} ${capitalizedName} Mode`;
+  return `${emoji} ${capitalizedName}`;
+}
+
+/**
+ * Get reply keyboard label for agent button.
+ */
+export function getAgentButtonLabel(agentName: string): string {
+  return `${getAgentDisplayName(agentName)} Agent`;
 }
