@@ -36,6 +36,7 @@ interface PinnedMessageManagerPrivateState {
     sessionId: null;
     sessionTitle: string;
     projectName: string;
+    projectBranch: string | null;
     tokensUsed: number;
     tokensLimit: number;
     lastUpdated: number;
@@ -123,6 +124,7 @@ export async function resetSingletonState(): Promise<void> {
     sessionId: null,
     sessionTitle: "new session",
     projectName: "",
+    projectBranch: null,
     tokensUsed: 0,
     tokensLimit: 0,
     lastUpdated: 0,
