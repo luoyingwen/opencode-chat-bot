@@ -3,6 +3,14 @@ import { logger } from "../utils/logger.js";
 import { config } from "../config.js";
 import { opencodeClient } from "../opencode/client.js";
 import { getCurrentSession } from "../session/manager.js";
+import {
+  recordProactiveRisk,
+  getProactiveRisk,
+  deleteProactiveRisk,
+  isProactivePermissionError,
+} from "./proactive-risk-registry.js";
+
+const DINGTALK_PROACTIVE_API = "https://api.dingtalk.com/v1.0/robot/oToMessages/batchSend";
 
 type MessageHandler = (data: {
   userId: string;
@@ -98,6 +106,124 @@ export class DingTalkClient {
     }
   }
 
+  async sendProactiveTextMessage(
+    userId: string,
+    text: string,
+  ): Promise<{ ok: boolean; error?: string }> {
+    const accessToken = await this.getAccessToken();
+    const robotCode = config.dingtalk.appKey;
+
+    const body = {
+      robotCode,
+      msgKey: "sampleText",
+      msgParam: JSON.stringify({ content: text }),
+      userIds: [userId],
+    };
+
+    try {
+      const response = await fetch(DINGTALK_PROACTIVE_API, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "x-acs-dingtalk-access-token": accessToken,
+        },
+        body: JSON.stringify(body),
+      });
+
+      const data = (await response.json()) as {
+        errcode?: number;
+        errmsg?: string;
+        processQueryKey?: string;
+      };
+
+      if (data.errcode && data.errcode !== 0) {
+        const errCode = String(data.errcode);
+        if (isProactivePermissionError(errCode)) {
+          recordProactiveRisk({
+            accountId: config.dingtalk.appKey,
+            targetId: userId,
+            level: "high",
+            reason: errCode,
+            source: "proactive-api",
+          });
+        }
+        return { ok: false, error: data.errmsg || `Error code: ${data.errcode}` };
+      }
+
+      deleteProactiveRisk(config.dingtalk.appKey, userId);
+      logger.debug(
+        `[DingTalk] Proactive text sent to ${userId}, processQueryKey=${data.processQueryKey}`,
+      );
+      return { ok: true };
+    } catch (err) {
+      const errorMsg = err instanceof Error ? err.message : String(err);
+      logger.error(`[DingTalk] Failed to send proactive text: ${errorMsg}`);
+      return { ok: false, error: errorMsg };
+    }
+  }
+
+  async sendProactiveMarkdownMessage(
+    userId: string,
+    title: string,
+    markdown: string,
+  ): Promise<{ ok: boolean; error?: string }> {
+    const accessToken = await this.getAccessToken();
+    const robotCode = config.dingtalk.appKey;
+
+    const body = {
+      robotCode,
+      msgKey: "sampleMarkdown",
+      msgParam: JSON.stringify({ title, text: markdown }),
+      userIds: [userId],
+    };
+
+    try {
+      const response = await fetch(DINGTALK_PROACTIVE_API, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "x-acs-dingtalk-access-token": accessToken,
+        },
+        body: JSON.stringify(body),
+      });
+
+      const data = (await response.json()) as {
+        errcode?: number;
+        errmsg?: string;
+        processQueryKey?: string;
+      };
+
+      if (data.errcode && data.errcode !== 0) {
+        const errCode = String(data.errcode);
+        if (isProactivePermissionError(errCode)) {
+          recordProactiveRisk({
+            accountId: config.dingtalk.appKey,
+            targetId: userId,
+            level: "high",
+            reason: errCode,
+            source: "proactive-api",
+          });
+        }
+        return { ok: false, error: data.errmsg || `Error code: ${data.errcode}` };
+      }
+
+      deleteProactiveRisk(config.dingtalk.appKey, userId);
+      logger.debug(
+        `[DingTalk] Proactive markdown sent to ${userId}, processQueryKey=${data.processQueryKey}`,
+      );
+      return { ok: true };
+    } catch (err) {
+      const errorMsg = err instanceof Error ? err.message : String(err);
+      logger.error(`[DingTalk] Failed to send proactive markdown: ${errorMsg}`);
+      return { ok: false, error: errorMsg };
+    }
+  }
+
+  hasProactiveRisk(userId: string): boolean {
+    const risk = getProactiveRisk(config.dingtalk.appKey, userId);
+    return risk !== null;
+  }
+
   onMessage(handler: MessageHandler): void {
     this.messageHandler = handler;
   }
@@ -158,10 +284,7 @@ export class DingTalkClient {
             `[DingTalk] Connection is down (${Math.floor(timeSinceLastMessage / 1000)}s), attempting reconnect...`,
           );
           void this.forceReconnect();
-        } else if (
-          connected &&
-          timeSinceLastMessage > STALE_CONNECTION_THRESHOLD_MS
-        ) {
+        } else if (connected && timeSinceLastMessage > STALE_CONNECTION_THRESHOLD_MS) {
           // Connected but stale — force reconnect
           logger.error(
             `[DingTalk] Connection stale (no message for ${Math.floor(timeSinceLastMessage / 1000)}s), forcing reconnect...`,

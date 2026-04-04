@@ -202,6 +202,21 @@ DINGTALK_ALLOWED_USER_ID=your-staff-id
 2. Find the robot in DingTalk and send a message
 3. Use `/status` to verify connection
 
+### Proactive Messaging
+
+The bot supports **proactive messaging** via DingTalk's `oToMessages/batchSend` API. This allows:
+
+- **Scheduled task notifications** — receive alerts without sending a message first
+- **Push notifications** — bot can message you proactively
+
+**Permission Requirements:**
+
+In DingTalk Developer Platform, ensure your app has:
+
+- `ChatBot.SendMessage` — Send bot messages to users
+
+If permissions are missing, the bot will fall back gracefully and log a warning.
+
 > **Note:** DingTalk currently supports text and markdown messages. Image, voice, and file messages will show a "not supported" notice.
 
 ## Scheduled Tasks

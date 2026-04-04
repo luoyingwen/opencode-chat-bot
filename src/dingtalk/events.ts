@@ -120,44 +120,55 @@ async function sendMessage(userId: string, text: string): Promise<void> {
   if (!dingTalkClient) return;
 
   const sessionWebhook = getUserSessionWebhook(userId);
-  if (!sessionWebhook) {
-    logger.error(`[DingTalk] No sessionWebhook for user ${userId}`);
+
+  if (sessionWebhook) {
+    try {
+      await dingTalkClient.sendMarkdownMessage(sessionWebhook, userId, "OpenCode", text);
+      logger.info(
+        `[DingTalk] Message sent to user ${userId}: ${text.slice(0, 100)}${text.length > 100 ? "..." : ""}`,
+      );
+      return;
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : String(err);
+
+      if (
+        errorMessage.includes("400502") ||
+        errorMessage.includes("400014") ||
+        errorMessage.includes("session") ||
+        errorMessage.includes("webhook") ||
+        errorMessage.includes("expired") ||
+        errorMessage.includes("invalid")
+      ) {
+        logger.warn(
+          `[DingTalk] Webhook expired for user ${userId}, falling back to proactive API...`,
+        );
+        userSessionWebhooks.delete(userId);
+      } else {
+        logger.error("[DingTalk] Failed to send message via webhook:", err);
+        return;
+      }
+    }
+  }
+
+  if (dingTalkClient.hasProactiveRisk(userId)) {
+    logger.warn(
+      `[DingTalk] Skipping proactive send to ${userId} due to recent permission error. User needs to send a message first.`,
+    );
     return;
   }
 
-  try {
-    await dingTalkClient.sendMarkdownMessage(sessionWebhook, userId, "OpenCode", text);
-    logger.info(
-      `[DingTalk] Message sent to user ${userId}: ${text.slice(0, 100)}${text.length > 100 ? "..." : ""}`,
-    );
-  } catch (err) {
-    const errorMessage = err instanceof Error ? err.message : String(err);
+  logger.info(`[DingTalk] Using proactive API to send message to user ${userId}`);
+  const result = await dingTalkClient.sendProactiveMarkdownMessage(userId, "OpenCode", text);
 
-    // Check if webhook expired (common error codes: 400502, 400014, or contains "session" or "webhook")
-    if (
-      errorMessage.includes("400502") ||
-      errorMessage.includes("400014") ||
-      errorMessage.includes("session") ||
-      errorMessage.includes("webhook") ||
-      errorMessage.includes("expired") ||
-      errorMessage.includes("invalid")
-    ) {
-      logger.warn(`[DingTalk] Webhook expired for user ${userId}, clearing...`);
-      userSessionWebhooks.delete(userId);
-
-      // Try to notify user they need to send a new message
-      try {
-        await dingTalkClient.sendTextMessage(
-          sessionWebhook,
-          userId,
-          "⚠️ 连接已过期，请发送任意消息重新激活机器人。",
-        );
-      } catch {
-        // Ignore secondary failure
-      }
-    } else {
-      logger.error("[DingTalk] Failed to send message:", err);
+  if (!result.ok) {
+    logger.error(`[DingTalk] Proactive message failed: ${result.error}`);
+    if (dingTalkClient.hasProactiveRisk(userId)) {
+      logger.warn(
+        `[DingTalk] Proactive API permission error detected for ${userId}. User may need to send a message first, or check DingTalk app permissions.`,
+      );
     }
+  } else {
+    logger.info(`[DingTalk] Proactive message sent successfully to ${userId}`);
   }
 }
 
