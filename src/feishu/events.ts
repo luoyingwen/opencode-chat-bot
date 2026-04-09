@@ -23,6 +23,7 @@ interface OriginalCallbacks {
   onTokens: ((tokens: TokensInfo) => void) | null;
   onSessionError: ((sessionId: string, message: string) => void) | null;
   onSessionRetry: ((retryInfo: SessionRetryInfo) => void) | null;
+  onIdle: ((sessionId: string) => void) | null;
 }
 
 const originalCallbacks: OriginalCallbacks = {
@@ -32,6 +33,7 @@ const originalCallbacks: OriginalCallbacks = {
   onTokens: null,
   onSessionError: null,
   onSessionRetry: null,
+  onIdle: null,
 };
 
 export function setFeishuClient(client: FeishuClient): void {
@@ -64,6 +66,7 @@ export function installFeishuEventRouting(): void {
   patchAggregatorCallback("setOnTokens", "onTokens", handleFeishuTokens);
   patchAggregatorCallback("setOnSessionError", "onSessionError", handleFeishuSessionError);
   patchAggregatorCallback("setOnSessionRetry", "onSessionRetry", handleFeishuSessionRetry);
+  patchAggregatorCallback("setOnIdle", "onIdle", handleFeishuIdle);
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const aggregator = summaryAggregator as any;
@@ -73,6 +76,7 @@ export function installFeishuEventRouting(): void {
   aggregator.setOnTokens(null);
   aggregator.setOnSessionError(null);
   aggregator.setOnSessionRetry(null);
+  aggregator.setOnIdle(null);
 
   logger.info("[Feishu] Event routing callbacks installed");
 }
@@ -175,11 +179,15 @@ function handleFeishuThinking(sessionId: string): void {
   const currentSession = getCurrentSession();
   if (!currentSession || currentSession.id !== sessionId) return;
 
-  // Add typing reaction
-  const lastMsgId = feishuClient.getLastIncomingMessageId(target.chatId);
-  if (lastMsgId) {
-    void feishuClient.addTypingReaction(lastMsgId);
+  if (feishuClient.hasActiveCard(target.chatId)) {
+    const lastMsgId = feishuClient.getLastIncomingMessageId(target.chatId);
+    if (lastMsgId) {
+      void feishuClient.addTypingReaction(lastMsgId);
+    }
+    return;
   }
+
+  void sendMessage(target.chatId, target.userId, t("bot.thinking"));
 }
 
 function handleFeishuTokens(_tokens: TokensInfo): void {}
@@ -227,4 +235,20 @@ function handleFeishuSessionRetry(retryInfo: SessionRetryInfo): void {
     target.userId,
     t("bot.session_retry", { message: truncatedMessage }),
   );
+}
+
+function handleFeishuIdle(sessionId: string): void {
+  const target = activeTarget;
+  if (!target || !feishuClient) return;
+
+  const currentSession = getCurrentSession();
+  if (!currentSession || currentSession.id !== sessionId) return;
+
+  if (feishuClient.hasActiveCard(target.chatId)) {
+    activeTarget = null;
+    return;
+  }
+
+  void sendMessage(target.chatId, target.userId, "✅ Done");
+  activeTarget = null;
 }
