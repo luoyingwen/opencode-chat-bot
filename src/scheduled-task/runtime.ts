@@ -51,7 +51,6 @@ export function clearFeishuNotificationCallback(): void {
   feishuNotificationCallback = null;
   logger.info("[ScheduledTaskRuntime] Feishu notification callback cleared");
 }
-
 function getScheduledTaskDeliveryFormat(): "raw" | "markdown_v2" {
   return config.bot.messageFormatMode === "markdown" ? "markdown_v2" : "raw";
 }
