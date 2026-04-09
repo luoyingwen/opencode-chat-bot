@@ -12,6 +12,7 @@ export const zh: I18nDictionary = {
   "cmd.description.commands": "自定义命令",
   "cmd.description.opencode_start": "启动 OpenCode 服务器",
   "cmd.description.opencode_stop": "停止 OpenCode 服务器",
+  "cmd.description.exit": "退出机器人应用",
   "cmd.description.help": "帮助",
 
   "callback.unknown_command": "未知命令",
@@ -164,6 +165,7 @@ export const zh: I18nDictionary = {
   "opencode_stop.stop_error": "🔴 停止 OpenCode 服务器失败\n\n错误：{error}",
   "opencode_stop.success": "✅ OpenCode 服务器已成功停止",
   "opencode_stop.error": "🔴 停止服务器时发生错误。\n\n请查看应用日志了解详情。",
+  "exit.stopping": "🛑 正在退出机器人应用...",
 
   "agent.changed_callback": "Agent 已更改：{name}",
   "agent.changed_message": "✅ Agent 已切换为：{name}",

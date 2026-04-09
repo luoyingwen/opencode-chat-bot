@@ -27,6 +27,7 @@ import { clearAllInteractionState } from "../interaction/cleanup.js";
 import { processManager } from "../process/manager.js";
 import { logger } from "../utils/logger.js";
 import { t } from "../i18n/index.js";
+import { exitApplication } from "../app/exit-app.js";
 import { handleTaskCommand, handleTaskTextInput, isUserInTaskFlow } from "./task.js";
 import {
   handleTaskListCommand,
@@ -591,6 +592,11 @@ async function handleHelpCommand(userId: string): Promise<void> {
   await sendDingTalkMessage(userId, message);
 }
 
+async function handleExitCommand(userId: string): Promise<void> {
+  await sendDingTalkMessage(userId, t("exit.stopping"));
+  await exitApplication("dingtalk:/exit");
+}
+
 async function waitForServerReadyDingTalk(maxWaitMs: number = 10000): Promise<boolean> {
   const startTime = Date.now();
   const pollInterval = 500;
@@ -625,6 +631,7 @@ function getLocalizedBotCommandsDingTalk(): { command: string; description: stri
     { command: "commands", description: t("cmd.description.commands") },
     { command: "opencode_start", description: t("cmd.description.opencode_start") },
     { command: "opencode_stop", description: t("cmd.description.opencode_stop") },
+    { command: "exit", description: t("cmd.description.exit") },
     { command: "help", description: t("cmd.description.help") },
   ];
 }
@@ -832,6 +839,8 @@ function processMessage(userId: string, text: string, sessionWebhook: string): v
     void handleOpencodeStartCommand(userId);
   } else if (text.startsWith("/opencode_stop")) {
     void handleOpencodeStopCommand(userId);
+  } else if (text.startsWith("/exit")) {
+    void handleExitCommand(userId);
   } else if (text.startsWith("/tasklist")) {
     void (async () => {
       const message = await handleTaskListCommand(userId);

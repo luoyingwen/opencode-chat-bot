@@ -11,6 +11,7 @@ export const zhTW: I18nDictionary = {
   "cmd.description.commands": "自訂命令",
   "cmd.description.opencode_start": "啟動 OpenCode 伺服器",
   "cmd.description.opencode_stop": "停止 OpenCode 伺服器",
+  "cmd.description.exit": "結束機器人應用程式",
   "cmd.description.help": "說明",
   "cmd.description.rename": "重新命名目前工作階段",
   "cmd.description.tts": "切換語音回覆",
@@ -162,6 +163,7 @@ export const zhTW: I18nDictionary = {
   "opencode_stop.stop_error": "🔴 停止 OpenCode 伺服器失敗\n\n錯誤：{error}",
   "opencode_stop.success": "✅ OpenCode 伺服器已成功停止",
   "opencode_stop.error": "🔴 停止伺服器時發生錯誤。\n\n請查看應用程式日誌了解詳情。",
+  "exit.stopping": "🛑 正在結束機器人應用程式...",
 
   "agent.changed_callback": "模式已變更：{name}",
   "agent.changed_message": "✅ 模式已切換為：{name}",

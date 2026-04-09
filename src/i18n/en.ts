@@ -10,6 +10,7 @@ export const en = {
   "cmd.description.commands": "Custom commands",
   "cmd.description.opencode_start": "Start OpenCode server",
   "cmd.description.opencode_stop": "Stop OpenCode server",
+  "cmd.description.exit": "Exit the bot application",
   "cmd.description.help": "Help",
 
   "callback.unknown_command": "Unknown command",
@@ -187,6 +188,7 @@ export const en = {
   "opencode_stop.success": "✅ OpenCode Server stopped successfully",
   "opencode_stop.error":
     "🔴 An error occurred while stopping server.\n\nCheck application logs for details.",
+  "exit.stopping": "🛑 Shutting down bot application...",
 
   "agent.changed_callback": "Agent changed: {name}",
   "agent.changed_message": "✅ Agent changed to: {name}",

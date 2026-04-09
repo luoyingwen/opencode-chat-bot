@@ -31,6 +31,7 @@ import {
   isUserInTaskListFlow,
 } from "./tasklist.js";
 import { setFeishuNotificationCallback } from "../scheduled-task/runtime.js";
+import { exitApplication } from "../app/exit-app.js";
 
 function isUserAllowed(userId: string): boolean {
   const allowed = config.feishu.allowedUsers;
@@ -614,6 +615,11 @@ async function handleHelpCommand(chatId: string, userId: string): Promise<void> 
   await sendFeishuMessage(chatId, userId, message);
 }
 
+async function handleExitCommand(chatId: string, userId: string): Promise<void> {
+  await sendFeishuMessage(chatId, userId, t("exit.stopping"));
+  await exitApplication("feishu:/exit");
+}
+
 async function waitForServerReadyFeishu(maxWaitMs: number = 10000): Promise<boolean> {
   const startTime = Date.now();
   const pollInterval = 500;
@@ -648,6 +654,7 @@ function getLocalizedBotCommandsFeishu(): { command: string; description: string
     { command: "commands", description: t("cmd.description.commands") },
     { command: "opencode_start", description: t("cmd.description.opencode_start") },
     { command: "opencode_stop", description: t("cmd.description.opencode_stop") },
+    { command: "exit", description: t("cmd.description.exit") },
     { command: "help", description: t("cmd.description.help") },
   ];
 }
@@ -868,6 +875,8 @@ function processMessage(userId: string, chatId: string, text: string, _messageId
     void handleOpencodeStartCommand(chatId, userId);
   } else if (text.startsWith("/opencode_stop")) {
     void handleOpencodeStopCommand(chatId, userId);
+  } else if (text.startsWith("/exit")) {
+    void handleExitCommand(chatId, userId);
   } else if (text.startsWith("/help") || text === "help" || text === "帮助" || text === "/帮助") {
     void handleHelpCommand(chatId, userId);
   } else {

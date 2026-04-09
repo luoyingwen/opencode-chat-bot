@@ -12,6 +12,7 @@ export const ru: I18nDictionary = {
   "cmd.description.commands": "Пользовательские команды",
   "cmd.description.opencode_start": "Запустить OpenCode сервер",
   "cmd.description.opencode_stop": "Остановить OpenCode сервер",
+  "cmd.description.exit": "Завершить приложение бота",
   "cmd.description.help": "Справка",
 
   "callback.unknown_command": "Неизвестная команда",
@@ -188,6 +189,7 @@ export const ru: I18nDictionary = {
   "opencode_stop.success": "✅ OpenCode Server успешно остановлен",
   "opencode_stop.error":
     "🔴 Произошла ошибка при остановке сервера.\n\nПроверьте логи приложения для подробностей.",
+  "exit.stopping": "🛑 Завершение приложения бота...",
 
   "agent.changed_callback": "Агент изменен: {name}",
   "agent.changed_message": "✅ Агент изменен на: {name}",

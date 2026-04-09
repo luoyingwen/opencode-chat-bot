@@ -12,6 +12,7 @@ export const de: I18nDictionary = {
   "cmd.description.commands": "Benutzerdefinierte Befehle",
   "cmd.description.opencode_start": "OpenCode-Server starten",
   "cmd.description.opencode_stop": "OpenCode-Server stoppen",
+  "cmd.description.exit": "Bot-Anwendung beenden",
   "cmd.description.help": "Hilfe",
 
   "callback.unknown_command": "Unbekannter Befehl",
@@ -198,6 +199,7 @@ export const de: I18nDictionary = {
   "opencode_stop.success": "✅ OpenCode-Server erfolgreich gestoppt",
   "opencode_stop.error":
     "🔴 Beim Stoppen des Servers ist ein Fehler aufgetreten.\n\nSiehe Anwendungslogs für Details.",
+  "exit.stopping": "🛑 Bot-Anwendung wird beendet...",
 
   "agent.changed_callback": "Agent geändert: {name}",
   "agent.changed_message": "✅ Agent geändert zu: {name}",
