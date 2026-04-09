@@ -30,11 +30,16 @@ export async function startBotApp(): Promise<void> {
 
   const hasTelegram = !!config.telegram.token;
   const hasSlack = !!(config.slack.botToken && config.slack.appToken);
-  const hasDingTalk = !!(config.dingtalk.appKey && config.dingtalk.appSecret);
+  const hasDingTalk = !!(
+    config.dingtalk.appKey &&
+    config.dingtalk.appSecret &&
+    config.dingtalk.allowedUserId
+  );
+  const hasFeishu = !!(config.feishu.appId && config.feishu.appSecret);
 
-  if (!hasTelegram && !hasSlack && !hasDingTalk) {
+  if (!hasTelegram && !hasSlack && !hasDingTalk && !hasFeishu) {
     throw new Error(
-      "No bot platform configured. Set TELEGRAM_BOT_TOKEN, SLACK_BOT_TOKEN + SLACK_APP_TOKEN, or DINGTALK_APP_KEY + DINGTALK_APP_SECRET.",
+      "No bot platform configured. Set TELEGRAM_BOT_TOKEN, SLACK_BOT_TOKEN + SLACK_APP_TOKEN, DINGTALK_APP_KEY + DINGTALK_APP_SECRET + DINGTALK_ALLOWED_USER_ID, or FEISHU_APP_ID + FEISHU_APP_SECRET.",
     );
   }
 
@@ -42,7 +47,7 @@ export async function startBotApp(): Promise<void> {
   logger.debug(`[Runtime] Application start mode: ${mode}`);
   logger.info(`[App] OpenCode API: ${config.opencode.apiUrl}`);
   logger.info(
-    `[App] Platforms: Telegram=${hasTelegram ? "enabled" : "disabled"}, Slack=${hasSlack ? "enabled" : "disabled"}, DingTalk=${hasDingTalk ? "enabled" : "disabled"}`,
+    `[App] Platforms: Telegram=${hasTelegram ? "enabled" : "disabled"}, Slack=${hasSlack ? "enabled" : "disabled"}, DingTalk=${hasDingTalk ? "enabled" : "disabled"}, Feishu=${hasFeishu ? "enabled" : "disabled"}`,
   );
 
   await loadSettings();
@@ -117,7 +122,7 @@ export async function startBotApp(): Promise<void> {
     logger.info("[App] Telegram not configured, skipping");
   }
 
-  // Initialize scheduled task runtime without Telegram (for DingTalk-only mode)
+  // Initialize scheduled task runtime without Telegram (for DingTalk/Feishu-only mode)
   if (!hasTelegram) {
     try {
       await scheduledTaskRuntime.initialize();
@@ -158,5 +163,21 @@ export async function startBotApp(): Promise<void> {
     }
   } else {
     logger.debug("[App] DingTalk not configured, skipping");
+  }
+
+  // ─── Start Feishu bot (if configured) ────────────────────────────────
+  if (hasFeishu) {
+    try {
+      const { initializeFeishuHandler, sendFeishuStartupMessage } =
+        await import("../feishu/handler.js");
+      await initializeFeishuHandler();
+      await sendFeishuStartupMessage();
+      logger.info("[App] Feishu bot started");
+    } catch (err) {
+      logger.error("[App] Failed to start Feishu bot:", err);
+      if (!hasTelegram && !hasSlack && !hasDingTalk) throw err;
+    }
+  } else {
+    logger.debug("[App] Feishu not configured, skipping");
   }
 }

@@ -134,4 +134,11 @@ export const config = {
     allowedUserId: getEnvVar("DINGTALK_ALLOWED_USER_ID", false),
     debug: getOptionalBooleanEnvVar("DINGTALK_DEBUG", false),
   },
+  feishu: {
+    appId: getEnvVar("FEISHU_APP_ID", false),
+    appSecret: getEnvVar("FEISHU_APP_SECRET", false),
+    domain: getEnvVar("FEISHU_DOMAIN", false) || "feishu",
+    allowedUsers: getEnvVar("FEISHU_ALLOWED_USERS", false),
+    streamEnabled: getOptionalBooleanEnvVar("FEISHU_STREAM_ENABLED", true),
+  },
 };

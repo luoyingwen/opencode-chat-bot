@@ -1,23 +1,20 @@
 import { config } from "../config.js";
-import { initDingTalkClient, getDingTalkClient } from "./client.js";
+import { initFeishuClient, getFeishuClient } from "./client.js";
 import {
-  setDingTalkClient,
-  setDingTalkActive,
-  clearDingTalkActive,
-  installDingTalkEventRouting,
-  setUserSessionWebhook,
-  getUserSessionWebhook,
+  setFeishuClient,
+  setFeishuActive,
+  clearFeishuActive,
+  installFeishuEventRouting,
+  getActiveChatId,
 } from "./events.js";
 import { opencodeClient } from "../opencode/client.js";
 import { getCurrentSession, setCurrentSession } from "../session/manager.js";
 import { ingestSessionInfoForCache } from "../session/cache-manager.js";
 import { getCurrentProject, setCurrentProject } from "../settings/manager.js";
 import { getProjects } from "../project/manager.js";
-import { getStoredAgent } from "../agent/manager.js";
-import { getStoredModel } from "../model/manager.js";
-import { fetchCurrentAgent } from "../agent/manager.js";
+import { getStoredAgent, fetchCurrentAgent } from "../agent/manager.js";
 import { getAgentDisplayName } from "../agent/types.js";
-import { fetchCurrentModel } from "../model/manager.js";
+import { fetchCurrentModel, getStoredModel } from "../model/manager.js";
 import { formatModelForDisplay } from "../model/types.js";
 import { summaryAggregator } from "../summary/aggregator.js";
 import { subscribeToEvents, stopEventListening } from "../opencode/events.js";
@@ -27,29 +24,25 @@ import { clearAllInteractionState } from "../interaction/cleanup.js";
 import { processManager } from "../process/manager.js";
 import { logger } from "../utils/logger.js";
 import { t } from "../i18n/index.js";
-import { handleTaskCommand, handleTaskTextInput, isUserInTaskFlow } from "./task.js";
-import {
-  handleTaskListCommand,
-  handleTaskListTextInput,
-  isUserInTaskListFlow,
-} from "./tasklist.js";
-import { setDingTalkNotificationCallback } from "../scheduled-task/runtime.js";
 
 function isUserAllowed(userId: string): boolean {
-  const allowed = config.dingtalk.allowedUserId;
+  const allowed = config.feishu.allowedUsers;
   if (!allowed) return true;
-  return userId === allowed;
+  const allowedList = allowed
+    .split(",")
+    .map((s) => s.trim())
+    .filter(Boolean);
+  if (allowedList.length === 0) return true;
+  return allowedList.includes(userId);
 }
 
 async function ensureEventSubscription(directory: string): Promise<void> {
   if (!directory) {
-    logger.error("[DingTalk] No directory found for event subscription");
+    logger.error("[Feishu] No directory found for event subscription");
     return;
   }
 
-  logger.info(`[DingTalk] Subscribing to OpenCode events for project: ${directory}`);
-  // subscribeToEvents runs indefinitely in a loop, so we don't await it
-  // It will keep listening for SSE events in the background
+  logger.info(`[Feishu] Subscribing to OpenCode events for project: ${directory}`);
   void subscribeToEvents(directory, (event) => {
     if (event.type === "session.created" || event.type === "session.updated") {
       const info = (
@@ -67,29 +60,27 @@ async function ensureEventSubscription(directory: string): Promise<void> {
     summaryAggregator.processEvent(event);
   });
 
-  logger.debug("[DingTalk] Event subscription initiated (running in background)");
+  logger.debug("[Feishu] Event subscription initiated (running in background)");
 }
 
-async function sendDingTalkMessage(userId: string, text: string): Promise<void> {
+async function sendFeishuMessage(chatId: string, userId: string, text: string): Promise<void> {
   try {
-    const client = getDingTalkClient();
-    const sessionWebhook = getUserSessionWebhook(userId);
-    if (!sessionWebhook) {
-      logger.error(`[DingTalk] No sessionWebhook for user ${userId}`);
-      return;
+    const client = getFeishuClient();
+    const result = await client.sendMarkdownMessage(chatId, text);
+    if (!result.ok) {
+      logger.error(`[Feishu] Failed to send message: ${result.error}`);
     }
-    await client.sendMarkdownMessage(sessionWebhook, userId, "OpenCode", text);
   } catch (err) {
-    logger.error("[DingTalk] Failed to send message:", err);
+    logger.error("[Feishu] Failed to send message:", err);
   }
 }
 
-async function handleStatusCommand(userId: string): Promise<void> {
+async function handleStatusCommand(chatId: string, userId: string): Promise<void> {
   try {
     const { data, error } = await opencodeClient.global.health();
 
     if (error || !data) {
-      await sendDingTalkMessage(userId, "❌ OpenCode server is unavailable.");
+      await sendFeishuMessage(chatId, userId, "❌ OpenCode server is unavailable.");
       return;
     }
 
@@ -128,18 +119,18 @@ async function handleStatusCommand(userId: string): Promise<void> {
       message += "No active session. Send a message to create one.\n";
     }
 
-    await sendDingTalkMessage(userId, message);
+    await sendFeishuMessage(chatId, userId, message);
   } catch (err) {
-    logger.error("[DingTalk] Error in status command:", err);
-    await sendDingTalkMessage(userId, "❌ Failed to fetch status.");
+    logger.error("[Feishu] Error in status command:", err);
+    await sendFeishuMessage(chatId, userId, "❌ Failed to fetch status.");
   }
 }
 
-async function handleNewCommand(userId: string): Promise<void> {
+async function handleNewCommand(chatId: string, userId: string): Promise<void> {
   try {
     const currentProject = getCurrentProject();
     if (!currentProject) {
-      await sendDingTalkMessage(userId, t("new.project_not_selected"));
+      await sendFeishuMessage(chatId, userId, t("new.project_not_selected"));
       return;
     }
 
@@ -148,11 +139,11 @@ async function handleNewCommand(userId: string): Promise<void> {
     });
 
     if (error || !session) {
-      await sendDingTalkMessage(userId, "❌ Failed to create session.");
+      await sendFeishuMessage(chatId, userId, "❌ Failed to create session.");
       return;
     }
 
-    logger.info(`[DingTalk] Created new session: id=${session.id}, title="${session.title}"`);
+    logger.info(`[Feishu] Created new session: id=${session.id}, title="${session.title}"`);
 
     setCurrentSession({
       id: session.id,
@@ -161,26 +152,32 @@ async function handleNewCommand(userId: string): Promise<void> {
     });
 
     summaryAggregator.clear();
-    clearAllInteractionState("dingtalk_session_created");
+    clearAllInteractionState("feishu_session_created");
     await ingestSessionInfoForCache(session);
 
-    await sendDingTalkMessage(userId, `✅ New session created: **${session.title}**`);
+    await sendFeishuMessage(chatId, userId, `✅ New session created: **${session.title}**`);
   } catch (err) {
-    logger.error("[DingTalk] Error in new command:", err);
-    await sendDingTalkMessage(userId, "❌ Failed to create session.");
+    logger.error("[Feishu] Error in new command:", err);
+    await sendFeishuMessage(chatId, userId, "❌ Failed to create session.");
   }
 }
 
-async function handleStopCommand(userId: string): Promise<void> {
+async function handleStopCommand(chatId: string, userId: string): Promise<void> {
   try {
-    clearDingTalkActive();
+    clearFeishuActive();
     stopEventListening();
     summaryAggregator.clear();
-    clearAllInteractionState("dingtalk_stop_command");
+    clearAllInteractionState("feishu_stop_command");
+
+    const client = getFeishuClient();
+    const activeChatId = getActiveChatId();
+    if (activeChatId && client.hasActiveCard(activeChatId)) {
+      client.cleanupCard(activeChatId);
+    }
 
     const currentSession = getCurrentSession();
     if (!currentSession) {
-      await sendDingTalkMessage(userId, t("stop.no_active_session"));
+      await sendFeishuMessage(chatId, userId, t("stop.no_active_session"));
       return;
     }
 
@@ -201,15 +198,20 @@ async function handleStopCommand(userId: string): Promise<void> {
       clearTimeout(timeoutId);
 
       if (abortError) {
-        logger.warn("[DingTalk] Abort request failed:", abortError);
-        await sendDingTalkMessage(userId, "⚠️ Stop signal sent, but server did not confirm abort.");
+        logger.warn("[Feishu] Abort request failed:", abortError);
+        await sendFeishuMessage(
+          chatId,
+          userId,
+          "⚠️ Stop signal sent, but server did not confirm abort.",
+        );
         return;
       }
 
-      await sendDingTalkMessage(userId, "✅ Session stopped.");
+      await sendFeishuMessage(chatId, userId, "✅ Session stopped.");
     } catch (err) {
       if (err instanceof Error && err.name === "AbortError") {
-        await sendDingTalkMessage(
+        await sendFeishuMessage(
+          chatId,
           userId,
           "⚠️ Stop request timed out. The session may still be running.",
         );
@@ -218,17 +220,21 @@ async function handleStopCommand(userId: string): Promise<void> {
       }
     }
   } catch (err) {
-    logger.error("[DingTalk] Error in stop command:", err);
-    await sendDingTalkMessage(userId, "❌ Failed to stop session.");
+    logger.error("[Feishu] Error in stop command:", err);
+    await sendFeishuMessage(chatId, userId, "❌ Failed to stop session.");
   }
 }
 
-async function handleProjectsCommand(userId: string): Promise<void> {
+async function handleProjectsCommand(chatId: string, userId: string): Promise<void> {
   try {
     const projects = await getProjects();
 
     if (projects.length === 0) {
-      await sendDingTalkMessage(userId, "No projects found. Make sure OpenCode server is running.");
+      await sendFeishuMessage(
+        chatId,
+        userId,
+        "No projects found. Make sure OpenCode server is running.",
+      );
       return;
     }
 
@@ -246,17 +252,18 @@ async function handleProjectsCommand(userId: string): Promise<void> {
 
     message += "\nUse `/project <number>` to select a project.";
 
-    await sendDingTalkMessage(userId, message);
+    await sendFeishuMessage(chatId, userId, message);
   } catch (err) {
-    logger.error("[DingTalk] Error in projects command:", err);
-    await sendDingTalkMessage(userId, "❌ Failed to load projects.");
+    logger.error("[Feishu] Error in projects command:", err);
+    await sendFeishuMessage(chatId, userId, "❌ Failed to load projects.");
   }
 }
 
-async function handleProjectCommand(userId: string, arg: string): Promise<void> {
+async function handleProjectCommand(chatId: string, userId: string, arg: string): Promise<void> {
   const index = parseInt(arg, 10);
   if (isNaN(index) || index < 1) {
-    await sendDingTalkMessage(
+    await sendFeishuMessage(
+      chatId,
       userId,
       "❌ Please provide a valid project number. Use `/projects` to see the list.",
     );
@@ -267,7 +274,8 @@ async function handleProjectCommand(userId: string, arg: string): Promise<void> 
     const projects = await getProjects();
 
     if (index > projects.length) {
-      await sendDingTalkMessage(
+      await sendFeishuMessage(
+        chatId,
         userId,
         `❌ Project #${index} not found. Only ${projects.length} projects available.`,
       );
@@ -283,25 +291,26 @@ async function handleProjectCommand(userId: string, arg: string): Promise<void> 
     });
 
     summaryAggregator.clear();
-    clearAllInteractionState("dingtalk_project_switch");
+    clearAllInteractionState("feishu_project_switch");
 
-    await sendDingTalkMessage(
+    await sendFeishuMessage(
+      chatId,
       userId,
       `✅ Project selected: **${selected.name || selected.worktree}**\n\`${selected.worktree}\``,
     );
 
-    logger.info(`[DingTalk] Project selected: ${selected.name || selected.worktree}`);
+    logger.info(`[Feishu] Project selected: ${selected.name || selected.worktree}`);
   } catch (err) {
-    logger.error("[DingTalk] Error in project command:", err);
-    await sendDingTalkMessage(userId, "❌ Failed to select project.");
+    logger.error("[Feishu] Error in project command:", err);
+    await sendFeishuMessage(chatId, userId, "❌ Failed to select project.");
   }
 }
 
-async function handleSessionsCommand(userId: string): Promise<void> {
+async function handleSessionsCommand(chatId: string, userId: string): Promise<void> {
   try {
     const currentProject = getCurrentProject();
     if (!currentProject) {
-      await sendDingTalkMessage(userId, "❌ No project selected. Use `/projects` first.");
+      await sendFeishuMessage(chatId, userId, "❌ No project selected. Use `/projects` first.");
       return;
     }
 
@@ -310,12 +319,12 @@ async function handleSessionsCommand(userId: string): Promise<void> {
     });
 
     if (error || !sessions) {
-      await sendDingTalkMessage(userId, "❌ Failed to load sessions.");
+      await sendFeishuMessage(chatId, userId, "❌ Failed to load sessions.");
       return;
     }
 
     if (sessions.length === 0) {
-      await sendDingTalkMessage(userId, "No sessions found. Send a message to create one.");
+      await sendFeishuMessage(chatId, userId, "No sessions found. Send a message to create one.");
       return;
     }
 
@@ -342,17 +351,18 @@ async function handleSessionsCommand(userId: string): Promise<void> {
 
     message += "\n\nUse `/session <number>` to select a session.";
 
-    await sendDingTalkMessage(userId, message);
+    await sendFeishuMessage(chatId, userId, message);
   } catch (err) {
-    logger.error("[DingTalk] Error in sessions command:", err);
-    await sendDingTalkMessage(userId, "❌ Failed to load sessions.");
+    logger.error("[Feishu] Error in sessions command:", err);
+    await sendFeishuMessage(chatId, userId, "❌ Failed to load sessions.");
   }
 }
 
-async function handleSessionCommand(userId: string, arg: string): Promise<void> {
+async function handleSessionCommand(chatId: string, userId: string, arg: string): Promise<void> {
   const index = parseInt(arg, 10);
   if (isNaN(index) || index < 1) {
-    await sendDingTalkMessage(
+    await sendFeishuMessage(
+      chatId,
       userId,
       "❌ Please provide a valid session number. Use `/sessions` to see the list.",
     );
@@ -362,7 +372,7 @@ async function handleSessionCommand(userId: string, arg: string): Promise<void> 
   try {
     const currentProject = getCurrentProject();
     if (!currentProject) {
-      await sendDingTalkMessage(userId, "❌ No project selected. Use `/projects` first.");
+      await sendFeishuMessage(chatId, userId, "❌ No project selected. Use `/projects` first.");
       return;
     }
 
@@ -371,7 +381,7 @@ async function handleSessionCommand(userId: string, arg: string): Promise<void> 
     });
 
     if (error || !sessions) {
-      await sendDingTalkMessage(userId, "❌ Failed to load sessions.");
+      await sendFeishuMessage(chatId, userId, "❌ Failed to load sessions.");
       return;
     }
 
@@ -382,7 +392,8 @@ async function handleSessionCommand(userId: string, arg: string): Promise<void> 
     });
 
     if (index > sorted.length) {
-      await sendDingTalkMessage(
+      await sendFeishuMessage(
+        chatId,
         userId,
         `❌ Session #${index} not found. Only ${sorted.length} sessions available.`,
       );
@@ -391,19 +402,18 @@ async function handleSessionCommand(userId: string, arg: string): Promise<void> 
 
     const selected = sorted[index - 1];
 
-    // Fetch full session details
     const { data: session, error: sessionError } = await opencodeClient.session.get({
       sessionID: selected.id,
       directory: currentProject.worktree,
     });
 
     if (sessionError || !session) {
-      await sendDingTalkMessage(userId, "❌ Failed to get session details.");
+      await sendFeishuMessage(chatId, userId, "❌ Failed to get session details.");
       return;
     }
 
     logger.info(
-      `[DingTalk] Session selected: id=${session.id}, title="${session.title}", project=${currentProject.worktree}`,
+      `[Feishu] Session selected: id=${session.id}, title="${session.title}", project=${currentProject.worktree}`,
     );
 
     const sessionInfo = {
@@ -414,36 +424,36 @@ async function handleSessionCommand(userId: string, arg: string): Promise<void> 
 
     setCurrentSession(sessionInfo);
     summaryAggregator.clear();
-    clearAllInteractionState("dingtalk_session_switch");
+    clearAllInteractionState("feishu_session_switch");
 
-    await sendDingTalkMessage(userId, `✅ Session selected: **${session.title}**`);
+    await sendFeishuMessage(chatId, userId, `✅ Session selected: **${session.title}**`);
 
-    logger.info(`[DingTalk] Session selected: ${session.title}`);
+    logger.info(`[Feishu] Session selected: ${session.title}`);
   } catch (err) {
-    logger.error("[DingTalk] Error in session command:", err);
-    await sendDingTalkMessage(userId, "❌ Failed to select session.");
+    logger.error("[Feishu] Error in session command:", err);
+    await sendFeishuMessage(chatId, userId, "❌ Failed to select session.");
   }
 }
 
-async function handleRenameCommand(userId: string): Promise<void> {
+async function handleRenameCommand(chatId: string, userId: string): Promise<void> {
   try {
     const currentSession = getCurrentSession();
     if (!currentSession) {
-      await sendDingTalkMessage(userId, t("rename.no_session"));
+      await sendFeishuMessage(chatId, userId, t("rename.no_session"));
       return;
     }
-    await sendDingTalkMessage(userId, t("rename.prompt", { title: currentSession.title }));
+    await sendFeishuMessage(chatId, userId, t("rename.prompt", { title: currentSession.title }));
   } catch (err) {
-    logger.error("[DingTalk] Error in rename command:", err);
-    await sendDingTalkMessage(userId, t("rename.error"));
+    logger.error("[Feishu] Error in rename command:", err);
+    await sendFeishuMessage(chatId, userId, t("rename.error"));
   }
 }
 
-async function handleCommandsCommand(userId: string): Promise<void> {
+async function handleCommandsCommand(chatId: string, userId: string): Promise<void> {
   try {
     const currentProject = getCurrentProject();
     if (!currentProject) {
-      await sendDingTalkMessage(userId, t("bot.project_not_selected"));
+      await sendFeishuMessage(chatId, userId, t("bot.project_not_selected"));
       return;
     }
 
@@ -452,7 +462,7 @@ async function handleCommandsCommand(userId: string): Promise<void> {
     });
 
     if (error || !data || data.length === 0) {
-      await sendDingTalkMessage(userId, t("commands.empty"));
+      await sendFeishuMessage(chatId, userId, t("commands.empty"));
       return;
     }
 
@@ -460,7 +470,7 @@ async function handleCommandsCommand(userId: string): Promise<void> {
       (cmd) => typeof cmd.name === "string" && cmd.name.trim().length > 0,
     );
     if (filtered.length === 0) {
-      await sendDingTalkMessage(userId, t("commands.empty"));
+      await sendFeishuMessage(chatId, userId, t("commands.empty"));
       return;
     }
 
@@ -469,22 +479,24 @@ async function handleCommandsCommand(userId: string): Promise<void> {
       return `• /${cmd.name} — ${desc}`;
     });
 
-    await sendDingTalkMessage(
+    await sendFeishuMessage(
+      chatId,
       userId,
       `📋 **OpenCode Commands** (${filtered.length} available)\n\n${lines.join("\n")}`,
     );
   } catch (err) {
-    logger.error("[DingTalk] Error in commands command:", err);
-    await sendDingTalkMessage(userId, t("commands.fetch_error"));
+    logger.error("[Feishu] Error in commands command:", err);
+    await sendFeishuMessage(chatId, userId, t("commands.fetch_error"));
   }
 }
 
-async function handleOpencodeStartCommand(userId: string): Promise<void> {
+async function handleOpencodeStartCommand(chatId: string, userId: string): Promise<void> {
   try {
     if (processManager.isRunning()) {
       const uptime = processManager.getUptime();
       const uptimeStr = uptime ? Math.floor(uptime / 1000) : 0;
-      await sendDingTalkMessage(
+      await sendFeishuMessage(
+        chatId,
         userId,
         t("opencode_start.already_running_managed", {
           pid: processManager.getPID() ?? "-",
@@ -497,7 +509,8 @@ async function handleOpencodeStartCommand(userId: string): Promise<void> {
     try {
       const { data, error } = await opencodeClient.global.health();
       if (!error && data?.healthy) {
-        await sendDingTalkMessage(
+        await sendFeishuMessage(
+          chatId,
           userId,
           t("opencode_start.already_running_external", {
             version: data.version || t("common.unknown"),
@@ -509,21 +522,23 @@ async function handleOpencodeStartCommand(userId: string): Promise<void> {
       // Continue with start
     }
 
-    await sendDingTalkMessage(userId, t("opencode_start.starting"));
+    await sendFeishuMessage(chatId, userId, t("opencode_start.starting"));
 
     const { success, error } = await processManager.start();
 
     if (!success) {
-      await sendDingTalkMessage(
+      await sendFeishuMessage(
+        chatId,
         userId,
         t("opencode_start.start_error", { error: error || t("common.unknown_error") }),
       );
       return;
     }
 
-    const ready = await waitForServerReadyDingTalk(10000);
+    const ready = await waitForServerReadyFeishu(10000);
     if (!ready) {
-      await sendDingTalkMessage(
+      await sendFeishuMessage(
+        chatId,
         userId,
         t("opencode_start.started_not_ready", { pid: processManager.getPID() ?? "-" }),
       );
@@ -531,7 +546,8 @@ async function handleOpencodeStartCommand(userId: string): Promise<void> {
     }
 
     const { data: health } = await opencodeClient.global.health();
-    await sendDingTalkMessage(
+    await sendFeishuMessage(
+      chatId,
       userId,
       t("opencode_start.success", {
         pid: processManager.getPID() ?? "-",
@@ -539,59 +555,59 @@ async function handleOpencodeStartCommand(userId: string): Promise<void> {
       }),
     );
 
-    logger.info(`[DingTalk] OpenCode server started, PID=${processManager.getPID()}`);
+    logger.info(`[Feishu] OpenCode server started, PID=${processManager.getPID()}`);
   } catch (err) {
-    logger.error("[DingTalk] Error in opencode_start command:", err);
-    await sendDingTalkMessage(userId, t("opencode_start.error"));
+    logger.error("[Feishu] Error in opencode_start command:", err);
+    await sendFeishuMessage(chatId, userId, t("opencode_start.error"));
   }
 }
 
-async function handleOpencodeStopCommand(userId: string): Promise<void> {
+async function handleOpencodeStopCommand(chatId: string, userId: string): Promise<void> {
   try {
     if (!processManager.isRunning()) {
       try {
         const { data, error } = await opencodeClient.global.health();
         if (!error && data?.healthy) {
-          await sendDingTalkMessage(userId, t("opencode_stop.external_running"));
+          await sendFeishuMessage(chatId, userId, t("opencode_stop.external_running"));
           return;
         }
       } catch {
         // Server not accessible
       }
-      await sendDingTalkMessage(userId, t("opencode_stop.not_running"));
+      await sendFeishuMessage(chatId, userId, t("opencode_stop.not_running"));
       return;
     }
 
     const pid = processManager.getPID();
-    await sendDingTalkMessage(userId, t("opencode_stop.stopping", { pid: pid ?? "-" }));
+    await sendFeishuMessage(chatId, userId, t("opencode_stop.stopping", { pid: pid ?? "-" }));
 
     const { success, error } = await processManager.stop(5000);
 
     if (!success) {
-      await sendDingTalkMessage(
+      await sendFeishuMessage(
+        chatId,
         userId,
         t("opencode_stop.stop_error", { error: error || t("common.unknown_error") }),
       );
       return;
     }
 
-    await sendDingTalkMessage(userId, t("opencode_stop.success"));
-    logger.info("[DingTalk] OpenCode server stopped");
+    await sendFeishuMessage(chatId, userId, t("opencode_stop.success"));
+    logger.info("[Feishu] OpenCode server stopped");
   } catch (err) {
-    logger.error("[DingTalk] Error in opencode_stop command:", err);
-    await sendDingTalkMessage(userId, t("opencode_stop.error"));
+    logger.error("[Feishu] Error in opencode_stop command:", err);
+    await sendFeishuMessage(chatId, userId, t("opencode_stop.error"));
   }
 }
 
-async function handleHelpCommand(userId: string): Promise<void> {
-  const commands = getLocalizedBotCommandsDingTalk();
+async function handleHelpCommand(chatId: string, userId: string): Promise<void> {
+  const commands = getLocalizedBotCommandsFeishu();
   const lines = commands.map((item) => `/${item.command} - ${item.description}`);
-  // DingTalk markdown needs double newlines for line breaks
   const message = `📖 **Commands**\n\n${lines.join("\n\n")}\n\n_Tip: Use \`/projects\` and \`/project <number>\` to select a project, then \`/sessions\` and \`/session <number>\` to select a session._`;
-  await sendDingTalkMessage(userId, message);
+  await sendFeishuMessage(chatId, userId, message);
 }
 
-async function waitForServerReadyDingTalk(maxWaitMs: number = 10000): Promise<boolean> {
+async function waitForServerReadyFeishu(maxWaitMs: number = 10000): Promise<boolean> {
   const startTime = Date.now();
   const pollInterval = 500;
 
@@ -610,7 +626,7 @@ async function waitForServerReadyDingTalk(maxWaitMs: number = 10000): Promise<bo
   return false;
 }
 
-function getLocalizedBotCommandsDingTalk(): { command: string; description: string }[] {
+function getLocalizedBotCommandsFeishu(): { command: string; description: string }[] {
   return [
     { command: "status", description: t("cmd.description.status") },
     { command: "new", description: t("cmd.description.new") },
@@ -620,8 +636,6 @@ function getLocalizedBotCommandsDingTalk(): { command: string; description: stri
     { command: "projects", description: t("cmd.description.projects") },
     { command: "project <number>", description: "Select a project by number" },
     { command: "rename", description: t("cmd.description.rename") },
-    { command: "task", description: t("cmd.description.task") },
-    { command: "tasklist", description: t("cmd.description.tasklist") },
     { command: "commands", description: t("cmd.description.commands") },
     { command: "opencode_start", description: t("cmd.description.opencode_start") },
     { command: "opencode_stop", description: t("cmd.description.opencode_stop") },
@@ -629,38 +643,19 @@ function getLocalizedBotCommandsDingTalk(): { command: string; description: stri
   ];
 }
 
-async function handleTextMessage(userId: string, text: string): Promise<void> {
+async function handleTextMessage(chatId: string, userId: string, text: string): Promise<void> {
   logger.info(
-    `[DingTalk] handleTextMessage called: userId=${userId}, text="${text.substring(0, 50)}..."`,
+    `[Feishu] handleTextMessage called: userId=${userId}, text="${text.substring(0, 50)}..."`,
   );
-
-  // Check if user is in task creation flow
-  if (isUserInTaskFlow(userId)) {
-    const response = await handleTaskTextInput(userId, text);
-    if (response !== null) {
-      await sendDingTalkMessage(userId, response);
-      return;
-    }
-  }
-
-  // Check if user is in task list flow
-  if (isUserInTaskListFlow(userId)) {
-    const response = await handleTaskListTextInput(userId, text);
-    if (response !== null) {
-      await sendDingTalkMessage(userId, response);
-      return;
-    }
-  }
 
   try {
     const currentProject = getCurrentProject();
-    logger.debug(
-      `[DingTalk] Current project: ${currentProject ? currentProject.worktree : "null"}`,
-    );
+    logger.debug(`[Feishu] Current project: ${currentProject ? currentProject.worktree : "null"}`);
 
     if (!currentProject) {
-      logger.warn(`[DingTalk] No project selected for user ${userId}`);
-      await sendDingTalkMessage(
+      logger.warn(`[Feishu] No project selected for user ${userId}`);
+      await sendFeishuMessage(
+        chatId,
         userId,
         "❌ No project selected. Use `/projects` and `/project <number>` first.",
       );
@@ -671,10 +666,10 @@ async function handleTextMessage(userId: string, text: string): Promise<void> {
 
     if (!currentSession || currentSession.directory !== currentProject.worktree) {
       if (currentSession && currentSession.directory !== currentProject.worktree) {
-        logger.warn(`[DingTalk] Session/project mismatch. Clearing session context.`);
+        logger.warn(`[Feishu] Session/project mismatch. Clearing session context.`);
         stopEventListening();
         summaryAggregator.clear();
-        clearAllInteractionState("dingtalk_session_mismatch");
+        clearAllInteractionState("feishu_session_mismatch");
       }
 
       const { data: session, error } = await opencodeClient.session.create({
@@ -682,12 +677,12 @@ async function handleTextMessage(userId: string, text: string): Promise<void> {
       });
 
       if (error || !session) {
-        logger.error(`[DingTalk] Failed to create session: ${error || "no session data"}`);
-        await sendDingTalkMessage(userId, "❌ Failed to create session.");
+        logger.error(`[Feishu] Failed to create session: ${error || "no session data"}`);
+        await sendFeishuMessage(chatId, userId, "❌ Failed to create session.");
         return;
       }
 
-      logger.info(`[DingTalk] Auto-created session: id=${session.id}, title="${session.title}"`);
+      logger.info(`[Feishu] Auto-created session: id=${session.id}, title="${session.title}"`);
 
       currentSession = {
         id: session.id,
@@ -697,7 +692,7 @@ async function handleTextMessage(userId: string, text: string): Promise<void> {
 
       setCurrentSession(currentSession);
       await ingestSessionInfoForCache(session);
-      await sendDingTalkMessage(userId, `📝 New session: **${session.title}**`);
+      await sendFeishuMessage(chatId, userId, `📝 New session: **${session.title}**`);
     }
 
     try {
@@ -708,7 +703,8 @@ async function handleTextMessage(userId: string, text: string): Promise<void> {
       if (statusData) {
         const sessionStatus = (statusData as Record<string, { type?: string }>)[currentSession.id];
         if (sessionStatus?.type === "busy") {
-          await sendDingTalkMessage(
+          await sendFeishuMessage(
+            chatId,
             userId,
             "⏳ Session is busy. Please wait for the current task to finish, or use `/stop`.",
           );
@@ -716,19 +712,22 @@ async function handleTextMessage(userId: string, text: string): Promise<void> {
         }
       }
     } catch (err) {
-      logger.warn("[DingTalk] Failed to check session status:", err);
+      logger.warn("[Feishu] Failed to check session status:", err);
     }
 
     await ensureEventSubscription(currentSession.directory);
-    logger.debug(`[DingTalk] Event subscription completed for ${currentSession.directory}`);
+    logger.debug(`[Feishu] Event subscription completed for ${currentSession.directory}`);
 
-    installDingTalkEventRouting();
+    installFeishuEventRouting();
     summaryAggregator.setSession(currentSession.id);
 
-    logger.info(`[DingTalk] Sending "Processing..." message to user ${userId}`);
-    await sendDingTalkMessage(userId, "⚙️ Processing…");
+    setFeishuActive(userId, chatId);
 
-    setDingTalkActive(userId);
+    const client = getFeishuClient();
+    const lastMsgId = client.getLastIncomingMessageId(chatId);
+    if (lastMsgId) {
+      await client.addTypingReaction(lastMsgId);
+    }
 
     const currentAgent = getStoredAgent();
     const storedModel = getStoredModel();
@@ -759,222 +758,116 @@ async function handleTextMessage(userId: string, text: string): Promise<void> {
     }
 
     logger.info(
-      `[DingTalk] Sending prompt (fire-and-forget): agent=${currentAgent}, session=${currentSession.id}, text="${text.substring(0, 50)}..."`,
+      `[Feishu] Sending prompt (fire-and-forget): agent=${currentAgent}, session=${currentSession.id}, text="${text.substring(0, 50)}..."`,
     );
 
     safeBackgroundTask({
-      taskName: "dingtalk.session.prompt",
+      taskName: "feishu.session.prompt",
       task: () => {
-        logger.debug(`[DingTalk] Executing session.prompt in background task`);
+        logger.debug(`[Feishu] Executing session.prompt in background task`);
         return opencodeClient.session.prompt(promptOptions);
       },
       onSuccess: ({ error }) => {
-        logger.debug(`[DingTalk] session.prompt onSuccess called, error=${error ? "yes" : "no"}`);
+        logger.debug(`[Feishu] session.prompt onSuccess called, error=${error ? "yes" : "no"}`);
         if (error) {
           const details = formatErrorDetails(error, 1500);
-          logger.error("[DingTalk] session.prompt API error:", details);
-          void sendDingTalkMessage(
+          logger.error("[Feishu] session.prompt API error:", details);
+          void sendFeishuMessage(
+            chatId,
             userId,
             `❌ Failed to send prompt.\n\nError details:\n\`\`\`\n${details}\n\`\`\``,
           );
-          // 不清除 activeTarget，以便可能接收后续事件
           return;
         }
-        logger.info("[DingTalk] session.prompt completed successfully");
+        logger.info("[Feishu] session.prompt completed successfully");
       },
       onError: (error) => {
         const details = formatErrorDetails(error, 1500);
-        logger.error("[DingTalk] session.prompt background failure:", details);
-        void sendDingTalkMessage(
+        logger.error("[Feishu] session.prompt background failure:", details);
+        void sendFeishuMessage(
+          chatId,
           userId,
           `❌ Prompt failed.\n\nError details:\n\`\`\`\n${details}\n\`\`\``,
         );
-        clearDingTalkActive();
+        clearFeishuActive();
       },
     });
-    logger.debug(`[DingTalk] safeBackgroundTask for session.prompt dispatched`);
+    logger.debug(`[Feishu] safeBackgroundTask for session.prompt dispatched`);
   } catch (err) {
-    logger.error("[DingTalk] Error processing message:", err);
-    await sendDingTalkMessage(userId, "❌ An error occurred. Please try again.");
-    clearDingTalkActive();
+    logger.error("[Feishu] Error processing message:", err);
+    await sendFeishuMessage(chatId, userId, "❌ An error occurred. Please try again.");
+    clearFeishuActive();
   }
 }
 
-function processMessage(userId: string, text: string, sessionWebhook: string): void {
+function processMessage(userId: string, chatId: string, text: string, _messageId: string): void {
   if (!isUserAllowed(userId)) {
-    logger.warn(`[DingTalk] Message from unauthorized user: ${userId}`);
+    logger.warn(`[Feishu] Message from unauthorized user: ${userId}`);
     return;
   }
 
-  setUserSessionWebhook(userId, sessionWebhook);
+  const client = getFeishuClient();
+  client.getLastIncomingMessageId(chatId);
 
   if (text.startsWith("/status")) {
-    void handleStatusCommand(userId);
+    void handleStatusCommand(chatId, userId);
   } else if (text.startsWith("/new")) {
-    void handleNewCommand(userId);
+    void handleNewCommand(chatId, userId);
   } else if (text.startsWith("/stop")) {
-    void handleStopCommand(userId);
+    void handleStopCommand(chatId, userId);
   } else if (text.startsWith("/projects")) {
-    void handleProjectsCommand(userId);
+    void handleProjectsCommand(chatId, userId);
   } else if (text.startsWith("/project ")) {
     const arg = text.slice(9).trim();
-    void handleProjectCommand(userId, arg);
+    void handleProjectCommand(chatId, userId, arg);
   } else if (text.startsWith("/sessions")) {
-    void handleSessionsCommand(userId);
+    void handleSessionsCommand(chatId, userId);
   } else if (text.startsWith("/session ")) {
     const arg = text.slice(9).trim();
-    void handleSessionCommand(userId, arg);
+    void handleSessionCommand(chatId, userId, arg);
   } else if (text.startsWith("/rename")) {
-    void handleRenameCommand(userId);
+    void handleRenameCommand(chatId, userId);
   } else if (text.startsWith("/commands")) {
-    void handleCommandsCommand(userId);
+    void handleCommandsCommand(chatId, userId);
   } else if (text.startsWith("/opencode_start")) {
-    void handleOpencodeStartCommand(userId);
+    void handleOpencodeStartCommand(chatId, userId);
   } else if (text.startsWith("/opencode_stop")) {
-    void handleOpencodeStopCommand(userId);
-  } else if (text.startsWith("/tasklist")) {
-    void (async () => {
-      const message = await handleTaskListCommand(userId);
-      await sendDingTalkMessage(userId, message);
-    })();
-  } else if (text.startsWith("/task")) {
-    void (async () => {
-      const message = await handleTaskCommand(userId);
-      await sendDingTalkMessage(userId, message);
-    })();
+    void handleOpencodeStopCommand(chatId, userId);
   } else if (text.startsWith("/help") || text === "help" || text === "帮助" || text === "/帮助") {
-    void handleHelpCommand(userId);
+    void handleHelpCommand(chatId, userId);
   } else {
     logger.info(
-      `[DingTalk] Routing to handleTextMessage: userId=${userId}, text="${text.substring(0, 30)}..."`,
+      `[Feishu] Routing to handleTextMessage: userId=${userId}, chatId=${chatId}, text="${text.substring(0, 30)}..."`,
     );
-    const webhook = getUserSessionWebhook(userId);
-    logger.debug(
-      `[DingTalk] Session webhook for user ${userId}: ${webhook ? "exists" : "missing"}`,
-    );
-    void handleTextMessage(userId, text);
+    void handleTextMessage(chatId, userId, text);
   }
 }
 
-export async function initializeDingTalkHandler(): Promise<void> {
-  const { appKey, appSecret } = config.dingtalk;
+export async function initializeFeishuHandler(): Promise<void> {
+  const { appId, appSecret, domain } = config.feishu;
 
-  if (!appKey || !appSecret) {
-    throw new Error(
-      "DINGTALK_APP_KEY and DINGTALK_APP_SECRET are required for DingTalk integration",
-    );
+  if (!appId || !appSecret) {
+    throw new Error("FEISHU_APP_ID and FEISHU_APP_SECRET are required for Feishu integration");
   }
 
-  const client = initDingTalkClient({ appKey, appSecret });
-  setDingTalkClient(client);
-
-  // Register DingTalk notification callback for scheduled tasks
-  setDingTalkNotificationCallback(async (text: string) => {
-    const userId = config.dingtalk.allowedUserId;
-    if (!userId) {
-      logger.warn(
-        "[DingTalk Task Notification] No allowed user ID configured, cannot send notification",
-      );
-      return;
-    }
-
-    const client = getDingTalkClient();
-    const sessionWebhook = getUserSessionWebhook(userId);
-
-    // Try sessionWebhook first
-    if (sessionWebhook) {
-      try {
-        await client.sendMarkdownMessage(sessionWebhook, userId, "OpenCode Task", text);
-        logger.info(`[DingTalk Task Notification] Sent via webhook to user ${userId}`);
-        return;
-      } catch (err) {
-        const errorMessage = err instanceof Error ? err.message : String(err);
-        if (
-          errorMessage.includes("400502") ||
-          errorMessage.includes("400014") ||
-          errorMessage.includes("session") ||
-          errorMessage.includes("webhook") ||
-          errorMessage.includes("expired") ||
-          errorMessage.includes("invalid")
-        ) {
-          logger.warn(
-            `[DingTalk Task Notification] Webhook expired for user ${userId}, falling back to proactive API...`,
-          );
-        } else {
-          logger.error("[DingTalk Task Notification] Failed to send via webhook:", err);
-          return;
-        }
-      }
-    }
-
-    // Check proactive risk cooldown
-    if (client.hasProactiveRisk(userId)) {
-      logger.warn(
-        `[DingTalk Task Notification] Skipping proactive send to ${userId} due to recent permission error. User needs to send a message first.`,
-      );
-      return;
-    }
-
-    // Use proactive API
-    logger.info(`[DingTalk Task Notification] Using proactive API to send to user ${userId}`);
-    const result = await client.sendProactiveMarkdownMessage(userId, "OpenCode Task", text);
-
-    if (!result.ok) {
-      logger.error(`[DingTalk Task Notification] Proactive message failed: ${result.error}`);
-      if (client.hasProactiveRisk(userId)) {
-        logger.warn(
-          `[DingTalk Task Notification] Proactive API permission error for ${userId}. Check DingTalk app permissions.`,
-        );
-      }
-    } else {
-      logger.info(`[DingTalk Task Notification] Proactive message sent successfully to ${userId}`);
-    }
-  });
-
-  client.onConnectionStatus(({ connected, registered, reconnecting }) => {
-    if (connected && registered && !reconnecting) {
-      logger.info("[DingTalk] Connection status: healthy (connected and registered)");
-    } else if (reconnecting) {
-      logger.warn("[DingTalk] Connection status: reconnecting");
-    } else if (!connected) {
-      logger.error("[DingTalk] Connection status: disconnected");
-    }
-  });
+  const client = initFeishuClient({ appId, appSecret, domain });
+  setFeishuClient(client);
 
   client.onMessage((data) => {
-    processMessage(data.userId, data.text, data.sessionWebhook);
+    processMessage(data.userId, data.chatId, data.text, data.messageId);
   });
 
   try {
-    await client.connectStream();
-    logger.info("[DingTalk] Stream mode connected successfully");
+    await client.connect();
+    logger.info("[Feishu] Stream mode connected successfully");
   } catch (err) {
-    logger.error("[DingTalk] Failed to connect stream (will retry automatically):", err);
-    // Don't throw - the underlying library will retry automatically
-    // and the connection monitor will track the status
+    logger.error("[Feishu] Failed to connect stream:", err);
+    // Don't throw - the underlying SDK will retry
   }
 }
 
-export async function sendDingTalkStartupMessage(): Promise<void> {
-  const userId = config.dingtalk.allowedUserId;
-  if (!userId) {
-    logger.debug("[DingTalk] No allowed user ID configured, skipping startup message");
-    return;
-  }
-
-  const sessionWebhook = getUserSessionWebhook(userId);
-  if (!sessionWebhook) {
-    logger.debug("[DingTalk] No sessionWebhook for user, skipping startup message");
-    return;
-  }
-
-  try {
-    await sendDingTalkMessage(
-      userId,
-      "🚀 **OpenCode Bot started!**\n\nUse `/status` to check status, or send a message to begin.",
-    );
-    logger.info(`[DingTalk] Startup message sent to user ${userId}`);
-  } catch (err) {
-    logger.error("[DingTalk] Failed to send startup message:", err);
-  }
+export async function sendFeishuStartupMessage(): Promise<void> {
+  // Feishu doesn't have a direct message API without session context
+  // Wait for user to send first message
+  logger.info("[Feishu] Bot started. Waiting for user messages...");
 }

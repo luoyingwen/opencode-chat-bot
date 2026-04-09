@@ -97,12 +97,14 @@ export async function abortCurrentOperation(
     const timeoutId = setTimeout(() => controller.abort(), 5000);
 
     try {
-      const { data: abortResult, error: abortError } = await opencodeClient.session.abort(
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const { data: abortResult, error: abortError } = await (opencodeClient.session.abort as any)(
         {
           sessionID: currentSession.id,
           directory: currentSession.directory,
         },
-        { signal: controller.signal },
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        { signal: controller.signal } as any,
       );
 
       clearTimeout(timeoutId);

@@ -8,6 +8,7 @@ const RECONNECT_BASE_DELAY_MS = 1000;
 const RECONNECT_MAX_DELAY_MS = 15000;
 const FATAL_NO_STREAM_ERROR = "No stream returned from event subscription";
 
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 let eventStream: AsyncGenerator<Event, unknown, unknown> | null = null;
 let eventCallback: EventCallback | null = null;
 let isListening = false;
@@ -68,9 +69,11 @@ export async function subscribeToEvents(directory: string, callback: EventCallba
 
     while (isListening && activeDirectory === directory && !controller.signal.aborted) {
       try {
-        const result = await opencodeClient.event.subscribe(
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const result = await (opencodeClient.event.subscribe as any)(
           { directory },
-          { signal: controller.signal },
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          { signal: controller.signal } as any,
         );
 
         if (!result.stream) {
@@ -80,7 +83,7 @@ export async function subscribeToEvents(directory: string, callback: EventCallba
         reconnectAttempt = 0;
         eventStream = result.stream;
 
-        for await (const event of eventStream) {
+        for await (const event of result.stream) {
           if (!isListening || activeDirectory !== directory || controller.signal.aborted) {
             logger.debug(`Event listener stopped or changed directory, breaking loop`);
             break;

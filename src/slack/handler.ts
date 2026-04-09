@@ -285,12 +285,14 @@ export async function initializeSlackHandler(): Promise<SlackApp> {
         const controller = new AbortController();
         const timeoutId = setTimeout(() => controller.abort(), 5000);
 
-        const { error: abortError } = await opencodeClient.session.abort(
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const { error: abortError } = await (opencodeClient.session.abort as any)(
           {
             sessionID: currentSession.id,
             directory: currentSession.directory,
           },
-          { signal: controller.signal },
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          { signal: controller.signal } as any,
         );
 
         clearTimeout(timeoutId);
