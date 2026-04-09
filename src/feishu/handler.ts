@@ -24,6 +24,13 @@ import { clearAllInteractionState } from "../interaction/cleanup.js";
 import { processManager } from "../process/manager.js";
 import { logger } from "../utils/logger.js";
 import { t } from "../i18n/index.js";
+import { handleTaskCommand, handleTaskTextInput, isUserInTaskFlow } from "./task.js";
+import {
+  handleTaskListCommand,
+  handleTaskListTextInput,
+  isUserInTaskListFlow,
+} from "./tasklist.js";
+import { setFeishuNotificationCallback } from "../scheduled-task/runtime.js";
 
 function isUserAllowed(userId: string): boolean {
   const allowed = config.feishu.allowedUsers;
@@ -636,6 +643,8 @@ function getLocalizedBotCommandsFeishu(): { command: string; description: string
     { command: "projects", description: t("cmd.description.projects") },
     { command: "project <number>", description: "Select a project by number" },
     { command: "rename", description: t("cmd.description.rename") },
+    { command: "task", description: t("cmd.description.task") },
+    { command: "tasklist", description: t("cmd.description.tasklist") },
     { command: "commands", description: t("cmd.description.commands") },
     { command: "opencode_start", description: t("cmd.description.opencode_start") },
     { command: "opencode_stop", description: t("cmd.description.opencode_stop") },
@@ -647,6 +656,22 @@ async function handleTextMessage(chatId: string, userId: string, text: string): 
   logger.info(
     `[Feishu] handleTextMessage called: userId=${userId}, text="${text.substring(0, 50)}..."`,
   );
+
+  if (isUserInTaskFlow(userId)) {
+    const response = await handleTaskTextInput(userId, text);
+    if (response !== null) {
+      await sendFeishuMessage(chatId, userId, response);
+      return;
+    }
+  }
+
+  if (isUserInTaskListFlow(userId)) {
+    const response = await handleTaskListTextInput(userId, text);
+    if (response !== null) {
+      await sendFeishuMessage(chatId, userId, response);
+      return;
+    }
+  }
 
   try {
     const currentProject = getCurrentProject();
@@ -827,6 +852,16 @@ function processMessage(userId: string, chatId: string, text: string, _messageId
     void handleSessionCommand(chatId, userId, arg);
   } else if (text.startsWith("/rename")) {
     void handleRenameCommand(chatId, userId);
+  } else if (text.startsWith("/tasklist")) {
+    void (async () => {
+      const message = await handleTaskListCommand(userId);
+      await sendFeishuMessage(chatId, userId, message);
+    })();
+  } else if (text.startsWith("/task")) {
+    void (async () => {
+      const message = await handleTaskCommand(userId);
+      await sendFeishuMessage(chatId, userId, message);
+    })();
   } else if (text.startsWith("/commands")) {
     void handleCommandsCommand(chatId, userId);
   } else if (text.startsWith("/opencode_start")) {
@@ -852,6 +887,23 @@ export async function initializeFeishuHandler(): Promise<void> {
 
   const client = initFeishuClient({ appId, appSecret, domain });
   setFeishuClient(client);
+
+  setFeishuNotificationCallback(async (text: string) => {
+    const activeChatId = getActiveChatId();
+    if (!activeChatId) {
+      logger.warn("[Feishu Task Notification] No active chat available, cannot send notification");
+      return;
+    }
+
+    const allowedUsers = config.feishu.allowedUsers
+      .split(",")
+      .map((item) => item.trim())
+      .filter(Boolean);
+    const userId = allowedUsers[0] || "feishu";
+
+    await sendFeishuMessage(activeChatId, userId, text);
+    logger.info(`[Feishu Task Notification] Sent scheduled task update to chat ${activeChatId}`);
+  });
 
   client.onMessage((data) => {
     processMessage(data.userId, data.chatId, data.text, data.messageId);

@@ -29,6 +29,9 @@ const RESTART_INTERRUPTED_ERROR = "Interrupted by bot restart during scheduled t
 type DingTalkNotificationCallback = (text: string) => Promise<void>;
 let dingTalkNotificationCallback: DingTalkNotificationCallback | null = null;
 
+type FeishuNotificationCallback = (text: string) => Promise<void>;
+let feishuNotificationCallback: FeishuNotificationCallback | null = null;
+
 export function setDingTalkNotificationCallback(callback: DingTalkNotificationCallback): void {
   dingTalkNotificationCallback = callback;
   logger.info("[ScheduledTaskRuntime] DingTalk notification callback registered");
@@ -37,6 +40,16 @@ export function setDingTalkNotificationCallback(callback: DingTalkNotificationCa
 export function clearDingTalkNotificationCallback(): void {
   dingTalkNotificationCallback = null;
   logger.info("[ScheduledTaskRuntime] DingTalk notification callback cleared");
+}
+
+export function setFeishuNotificationCallback(callback: FeishuNotificationCallback): void {
+  feishuNotificationCallback = callback;
+  logger.info("[ScheduledTaskRuntime] Feishu notification callback registered");
+}
+
+export function clearFeishuNotificationCallback(): void {
+  feishuNotificationCallback = null;
+  logger.info("[ScheduledTaskRuntime] Feishu notification callback cleared");
 }
 
 function getScheduledTaskDeliveryFormat(): "raw" | "markdown_v2" {
@@ -471,6 +484,7 @@ export class ScheduledTaskRuntime {
   private async sendDelivery(delivery: QueuedScheduledTaskDelivery): Promise<boolean> {
     let telegramSuccess = false;
     let dingTalkSuccess = false;
+    let feishuSuccess = false;
 
     // Send to Telegram if available
     if (this.botApi && this.chatId !== null) {
@@ -518,7 +532,26 @@ export class ScheduledTaskRuntime {
       }
     }
 
-    return telegramSuccess || dingTalkSuccess;
+    if (feishuNotificationCallback) {
+      try {
+        const messageParts =
+          delivery.status === "success"
+            ? buildScheduledTaskSuccessMessageParts(delivery)
+            : [delivery.notificationText];
+
+        for (const part of messageParts) {
+          await feishuNotificationCallback(part);
+        }
+        feishuSuccess = true;
+      } catch (error) {
+        logger.error(
+          `[ScheduledTaskRuntime] Failed to send delivery to Feishu: id=${delivery.taskId}, status=${delivery.status}`,
+          error,
+        );
+      }
+    }
+
+    return telegramSuccess || dingTalkSuccess || feishuSuccess;
   }
 }
 
