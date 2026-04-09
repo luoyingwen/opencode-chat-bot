@@ -14,6 +14,9 @@ export const fr: I18nDictionary = {
   "cmd.description.opencode_stop": "Arrêter le serveur OpenCode",
   "cmd.description.exit": "Quitter l'application du bot",
   "cmd.description.help": "Aide",
+  "cmd.description.agent": "Changer d'agent",
+  "cmd.description.agents": "Lister les agents disponibles",
+  "cmd.description.agent_number": "Changer d'agent par numéro",
 
   "callback.unknown_command": "Commande inconnue",
   "callback.processing_error": "Erreur de traitement",
@@ -208,6 +211,12 @@ export const fr: I18nDictionary = {
   "agent.menu.select": "Sélectionnez un agent :",
   "agent.menu.empty": "⚠️ Aucun mode disponible",
   "agent.menu.error": "🔴 Impossible de récupérer la liste des modes",
+  "agent.list.title":
+    "🤖 **Agents disponibles**\n\nActuel : {current}\n\n{list}\n\nUtilisez `/agent <numéro>` pour changer",
+  "agent.list.empty": "⚠️ Aucun agent disponible",
+  "agent.switch.success": "✅ Agent défini sur : {name}",
+  "agent.switch.error": "❌ Impossible de changer d'agent",
+  "agent.switch.invalid_index": "❌ Numéro invalide. Utilisez `/agent` pour voir la liste",
 
   "model.changed_callback": "Modèle modifié : {name}",
   "model.changed_message": "✅ Modèle défini sur : {name}",

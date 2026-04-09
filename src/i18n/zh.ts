@@ -14,6 +14,9 @@ export const zh: I18nDictionary = {
   "cmd.description.opencode_stop": "停止 OpenCode 服务器",
   "cmd.description.exit": "退出机器人应用",
   "cmd.description.help": "帮助",
+  "cmd.description.agent": "切换 Agent",
+  "cmd.description.agents": "列出可用 Agent",
+  "cmd.description.agent_number": "按序号切换 Agent",
 
   "callback.unknown_command": "未知命令",
   "callback.processing_error": "处理错误",
@@ -174,6 +177,12 @@ export const zh: I18nDictionary = {
   "agent.menu.select": "请选择 Agent：",
   "agent.menu.empty": "⚠️ 没有可用的代理",
   "agent.menu.error": "🔴 获取代理列表失败",
+  "agent.list.title":
+    "🤖 **可用 Agent 列表**\n\n当前: {current}\n\n{list}\n\n使用 `/agent <序号>` 切换",
+  "agent.list.empty": "⚠️ 当前没有可用的 Agent",
+  "agent.switch.success": "✅ Agent 已切换为: {name}",
+  "agent.switch.error": "❌ 切换 Agent 失败",
+  "agent.switch.invalid_index": "❌ 无效的序号。请使用 `/agent` 查看列表",
 
   "model.changed_callback": "模型已更改：{name}",
   "model.changed_message": "✅ 模型已切换为：{name}",

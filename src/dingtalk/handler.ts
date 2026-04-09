@@ -14,6 +14,7 @@ import { ingestSessionInfoForCache } from "../session/cache-manager.js";
 import { getCurrentProject, setCurrentProject } from "../settings/manager.js";
 import { getProjects } from "../project/manager.js";
 import { getStoredAgent } from "../agent/manager.js";
+import { getAvailableAgents, selectAgent } from "../agent/manager.js";
 import { getStoredModel } from "../model/manager.js";
 import { fetchCurrentAgent } from "../agent/manager.js";
 import { getAgentDisplayName } from "../agent/types.js";
@@ -592,6 +593,64 @@ async function handleHelpCommand(userId: string): Promise<void> {
   await sendDingTalkMessage(userId, message);
 }
 
+async function handleAgentListCommand(userId: string): Promise<void> {
+  try {
+    const agents = await getAvailableAgents();
+
+    if (agents.length === 0) {
+      await sendDingTalkMessage(userId, t("agent.list.empty"));
+      return;
+    }
+
+    const currentAgent = getStoredAgent();
+    const list = agents
+      .map((agent, index) => {
+        const marker = agent.name === currentAgent ? " ✅" : "";
+        return `${index + 1}. ${getAgentDisplayName(agent.name)}${marker}`;
+      })
+      .join("\n");
+
+    const message = t("agent.list.title", {
+      current: getAgentDisplayName(currentAgent),
+      list,
+    });
+
+    await sendDingTalkMessage(userId, message);
+  } catch (err) {
+    logger.error("[DingTalk] Error listing agents:", err);
+    await sendDingTalkMessage(userId, t("error.load_agents"));
+  }
+}
+
+async function handleAgentSwitchCommand(userId: string, arg: string): Promise<void> {
+  const index = parseInt(arg, 10);
+
+  if (isNaN(index) || index < 1) {
+    await sendDingTalkMessage(userId, t("agent.switch.invalid_index"));
+    return;
+  }
+
+  try {
+    const agents = await getAvailableAgents();
+
+    if (index > agents.length) {
+      await sendDingTalkMessage(userId, t("agent.switch.invalid_index"));
+      return;
+    }
+
+    const selectedAgent = agents[index - 1];
+    selectAgent(selectedAgent.name);
+
+    await sendDingTalkMessage(
+      userId,
+      t("agent.switch.success", { name: getAgentDisplayName(selectedAgent.name) }),
+    );
+  } catch (err) {
+    logger.error("[DingTalk] Error switching agent:", err);
+    await sendDingTalkMessage(userId, t("agent.switch.error"));
+  }
+}
+
 async function handleExitCommand(userId: string): Promise<void> {
   await sendDingTalkMessage(userId, t("exit.stopping"));
   await exitApplication("dingtalk:/exit");
@@ -625,6 +684,8 @@ function getLocalizedBotCommandsDingTalk(): { command: string; description: stri
     { command: "session <number>", description: "Select a session by number" },
     { command: "projects", description: t("cmd.description.projects") },
     { command: "project <number>", description: "Select a project by number" },
+    { command: "agents", description: t("cmd.description.agents") },
+    { command: "agent <number>", description: t("cmd.description.agent_number") },
     { command: "rename", description: t("cmd.description.rename") },
     { command: "task", description: t("cmd.description.task") },
     { command: "tasklist", description: t("cmd.description.tasklist") },
@@ -833,6 +894,11 @@ function processMessage(userId: string, text: string, sessionWebhook: string): v
     void handleSessionCommand(userId, arg);
   } else if (text.startsWith("/rename")) {
     void handleRenameCommand(userId);
+  } else if (text === "/agents") {
+    void handleAgentListCommand(userId);
+  } else if (text.startsWith("/agent ")) {
+    const arg = text.slice(7).trim();
+    void handleAgentSwitchCommand(userId, arg);
   } else if (text.startsWith("/commands")) {
     void handleCommandsCommand(userId);
   } else if (text.startsWith("/opencode_start")) {

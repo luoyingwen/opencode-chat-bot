@@ -13,6 +13,9 @@ export const zhTW: I18nDictionary = {
   "cmd.description.opencode_stop": "停止 OpenCode 伺服器",
   "cmd.description.exit": "結束機器人應用程式",
   "cmd.description.help": "說明",
+  "cmd.description.agent": "切換模式",
+  "cmd.description.agents": "列出可用模式",
+  "cmd.description.agent_number": "依序號切換模式",
   "cmd.description.rename": "重新命名目前工作階段",
   "cmd.description.tts": "切換語音回覆",
 
@@ -172,6 +175,12 @@ export const zhTW: I18nDictionary = {
   "agent.menu.select": "請選擇工作模式：",
   "agent.menu.empty": "⚠️ 沒有可用的代理",
   "agent.menu.error": "🔴 取得代理清單失敗",
+  "agent.list.title":
+    "🤖 **可用模式列表**\n\n目前: {current}\n\n{list}\n\n使用 `/agent <序號>` 切換",
+  "agent.list.empty": "⚠️ 目前沒有可用的模式",
+  "agent.switch.success": "✅ 模式已切換為: {name}",
+  "agent.switch.error": "❌ 切換模式失敗",
+  "agent.switch.invalid_index": "❌ 無效的序號。請使用 `/agent` 查看列表",
 
   "model.changed_callback": "模型已變更：{name}",
   "model.changed_message": "✅ 模型已切換為：{name}",

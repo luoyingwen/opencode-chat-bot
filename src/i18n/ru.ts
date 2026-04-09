@@ -14,6 +14,9 @@ export const ru: I18nDictionary = {
   "cmd.description.opencode_stop": "Остановить OpenCode сервер",
   "cmd.description.exit": "Завершить приложение бота",
   "cmd.description.help": "Справка",
+  "cmd.description.agent": "Сменить агента",
+  "cmd.description.agents": "Список доступных агентов",
+  "cmd.description.agent_number": "Сменить агента по номеру",
 
   "callback.unknown_command": "Неизвестная команда",
   "callback.processing_error": "Ошибка обработки",
@@ -198,6 +201,12 @@ export const ru: I18nDictionary = {
   "agent.menu.select": "Выберите агента:",
   "agent.menu.empty": "⚠️ Нет доступных агентов",
   "agent.menu.error": "🔴 Не удалось получить список агентов",
+  "agent.list.title":
+    "🤖 **Доступные агенты**\n\nТекущий: {current}\n\n{list}\n\nИспользуйте `/agent <номер>` для смены",
+  "agent.list.empty": "⚠️ Нет доступных агентов",
+  "agent.switch.success": "✅ Агент изменен на: {name}",
+  "agent.switch.error": "❌ Не удалось сменить агента",
+  "agent.switch.invalid_index": "❌ Неверный номер. Используйте `/agent` для просмотра списка",
 
   "model.changed_callback": "Модель изменена: {name}",
   "model.changed_message": "✅ Модель изменена на: {name}",

@@ -12,6 +12,9 @@ export const en = {
   "cmd.description.opencode_stop": "Stop OpenCode server",
   "cmd.description.exit": "Exit the bot application",
   "cmd.description.help": "Help",
+  "cmd.description.agent": "Switch agent",
+  "cmd.description.agents": "List available agents",
+  "cmd.description.agent_number": "Switch to agent by number",
 
   "callback.unknown_command": "Unknown command",
   "callback.processing_error": "Processing error",
@@ -197,6 +200,12 @@ export const en = {
   "agent.menu.select": "Select agent:",
   "agent.menu.empty": "⚠️ No available agents",
   "agent.menu.error": "🔴 Failed to get agents list",
+  "agent.list.title":
+    "🤖 **Available Agents**\n\nCurrent: {current}\n\n{list}\n\nUse `/agent <number>` to switch",
+  "agent.list.empty": "⚠️ No agents available",
+  "agent.switch.success": "✅ Agent switched to: {name}",
+  "agent.switch.error": "❌ Failed to switch agent",
+  "agent.switch.invalid_index": "❌ Invalid index. Use `/agent` to see the list",
 
   "model.changed_callback": "Model changed: {name}",
   "model.changed_message": "✅ Model changed to: {name}",
