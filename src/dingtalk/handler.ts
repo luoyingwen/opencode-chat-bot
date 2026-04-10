@@ -25,6 +25,8 @@ import { subscribeToEvents, stopEventListening } from "../opencode/events.js";
 import { safeBackgroundTask } from "../utils/safe-background-task.js";
 import { formatErrorDetails } from "../utils/error-format.js";
 import { clearAllInteractionState } from "../interaction/cleanup.js";
+import { interactionManager } from "../interaction/manager.js";
+import { renameManager } from "../rename/manager.js";
 import { processManager } from "../process/manager.js";
 import { logger } from "../utils/logger.js";
 import { t } from "../i18n/index.js";
@@ -434,7 +436,25 @@ async function handleRenameCommand(userId: string): Promise<void> {
       await sendDingTalkMessage(userId, t("rename.no_session"));
       return;
     }
-    await sendDingTalkMessage(userId, t("rename.prompt", { title: currentSession.title }));
+
+    // Start rename flow and set up state management
+    renameManager.startWaiting(currentSession.id, currentSession.directory, currentSession.title);
+    interactionManager.start({
+      kind: "rename",
+      expectedInput: "text",
+      metadata: {
+        sessionId: currentSession.id,
+        userId: userId,
+      },
+    });
+
+    // Send prompt message (DingTalk doesn't support inline keyboards like Telegram,
+    // but user can use /abort to cancel)
+    const message =
+      t("rename.prompt", { title: currentSession.title }) + "\n\n" + "💡 " + t("rename.hint_abort");
+    await sendDingTalkMessage(userId, message);
+
+    logger.info(`[DingTalk] Waiting for new title for session: ${currentSession.id}`);
   } catch (err) {
     logger.error("[DingTalk] Error in rename command:", err);
     await sendDingTalkMessage(userId, t("rename.error"));
@@ -720,6 +740,50 @@ async function handleTextMessage(userId: string, text: string): Promise<void> {
     }
   }
 
+  // Check if user is in rename flow
+  if (renameManager.isWaitingForName()) {
+    const sessionInfo = renameManager.getSessionInfo();
+    if (sessionInfo) {
+      const newTitle = text.trim();
+      if (!newTitle) {
+        await sendDingTalkMessage(userId, t("rename.empty_title"));
+        return;
+      }
+
+      logger.info(`[DingTalk] Renaming session ${sessionInfo.sessionId} to: ${newTitle}`);
+
+      try {
+        const { data: updatedSession, error } = await opencodeClient.session.update({
+          sessionID: sessionInfo.sessionId,
+          directory: sessionInfo.directory,
+          title: newTitle,
+        });
+
+        if (error || !updatedSession) {
+          throw error || new Error("Failed to update session");
+        }
+
+        setCurrentSession({
+          id: sessionInfo.sessionId,
+          title: newTitle,
+          directory: sessionInfo.directory,
+        });
+
+        await sendDingTalkMessage(userId, t("rename.success", { title: newTitle }));
+        logger.info(`[DingTalk] Session renamed successfully: ${newTitle}`);
+      } catch (err) {
+        logger.error("[DingTalk] Error renaming session:", err);
+        await sendDingTalkMessage(userId, t("rename.error"));
+      }
+
+      renameManager.clear();
+      if (interactionManager.getSnapshot()?.kind === "rename") {
+        interactionManager.clear("rename_completed");
+      }
+      return;
+    }
+  }
+
   try {
     const currentProject = getCurrentProject();
     logger.debug(
@@ -852,6 +916,20 @@ async function handleTextMessage(userId: string, text: string): Promise<void> {
       },
       onError: (error) => {
         const details = formatErrorDetails(error, 1500);
+
+        // Check if it's a network/connection termination error
+        const isTerminatedError =
+          error instanceof Error &&
+          (error.message?.includes("terminated") ||
+            error.message?.includes("Connection") ||
+            error.message?.includes("aborted"));
+
+        if (isTerminatedError) {
+          logger.warn("[DingTalk] session.prompt connection terminated (network issue):", details);
+          // Don't send error to user - SSE might still receive events
+          return;
+        }
+
         logger.error("[DingTalk] session.prompt background failure:", details);
         void sendDingTalkMessage(
           userId,

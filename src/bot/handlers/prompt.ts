@@ -319,6 +319,25 @@ export async function processUserPrompt(
         foregroundSessionState.markIdle(currentSession.id);
         clearPromptResponseMode(currentSession.id);
         const details = formatErrorDetails(error, 6000);
+
+        // Check if it's a network/connection termination error
+        const isTerminatedError =
+          error instanceof Error &&
+          (error.message?.includes("terminated") ||
+            error.message?.includes("Connection") ||
+            error.message?.includes("aborted"));
+
+        if (isTerminatedError) {
+          logger.warn(
+            "[Bot] session.prompt connection terminated (network issue):",
+            promptErrorLogContext,
+          );
+          logger.warn("[Bot] Details:", details);
+          // Don't send error to user - SSE might still receive events
+          // Just log it and let SSE handle completion
+          return;
+        }
+
         logger.error("[Bot] session.prompt background task failed", promptErrorLogContext);
         logger.error("[Bot] session.prompt background failure details:", details);
         logger.error("[Bot] session.prompt raw background error object:", error);

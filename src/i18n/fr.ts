@@ -376,6 +376,7 @@ export const fr: I18nDictionary = {
   "rename.blocked.command_not_allowed":
     "⚠️ Cette commande n'est pas disponible tant que le renommage attend un nouveau nom.",
   "rename.button.cancel": "❌ Annuler",
+  "rename.hint_abort": "Envoyez /abort pour annuler le renommage.",
 
   "task.prompt.schedule":
     "⏰ Envoyez le planning de la tâche en langage naturel.\n\nExemples :\n- toutes les 5 minutes\n- chaque jour à 17:00\n- demain à 12:00",

@@ -885,6 +885,20 @@ async function handleTextMessage(chatId: string, userId: string, text: string): 
       },
       onError: (error) => {
         const details = formatErrorDetails(error, 1500);
+
+        // Check if it's a network/connection termination error
+        const isTerminatedError =
+          error instanceof Error &&
+          (error.message?.includes("terminated") ||
+            error.message?.includes("Connection") ||
+            error.message?.includes("aborted"));
+
+        if (isTerminatedError) {
+          logger.warn("[Feishu] session.prompt connection terminated (network issue):", details);
+          // Don't send error to user - SSE might still receive events
+          return;
+        }
+
         logger.error("[Feishu] session.prompt background failure:", details);
         void sendFeishuMessage(
           chatId,

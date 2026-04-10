@@ -26,8 +26,8 @@ type ConnectionStatusHandler = (status: {
   reconnecting: boolean;
 }) => void;
 
-// Force reconnect if no message for 2 minutes
-const STALE_CONNECTION_THRESHOLD_MS = 120000;
+// Force reconnect if no message for 10 minutes (increased to avoid interrupting long tasks)
+const STALE_CONNECTION_THRESHOLD_MS = 600000;
 const DISCONNECTED_RETRY_INTERVAL_MS = 30000;
 
 export class DingTalkClient {
@@ -324,8 +324,10 @@ export class DingTalkClient {
           const sessionStatus = (data as Record<string, { type?: string }>)[currentSession.id];
           if (sessionStatus?.type === "busy") {
             logger.warn(
-              `[DingTalk] OpenCode session ${currentSession.id} is busy, delaying reconnect...`,
+              `[DingTalk] OpenCode session ${currentSession.id} is busy, delaying reconnect and refreshing lastMessageTime...`,
             );
+            // Refresh lastMessageTime to prevent immediate re-trigger
+            this.lastMessageTime = Date.now();
             return; // Skip reconnect, will try again in next interval
           }
         }

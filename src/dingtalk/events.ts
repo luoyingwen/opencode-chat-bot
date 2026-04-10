@@ -174,19 +174,33 @@ async function sendMessage(userId: string, text: string): Promise<void> {
 
 function handleDingTalkComplete(sessionId: string, _messageId: string, messageText: string): void {
   const target = activeTarget;
-  if (!target) return;
+  if (!target) {
+    logger.debug("[DingTalk] handleDingTalkComplete: no active target, skipping");
+    return;
+  }
 
   const currentSession = getCurrentSession();
-  if (currentSession?.id !== sessionId) return;
+  if (currentSession?.id !== sessionId) {
+    logger.debug(
+      `[DingTalk] handleDingTalkComplete: session mismatch, current=${currentSession?.id}, expected=${sessionId}`,
+    );
+    return;
+  }
+
+  logger.info(`[DingTalk] Sending completion message to user ${target.userId}`);
 
   const sendResponse = async () => {
     try {
       const parts = formatForDingTalk(messageText);
-      if (parts.length === 0) return;
+      if (parts.length === 0) {
+        logger.warn("[DingTalk] No content to send after formatting");
+        return;
+      }
 
       for (const part of parts) {
         await sendMessage(target.userId, part);
       }
+      logger.info(`[DingTalk] Completion message sent successfully (${parts.length} parts)`);
     } catch (err) {
       logger.error("[DingTalk] Error sending completion message:", err);
     }
@@ -255,11 +269,20 @@ function handleDingTalkSessionRetry(retryInfo: SessionRetryInfo): void {
 
 function handleDingTalkIdle(sessionId: string): void {
   const target = activeTarget;
-  if (!target) return;
+  if (!target) {
+    logger.debug("[DingTalk] handleDingTalkIdle: no active target, skipping");
+    return;
+  }
 
   const currentSession = getCurrentSession();
-  if (!currentSession || currentSession.id !== sessionId) return;
+  if (!currentSession || currentSession.id !== sessionId) {
+    logger.debug(
+      `[DingTalk] handleDingTalkIdle: session mismatch, current=${currentSession?.id}, expected=${sessionId}`,
+    );
+    return;
+  }
 
+  logger.info(`[DingTalk] Sending completion message (Done) to user ${target.userId}`);
   void sendMessage(target.userId, "✅ Done");
   activeTarget = null;
 }

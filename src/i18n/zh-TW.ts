@@ -327,6 +327,7 @@ export const zhTW: I18nDictionary = {
   "rename.blocked.expected_name": "⚠️ 請以文字輸入新工作階段名稱，或在重新命名訊息中點選取消。",
   "rename.blocked.command_not_allowed": "⚠️ 重新命名等待新名稱期間無法使用此命令。",
   "rename.button.cancel": "❌ 取消",
+  "rename.hint_abort": "傳送 /abort 取消重新命名。",
 
   "task.prompt.schedule":
     "⏰ 以自然語言傳送任務排程。\n\n範例：\n- 每 5 分鐘\n- 每天 17:00\n- 明天 12:00",

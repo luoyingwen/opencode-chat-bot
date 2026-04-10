@@ -375,6 +375,7 @@ export const de: I18nDictionary = {
   "rename.blocked.command_not_allowed":
     "⚠️ Dieser Befehl ist nicht verfügbar, solange beim Umbenennen auf einen neuen Namen gewartet wird.",
   "rename.button.cancel": "❌ Abbrechen",
+  "rename.hint_abort": "Sende /abort, um das Umbenennen abzubrechen.",
 
   "task.prompt.schedule":
     "⏰ Sende den Zeitplan der Aufgabe in natürlicher Sprache.\n\nBeispiele:\n- alle 5 Minuten\n- jeden Tag um 17:00\n- morgen um 12:00",

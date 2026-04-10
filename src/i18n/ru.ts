@@ -362,6 +362,7 @@ export const ru: I18nDictionary = {
   "rename.blocked.command_not_allowed":
     "⚠️ Эта команда недоступна, пока ожидается новое название сессии.",
   "rename.button.cancel": "❌ Отмена",
+  "rename.hint_abort": "Отправьте /abort, чтобы отменить переименование.",
 
   "task.prompt.schedule":
     "⏰ Отправьте расписание задачи обычным языком.\n\nПримеры:\n- каждые 5 минут\n- каждый день в 17:00\n- завтра в 12:00",
