@@ -6,6 +6,7 @@
  * on a single allowed channel ID.
  */
 
+import { randomUUID } from "node:crypto";
 import pkg from "@slack/bolt";
 const { App, LogLevel } = pkg;
 
@@ -18,7 +19,7 @@ import { getCurrentSession, setCurrentSession } from "../session/manager.js";
 import { ingestSessionInfoForCache } from "../session/cache-manager.js";
 import { getCurrentProject, setCurrentProject } from "../settings/manager.js";
 import { getProjects } from "../project/manager.js";
-import { getStoredAgent } from "../agent/manager.js";
+import { getStoredAgent, getAvailableAgents, selectAgent } from "../agent/manager.js";
 import { getStoredModel } from "../model/manager.js";
 import { fetchCurrentAgent } from "../agent/manager.js";
 import { getAgentDisplayName } from "../agent/types.js";
@@ -34,7 +35,22 @@ import { renameManager } from "../rename/manager.js";
 import { processManager } from "../process/manager.js";
 import { getLocalizedBotCommands } from "../bot/commands/definitions.js";
 import { logger } from "../utils/logger.js";
-import { t } from "../i18n/index.js";
+import { t, getDateLocale } from "../i18n/index.js";
+import { parseTaskSchedule } from "../scheduled-task/schedule-parser.js";
+import {
+  addScheduledTask,
+  listScheduledTasks,
+  removeScheduledTask,
+  getScheduledTask,
+} from "../scheduled-task/store.js";
+import { scheduledTaskRuntime } from "../scheduled-task/runtime.js";
+import {
+  createScheduledTaskModel,
+  type ParsedTaskSchedule,
+  type ScheduledTask,
+  type ScheduledTaskModel,
+} from "../scheduled-task/types.js";
+import { formatTaskListBadge } from "../scheduled-task/display.js";
 import {
   setSlackApp,
   setSlackActive,
@@ -54,12 +70,82 @@ function isChannelAllowed(channelId: string): boolean {
   return channelId === allowed;
 }
 
-/**
- * Ensure SSE event subscription is active for the given directory.
- * This is the Slack-side equivalent of ensureEventSubscription in bot/index.ts.
- * It re-uses the same subscribeToEvents / summaryAggregator pipeline — the
- * event routing layer (slack/events.ts) handles directing output to Slack.
- */
+// ─── Task State Management ────────────────────────────────────────────────
+
+interface SlackTaskState {
+  stage: "awaiting_schedule" | "awaiting_prompt";
+  projectId: string;
+  projectWorktree: string;
+  model: ScheduledTaskModel;
+  scheduleText: string;
+  parsedSchedule: ParsedTaskSchedule | null;
+  lastActivity: number;
+}
+
+const slackTaskStates = new Map<string, SlackTaskState>();
+const TASK_STATE_TIMEOUT_MS = 5 * 60 * 1000; // 5 minutes timeout
+
+function isTaskLimitReached(): boolean {
+  return listScheduledTasks().length >= config.bot.taskLimit;
+}
+
+function getSlackTaskState(userId: string): SlackTaskState | null {
+  const state = slackTaskStates.get(userId);
+  if (!state) return null;
+  if (Date.now() - state.lastActivity > TASK_STATE_TIMEOUT_MS) {
+    slackTaskStates.delete(userId);
+    return null;
+  }
+  return state;
+}
+
+function setSlackTaskState(userId: string, state: SlackTaskState): void {
+  slackTaskStates.set(userId, state);
+}
+
+function clearSlackTaskState(userId: string): void {
+  slackTaskStates.delete(userId);
+}
+
+function isUserInTaskFlow(userId: string): boolean {
+  return getSlackTaskState(userId) !== null;
+}
+
+// ─── TaskList State Management ────────────────────────────────────────────
+
+interface TaskListState {
+  stage: "list" | "detail";
+  taskId: string | null;
+  lastActivity: number;
+}
+
+const slackTaskListStates = new Map<string, TaskListState>();
+const TASK_LIST_STATE_TIMEOUT_MS = 5 * 60 * 1000; // 5 minutes timeout
+
+function getSlackTaskListState(userId: string): TaskListState | null {
+  const state = slackTaskListStates.get(userId);
+  if (!state) return null;
+  if (Date.now() - state.lastActivity > TASK_LIST_STATE_TIMEOUT_MS) {
+    slackTaskListStates.delete(userId);
+    return null;
+  }
+  return state;
+}
+
+function setSlackTaskListState(userId: string, state: TaskListState): void {
+  slackTaskListStates.set(userId, state);
+}
+
+function clearSlackTaskListState(userId: string): void {
+  slackTaskListStates.delete(userId);
+}
+
+function isUserInTaskListFlow(userId: string): boolean {
+  return getSlackTaskListState(userId) !== null;
+}
+
+// ─── SSE Event Subscription ───────────────────────────────────────────────
+
 async function ensureEventSubscription(directory: string): Promise<void> {
   if (!directory) {
     logger.error("[Slack] No directory found for event subscription");
@@ -673,6 +759,133 @@ export async function initializeSlackHandler(): Promise<SlackApp> {
     }
   });
 
+  // ─── Command: /tasklist ─────────────────────────────────────────────
+
+  app.command("/tasklist", async ({ command, ack, say }) => {
+    await ack();
+
+    if (!isChannelAllowed(command.channel_id)) {
+      await say("⛔ This channel is not authorized.");
+      return;
+    }
+
+    try {
+      const tasks = listScheduledTasks();
+      if (tasks.length === 0) {
+        await say(t("tasklist.empty"));
+        return;
+      }
+
+      const sortedTasks = [...tasks].sort((left, right) => {
+        const leftNextRun = left.nextRunAt ? Date.parse(left.nextRunAt) : Number.POSITIVE_INFINITY;
+        const rightNextRun = right.nextRunAt
+          ? Date.parse(right.nextRunAt)
+          : Number.POSITIVE_INFINITY;
+        return leftNextRun - rightNextRun;
+      });
+
+      const lines: string[] = [t("tasklist.select"), ""];
+      sortedTasks.forEach((task, index) => {
+        const badge = formatTaskListBadge(task);
+        const prompt = task.prompt.replace(/\s+/g, " ").trim();
+        const truncatedPrompt = prompt.length > 50 ? `${prompt.slice(0, 47)}...` : prompt;
+        lines.push(`${index + 1}. [${badge}] ${truncatedPrompt}`);
+      });
+
+      lines.push("");
+      lines.push("Enter task number for details, or type 'cancel' to exit.");
+
+      // Start interactive task list flow
+      setSlackTaskListState(command.user_id, {
+        stage: "list",
+        taskId: null,
+        lastActivity: Date.now(),
+      });
+
+      await say(lines.join("\n"));
+    } catch (err) {
+      logger.error("[Slack] Error listing tasks:", err);
+      await say(t("tasklist.load_error"));
+    }
+  });
+
+  // ─── Command: /task ─────────────────────────────────────────────────
+
+  app.command("/task", async ({ command, ack, say }) => {
+    await ack();
+
+    if (!isChannelAllowed(command.channel_id)) {
+      await say("⛔ This channel is not authorized.");
+      return;
+    }
+
+    if (isTaskLimitReached()) {
+      await say(t("task.limit_reached", { limit: config.bot.taskLimit }));
+      return;
+    }
+
+    const currentProject = getCurrentProject();
+    if (!currentProject) {
+      await say("❌ No project selected. Use `/projects` first.");
+      return;
+    }
+
+    const storedModel = getStoredModel();
+    const model = createScheduledTaskModel(storedModel);
+
+    // Start task creation flow
+    const userId = command.user_id;
+    setSlackTaskState(userId, {
+      stage: "awaiting_schedule",
+      projectId: currentProject.id,
+      projectWorktree: currentProject.worktree,
+      model,
+      scheduleText: "",
+      parsedSchedule: null,
+      lastActivity: Date.now(),
+    });
+
+    await say(t("task.prompt.schedule"));
+  });
+
+  // ─── Command: /agents ───────────────────────────────────────────────
+
+  app.command("/agents", async ({ command, ack, say }) => {
+    await ack();
+
+    if (!isChannelAllowed(command.channel_id)) {
+      await say("⛔ This channel is not authorized.");
+      return;
+    }
+
+    try {
+      const agents = await getAvailableAgents();
+
+      if (agents.length === 0) {
+        await say(t("agent.list.empty"));
+        return;
+      }
+
+      const currentAgent = getStoredAgent();
+      const list = agents
+        .map((agent, index) => {
+          const marker = agent.name === currentAgent ? " ✅" : "";
+          return `${index + 1}. ${getAgentDisplayName(agent.name)}${marker}`;
+        })
+        .join("\n");
+
+      const message = t("agent.list.title", {
+        current: getAgentDisplayName(currentAgent),
+        list,
+      });
+
+      await say(message);
+    } catch (err) {
+      logger.error("[Slack] Error listing agents:", err);
+      await say(t("error.load_agents"));
+    }
+  });
+
   // ─── Command: /help ─────────────────────────────────────────────────
 
   app.command("/help", async ({ command, ack, say }) => {
@@ -744,6 +957,157 @@ export async function initializeSlackHandler(): Promise<SlackApp> {
         if (interactionManager.getSnapshot()?.kind === "rename") {
           interactionManager.clear("rename_completed");
         }
+        return;
+      }
+    }
+
+    // Get user ID from message
+    const userId = (msg.user as string) || "";
+
+    // Check if user is in task flow
+    const taskState = getSlackTaskState(userId);
+    if (taskState) {
+      if (userMessage.trim().toLowerCase() === "cancel" || userMessage.trim() === "/cancel") {
+        clearSlackTaskState(userId);
+        await say(t("task.cancelled"));
+        return;
+      }
+
+      if (taskState.stage === "awaiting_schedule") {
+        const scheduleText = userMessage.trim();
+        if (!scheduleText) {
+          await say(t("task.schedule_empty"));
+          return;
+        }
+
+        try {
+          await say(t("task.parse.in_progress"));
+          const parsedSchedule = await parseTaskSchedule(scheduleText, taskState.projectWorktree);
+
+          // Update state to await prompt
+          setSlackTaskState(userId, {
+            ...taskState,
+            stage: "awaiting_prompt",
+            scheduleText,
+            parsedSchedule,
+            lastActivity: Date.now(),
+          });
+
+          await say(formatParsedScheduleMessage(parsedSchedule) + "\n\n" + t("task.prompt.body"));
+          return;
+        } catch (error) {
+          logger.error("[Slack] Failed to parse schedule:", error);
+          await say(
+            t("task.parse_error", {
+              message: error instanceof Error ? error.message : String(error),
+            }),
+          );
+          return;
+        }
+      }
+
+      if (taskState.stage === "awaiting_prompt") {
+        const promptText = userMessage.trim();
+        if (!promptText) {
+          await say(t("task.prompt_empty"));
+          return;
+        }
+
+        if (!taskState.parsedSchedule) {
+          clearSlackTaskState(userId);
+          await say("⚠️ Invalid task state. Please start over.");
+          return;
+        }
+
+        try {
+          const task = buildScheduledTask(
+            taskState.projectId,
+            taskState.projectWorktree,
+            taskState.model,
+            taskState.scheduleText,
+            taskState.parsedSchedule,
+            promptText,
+          );
+
+          await addScheduledTask(task);
+          scheduledTaskRuntime.registerTask(task);
+          clearSlackTaskState(userId);
+
+          await say(formatTaskCreatedMessage(task));
+          logger.info(`[Slack] Scheduled task created: ${task.id}`);
+        } catch (error) {
+          logger.error("[Slack] Failed to create task:", error);
+          await say("❌ Failed to create task");
+        }
+        return;
+      }
+    }
+
+    // Check if user is in task list flow
+    const taskListState = getSlackTaskListState(userId);
+    if (taskListState) {
+      const trimmedText = userMessage.trim().toLowerCase();
+
+      if (trimmedText === "cancel" || trimmedText === "/cancel") {
+        clearSlackTaskListState(userId);
+        await say(t("tasklist.cancelled_callback"));
+        return;
+      }
+
+      if (taskListState.stage === "list") {
+        const taskNumber = Number.parseInt(userMessage.trim(), 10);
+        if (Number.isNaN(taskNumber) || taskNumber < 1) {
+          await say("⚠️ Please enter a valid task number or type 'cancel' to exit.");
+          return;
+        }
+
+        const tasks = listScheduledTasks();
+        if (taskNumber > tasks.length) {
+          await say(`⚠️ Task #${taskNumber} does not exist. There are ${tasks.length} tasks.`);
+          return;
+        }
+
+        const task = tasks[taskNumber - 1];
+        setSlackTaskListState(userId, {
+          stage: "detail",
+          taskId: task.id,
+          lastActivity: Date.now(),
+        });
+
+        const details = formatTaskDetails(task);
+        await say(`${details}\n\nType "delete" to remove this task, or "cancel" to go back.`);
+        return;
+      }
+
+      if (taskListState.stage === "detail") {
+        if (!taskListState.taskId) {
+          clearSlackTaskListState(userId);
+          await say(t("tasklist.inactive_callback"));
+          return;
+        }
+
+        if (trimmedText === "delete") {
+          try {
+            const task = getScheduledTask(taskListState.taskId);
+            if (!task) {
+              clearSlackTaskListState(userId);
+              await say(t("tasklist.inactive_callback"));
+              return;
+            }
+
+            await removeScheduledTask(taskListState.taskId);
+            scheduledTaskRuntime.removeTask(taskListState.taskId);
+            clearSlackTaskListState(userId);
+
+            await say(t("tasklist.deleted_callback"));
+          } catch (error) {
+            logger.error("[Slack] Failed to delete task:", error);
+            await say("❌ Failed to delete task");
+          }
+          return;
+        }
+
+        await say('⚠️ Type "delete" to remove this task, or "cancel" to exit.');
         return;
       }
     }
@@ -949,4 +1313,108 @@ async function postMessageToChannel(channel: string, text: string): Promise<void
   } catch (err) {
     logger.error("[Slack] Failed to post message to channel:", err);
   }
+}
+
+// ─── Helper Functions for Task Management ────────────────────────────────
+
+function formatParsedScheduleMessage(schedule: ParsedTaskSchedule): string {
+  const cronLine =
+    schedule.kind === "cron" ? `${t("task.schedule_preview.cron", { cron: schedule.cron })}\n` : "";
+
+  return t("task.schedule_preview", {
+    summary: schedule.summary,
+    cronLine,
+    timezone: schedule.timezone,
+    kind: schedule.kind === "cron" ? t("task.kind.cron") : t("task.kind.once"),
+    nextRunAt: formatDateTime(schedule.nextRunAt, schedule.timezone),
+  });
+}
+
+function formatTaskCreatedMessage(task: ScheduledTask): string {
+  const variant = task.model.variant ? ` (${task.model.variant})` : "";
+  const model = `${task.model.providerID}/${task.model.modelID}${variant}`;
+  const cronLine = task.kind === "cron" ? `${t("task.created.cron", { cron: task.cron })}\n` : "";
+
+  const truncatedPrompt = task.prompt.length > 100 ? `${task.prompt.slice(0, 97)}...` : task.prompt;
+
+  return t("task.created", {
+    description: truncatedPrompt,
+    project: task.projectWorktree,
+    model,
+    schedule: task.scheduleSummary,
+    cronLine,
+    nextRunAt: task.nextRunAt ? formatDateTime(task.nextRunAt, task.timezone) : "-",
+  });
+}
+
+function formatTaskDetails(task: ScheduledTask): string {
+  const cronLine =
+    task.kind === "cron" ? `${t("tasklist.details.cron", { cron: task.cron })}\n` : "";
+
+  return t("tasklist.details", {
+    prompt: task.prompt,
+    project: task.projectWorktree,
+    schedule: task.scheduleSummary,
+    cronLine,
+    timezone: task.timezone,
+    nextRunAt: formatDateTime(task.nextRunAt, task.timezone),
+    lastRunAt: formatDateTime(task.lastRunAt, task.timezone),
+    runCount: String(task.runCount),
+  });
+}
+
+function formatDateTime(dateIso: string | null, timezone: string): string {
+  if (!dateIso) {
+    return "-";
+  }
+
+  try {
+    return new Intl.DateTimeFormat(getDateLocale(), {
+      dateStyle: "medium",
+      timeStyle: "short",
+      timeZone: timezone,
+    }).format(new Date(dateIso));
+  } catch {
+    return dateIso;
+  }
+}
+
+function buildScheduledTask(
+  projectId: string,
+  projectWorktree: string,
+  model: import("../scheduled-task/types.js").ScheduledTaskModel,
+  scheduleText: string,
+  parsedSchedule: import("../scheduled-task/types.js").ParsedTaskSchedule,
+  prompt: string,
+): import("../scheduled-task/types.js").ScheduledTask {
+  const baseTask = {
+    id: randomUUID(),
+    projectId,
+    projectWorktree,
+    model,
+    scheduleText,
+    scheduleSummary: parsedSchedule.summary,
+    timezone: parsedSchedule.timezone,
+    prompt,
+    createdAt: new Date().toISOString(),
+    nextRunAt: parsedSchedule.nextRunAt,
+    lastRunAt: null,
+    runCount: 0,
+    lastStatus: "idle" as const,
+    lastError: null,
+  };
+
+  if (parsedSchedule.kind === "cron") {
+    return {
+      ...baseTask,
+      kind: "cron",
+      cron: parsedSchedule.cron,
+    };
+  }
+
+  return {
+    ...baseTask,
+    kind: "once",
+    runAt: parsedSchedule.runAt,
+  };
 }

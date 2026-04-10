@@ -914,6 +914,7 @@ export function createBot(): Bot<Context> {
   bot.command("sessions", sessionsCommand);
   bot.command("new", newCommand);
   bot.command("abort", abortCommand);
+  bot.command("stop", abortCommand); // Alias for /abort
   bot.command("task", taskCommand);
   bot.command("tasklist", taskListCommand);
   bot.command("rename", renameCommand);
