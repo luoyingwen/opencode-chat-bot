@@ -26,6 +26,8 @@ import { subscribeToEvents, stopEventListening } from "../opencode/events.js";
 import { safeBackgroundTask } from "../utils/safe-background-task.js";
 import { formatErrorDetails } from "../utils/error-format.js";
 import { clearAllInteractionState } from "../interaction/cleanup.js";
+import { interactionManager } from "../interaction/manager.js";
+import { renameManager } from "../rename/manager.js";
 import { processManager } from "../process/manager.js";
 import { logger } from "../utils/logger.js";
 import { t } from "../i18n/index.js";
@@ -455,7 +457,24 @@ async function handleRenameCommand(chatId: string, userId: string): Promise<void
       await sendFeishuMessage(chatId, userId, t("rename.no_session"));
       return;
     }
-    await sendFeishuMessage(chatId, userId, t("rename.prompt", { title: currentSession.title }));
+
+    // Start rename flow and set up state management
+    renameManager.startWaiting(currentSession.id, currentSession.directory, currentSession.title);
+    interactionManager.start({
+      kind: "rename",
+      expectedInput: "text",
+      metadata: {
+        sessionId: currentSession.id,
+        userId: userId,
+      },
+    });
+
+    // Send prompt message with abort hint
+    const message =
+      t("rename.prompt", { title: currentSession.title }) + "\n\n" + "💡 " + t("rename.hint_abort");
+    await sendFeishuMessage(chatId, userId, message);
+
+    logger.info(`[Feishu] Waiting for new title for session: ${currentSession.id}`);
   } catch (err) {
     logger.error("[Feishu] Error in rename command:", err);
     await sendFeishuMessage(chatId, userId, t("rename.error"));
@@ -746,6 +765,50 @@ async function handleTextMessage(chatId: string, userId: string, text: string): 
     const response = await handleTaskListTextInput(userId, text);
     if (response !== null) {
       await sendFeishuMessage(chatId, userId, response);
+      return;
+    }
+  }
+
+  // Check if user is in rename flow
+  if (renameManager.isWaitingForName()) {
+    const sessionInfo = renameManager.getSessionInfo();
+    if (sessionInfo) {
+      const newTitle = text.trim();
+      if (!newTitle) {
+        await sendFeishuMessage(chatId, userId, t("rename.empty_title"));
+        return;
+      }
+
+      logger.info(`[Feishu] Renaming session ${sessionInfo.sessionId} to: ${newTitle}`);
+
+      try {
+        const { data: updatedSession, error } = await opencodeClient.session.update({
+          sessionID: sessionInfo.sessionId,
+          directory: sessionInfo.directory,
+          title: newTitle,
+        });
+
+        if (error || !updatedSession) {
+          throw error || new Error("Failed to update session");
+        }
+
+        setCurrentSession({
+          id: sessionInfo.sessionId,
+          title: newTitle,
+          directory: sessionInfo.directory,
+        });
+
+        await sendFeishuMessage(chatId, userId, t("rename.success", { title: newTitle }));
+        logger.info(`[Feishu] Session renamed successfully: ${newTitle}`);
+      } catch (err) {
+        logger.error("[Feishu] Error renaming session:", err);
+        await sendFeishuMessage(chatId, userId, t("rename.error"));
+      }
+
+      renameManager.clear();
+      if (interactionManager.getSnapshot()?.kind === "rename") {
+        interactionManager.clear("rename_completed");
+      }
       return;
     }
   }

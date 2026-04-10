@@ -29,6 +29,8 @@ import { subscribeToEvents, stopEventListening } from "../opencode/events.js";
 import { safeBackgroundTask } from "../utils/safe-background-task.js";
 import { formatErrorDetails } from "../utils/error-format.js";
 import { clearAllInteractionState } from "../interaction/cleanup.js";
+import { interactionManager } from "../interaction/manager.js";
+import { renameManager } from "../rename/manager.js";
 import { processManager } from "../process/manager.js";
 import { getLocalizedBotCommands } from "../bot/commands/definitions.js";
 import { logger } from "../utils/logger.js";
@@ -486,7 +488,26 @@ export async function initializeSlackHandler(): Promise<SlackApp> {
         return;
       }
 
-      await say(t("rename.prompt", { title: currentSession.title }));
+      // Start rename flow and set up state management
+      renameManager.startWaiting(currentSession.id, currentSession.directory, currentSession.title);
+      interactionManager.start({
+        kind: "rename",
+        expectedInput: "text",
+        metadata: {
+          sessionId: currentSession.id,
+          channelId: command.channel_id,
+        },
+      });
+
+      // Send prompt message with abort hint
+      const message =
+        t("rename.prompt", { title: currentSession.title }) +
+        "\n\n" +
+        "💡 " +
+        t("rename.hint_abort");
+      await say(message);
+
+      logger.info(`[Slack] Waiting for new title for session: ${currentSession.id}`);
     } catch (err) {
       logger.error("[Slack] Error in /rename:", err);
       await say(t("rename.error"));
@@ -682,6 +703,50 @@ export async function initializeSlackHandler(): Promise<SlackApp> {
     if (!isChannelAllowed(channelId)) return;
 
     const userMessage = msg.text as string;
+
+    // Check if user is in rename flow
+    if (renameManager.isWaitingForName()) {
+      const sessionInfo = renameManager.getSessionInfo();
+      if (sessionInfo) {
+        const newTitle = userMessage.trim();
+        if (!newTitle) {
+          await say(t("rename.empty_title"));
+          return;
+        }
+
+        logger.info(`[Slack] Renaming session ${sessionInfo.sessionId} to: ${newTitle}`);
+
+        try {
+          const { data: updatedSession, error } = await opencodeClient.session.update({
+            sessionID: sessionInfo.sessionId,
+            directory: sessionInfo.directory,
+            title: newTitle,
+          });
+
+          if (error || !updatedSession) {
+            throw error || new Error("Failed to update session");
+          }
+
+          setCurrentSession({
+            id: sessionInfo.sessionId,
+            title: newTitle,
+            directory: sessionInfo.directory,
+          });
+
+          await say(t("rename.success", { title: newTitle }));
+          logger.info(`[Slack] Session renamed successfully: ${newTitle}`);
+        } catch (err) {
+          logger.error("[Slack] Error renaming session:", err);
+          await say(t("rename.error"));
+        }
+
+        renameManager.clear();
+        if (interactionManager.getSnapshot()?.kind === "rename") {
+          interactionManager.clear("rename_completed");
+        }
+        return;
+      }
+    }
 
     try {
       const currentProject = getCurrentProject();
