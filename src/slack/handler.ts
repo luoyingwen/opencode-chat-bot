@@ -57,6 +57,11 @@ import {
   clearSlackActive,
   installSlackEventRouting,
 } from "./events.js";
+import {
+  handleCommandsCommand,
+  handleCommandsTextInput,
+  isUserInCommandsFlow,
+} from "./commands.js";
 
 import type { App as SlackApp } from "@slack/bolt";
 
@@ -610,43 +615,9 @@ export async function initializeSlackHandler(): Promise<SlackApp> {
       return;
     }
 
-    try {
-      const currentProject = getCurrentProject();
-      if (!currentProject) {
-        await say(t("bot.project_not_selected"));
-        return;
-      }
-
-      const { data, error } = await opencodeClient.command.list({
-        directory: currentProject.worktree.replace(/\\/g, "/"),
-      });
-
-      if (error || !data || data.length === 0) {
-        await say(t("commands.empty"));
-        return;
-      }
-
-      const filtered = data.filter(
-        (cmd) => typeof cmd.name === "string" && cmd.name.trim().length > 0,
-      );
-      if (filtered.length === 0) {
-        await say(t("commands.empty"));
-        return;
-      }
-
-      const lines = filtered.map((cmd) => {
-        const desc = cmd.description?.trim() || t("commands.no_description");
-        return `• /\`${cmd.name}\` — ${desc}`;
-      });
-
-      await say({
-        text: `📋 *OpenCode Commands* (${filtered.length} available)\n\n${lines.join("\n")}`,
-        mrkdwn: true,
-      });
-    } catch (err) {
-      logger.error("[Slack] Error in /commands:", err);
-      await say(t("commands.fetch_error"));
-    }
+    const userId = command.user_id;
+    const message = await handleCommandsCommand(userId);
+    await say(message);
   });
 
   // ─── Command: /opencode_start ─────────────────────────────────────────
@@ -1108,6 +1079,15 @@ export async function initializeSlackHandler(): Promise<SlackApp> {
         }
 
         await say('⚠️ Type "delete" to remove this task, or "cancel" to exit.');
+        return;
+      }
+    }
+
+    // Check if user is in commands flow
+    if (isUserInCommandsFlow(userId)) {
+      const response = await handleCommandsTextInput(userId, userMessage);
+      if (response !== null) {
+        await say(response);
         return;
       }
     }

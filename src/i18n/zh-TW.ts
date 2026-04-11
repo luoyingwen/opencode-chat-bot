@@ -388,6 +388,10 @@ export const zhTW: I18nDictionary = {
   "commands.button.next_page": "下一頁 ➡️",
   "commands.page_empty_callback": "此頁沒有命令",
   "commands.page_load_error_callback": "無法載入此頁面。請重試。",
+  "commands.hint_select": "💡 輸入命令編號選擇，或輸入「取消」退出。",
+  "commands.confirm_hint":
+    "💡 輸入參數（可選），或：\n• 輸入「執行」無參數執行\n• 輸入「取消」返回列表",
+  "commands.invalid_number": "請輸入有效的命令編號（{min}-{max}）。",
 
   "cli.usage":
     "用法：\n  opencode-telegram [start] [--mode sources|installed]\n  opencode-telegram status\n  opencode-telegram stop\n  opencode-telegram config\n\n說明：\n  - 不帶命令時預設執行 `start`\n  - `--mode` 目前僅支援 `start` 命令",

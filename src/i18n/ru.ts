@@ -431,6 +431,10 @@ export const ru: I18nDictionary = {
   "commands.page_empty_callback": "На этой странице нет команд",
   "commands.page_load_error_callback":
     "Не удалось загрузить эту страницу. Пожалуйста, попробуйте снова.",
+  "commands.hint_select": '💡 Введите номер команды или "отмена" для выхода.',
+  "commands.confirm_hint":
+    '💡 Введите аргументы (опционально), или:\n• "выполнить" без аргументов\n• "отмена" для возврата',
+  "commands.invalid_number": "Введите правильный номер ({min}-{max}).",
 
   "cmd.description.rename": "Переименовать текущую сессию",
 

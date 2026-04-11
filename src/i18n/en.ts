@@ -428,6 +428,10 @@ export const en = {
   "commands.button.next_page": "Next ➡️",
   "commands.page_empty_callback": "No commands on this page",
   "commands.page_load_error_callback": "Cannot load this page. Please try again.",
+  "commands.hint_select": '💡 Enter command number to select, or type "cancel" to exit.',
+  "commands.confirm_hint":
+    '💡 Enter arguments (optional), or:\n• Type "run" to execute without arguments\n• Type "cancel" to go back',
+  "commands.invalid_number": "Please enter a valid command number ({min}-{max}).",
 
   "cmd.description.rename": "Rename current session",
 

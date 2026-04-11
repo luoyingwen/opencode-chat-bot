@@ -391,6 +391,10 @@ export const zh: I18nDictionary = {
   "commands.button.next_page": "下一页 ➡️",
   "commands.page_empty_callback": "这一页没有命令",
   "commands.page_load_error_callback": "无法加载此页面。请重试。",
+  "commands.hint_select": "💡 输入命令编号选择，或输入「取消」退出。",
+  "commands.confirm_hint":
+    "💡 输入参数（可选），或：\n• 输入「执行」无参数执行\n• 输入「取消」返回列表",
+  "commands.invalid_number": "请输入有效的命令编号（{min}-{max}）。",
 
   "cmd.description.rename": "重命名当前会话",
 

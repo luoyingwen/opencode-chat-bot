@@ -443,6 +443,10 @@ export const es: I18nDictionary = {
   "commands.page_empty_callback": "No hay comandos en esta página",
   "commands.page_load_error_callback":
     "No se pudo cargar esta página. Por favor, inténtalo de nuevo.",
+  "commands.hint_select": '💡 Introduce número de comando o "cancelar" para salir.',
+  "commands.confirm_hint":
+    '💡 Introduce argumentos (opcional), o:\n• "ejecutar" sin argumentos\n• "cancelar" para volver',
+  "commands.invalid_number": "Introduce número válido ({min}-{max}).",
 
   "cmd.description.rename": "Renombrar la sesión actual",
 

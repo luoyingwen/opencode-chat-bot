@@ -444,6 +444,10 @@ export const de: I18nDictionary = {
   "commands.page_empty_callback": "Keine Befehle auf dieser Seite",
   "commands.page_load_error_callback":
     "Diese Seite konnte nicht geladen werden. Bitte versuche es erneut.",
+  "commands.hint_select": '💡 Befehlsnummer eingeben oder "abbrechen" zum Beenden.',
+  "commands.confirm_hint":
+    '💡 Argumente eingeben (optional), oder:\n• "ausführen" ohne Argumente\n• "abbrechen" zum Zurückgehen',
+  "commands.invalid_number": "Bitte gültige Befehlsnummer eingeben ({min}-{max}).",
 
   "cmd.description.rename": "Aktuelle Sitzung umbenennen",
 

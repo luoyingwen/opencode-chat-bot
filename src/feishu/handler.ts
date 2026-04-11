@@ -39,6 +39,11 @@ import {
 } from "./tasklist.js";
 import { setFeishuNotificationCallback } from "../scheduled-task/runtime.js";
 import { exitApplication } from "../app/exit-app.js";
+import {
+  handleCommandsCommand,
+  handleCommandsTextInput,
+  isUserInCommandsFlow,
+} from "./commands.js";
 
 function isUserAllowed(userId: string): boolean {
   const allowed = config.feishu.allowedUsers;
@@ -481,47 +486,6 @@ async function handleRenameCommand(chatId: string, userId: string): Promise<void
   }
 }
 
-async function handleCommandsCommand(chatId: string, userId: string): Promise<void> {
-  try {
-    const currentProject = getCurrentProject();
-    if (!currentProject) {
-      await sendFeishuMessage(chatId, userId, t("bot.project_not_selected"));
-      return;
-    }
-
-    const { data, error } = await opencodeClient.command.list({
-      directory: currentProject.worktree.replace(/\\/g, "/"),
-    });
-
-    if (error || !data || data.length === 0) {
-      await sendFeishuMessage(chatId, userId, t("commands.empty"));
-      return;
-    }
-
-    const filtered = data.filter(
-      (cmd) => typeof cmd.name === "string" && cmd.name.trim().length > 0,
-    );
-    if (filtered.length === 0) {
-      await sendFeishuMessage(chatId, userId, t("commands.empty"));
-      return;
-    }
-
-    const lines = filtered.map((cmd) => {
-      const desc = cmd.description?.trim() || t("commands.no_description");
-      return `• /${cmd.name} — ${desc}`;
-    });
-
-    await sendFeishuMessage(
-      chatId,
-      userId,
-      `📋 **OpenCode Commands** (${filtered.length} available)\n\n${lines.join("\n")}`,
-    );
-  } catch (err) {
-    logger.error("[Feishu] Error in commands command:", err);
-    await sendFeishuMessage(chatId, userId, t("commands.fetch_error"));
-  }
-}
-
 async function handleOpencodeStartCommand(chatId: string, userId: string): Promise<void> {
   try {
     if (processManager.isRunning()) {
@@ -763,6 +727,15 @@ async function handleTextMessage(chatId: string, userId: string, text: string): 
 
   if (isUserInTaskListFlow(userId)) {
     const response = await handleTaskListTextInput(userId, text);
+    if (response !== null) {
+      await sendFeishuMessage(chatId, userId, response);
+      return;
+    }
+  }
+
+  // Check if user is in commands flow
+  if (isUserInCommandsFlow(userId)) {
+    const response = await handleCommandsTextInput(chatId, userId, text);
     if (response !== null) {
       await sendFeishuMessage(chatId, userId, response);
       return;
@@ -1022,7 +995,10 @@ function processMessage(userId: string, chatId: string, text: string, _messageId
       await sendFeishuMessage(chatId, userId, message);
     })();
   } else if (text.startsWith("/commands")) {
-    void handleCommandsCommand(chatId, userId);
+    void (async () => {
+      const message = await handleCommandsCommand(chatId, userId);
+      await sendFeishuMessage(chatId, userId, message);
+    })();
   } else if (text.startsWith("/opencode_start")) {
     void handleOpencodeStartCommand(chatId, userId);
   } else if (text.startsWith("/opencode_stop")) {

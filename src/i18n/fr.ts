@@ -444,6 +444,10 @@ export const fr: I18nDictionary = {
   "commands.button.next_page": "Suivant ➡️",
   "commands.page_empty_callback": "Aucune commande sur cette page",
   "commands.page_load_error_callback": "Impossible de charger cette page. Veuillez réessayer.",
+  "commands.hint_select": '💡 Entrez numéro ou "annuler" pour quitter.',
+  "commands.confirm_hint":
+    '💡 Entrez arguments (optionnel), ou:\n• "exécuter" sans arguments\n• "annuler" pour revenir',
+  "commands.invalid_number": "Entrez numéro valide ({min}-{max}).",
 
   "cmd.description.rename": "Renommer la session actuelle",
 

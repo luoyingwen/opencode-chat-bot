@@ -38,6 +38,11 @@ import {
   isUserInTaskListFlow,
 } from "./tasklist.js";
 import { setDingTalkNotificationCallback } from "../scheduled-task/runtime.js";
+import {
+  handleCommandsCommand,
+  handleCommandsTextInput,
+  isUserInCommandsFlow,
+} from "./commands.js";
 
 function isUserAllowed(userId: string): boolean {
   const allowed = config.dingtalk.allowedUserId;
@@ -461,46 +466,6 @@ async function handleRenameCommand(userId: string): Promise<void> {
   }
 }
 
-async function handleCommandsCommand(userId: string): Promise<void> {
-  try {
-    const currentProject = getCurrentProject();
-    if (!currentProject) {
-      await sendDingTalkMessage(userId, t("bot.project_not_selected"));
-      return;
-    }
-
-    const { data, error } = await opencodeClient.command.list({
-      directory: currentProject.worktree.replace(/\\/g, "/"),
-    });
-
-    if (error || !data || data.length === 0) {
-      await sendDingTalkMessage(userId, t("commands.empty"));
-      return;
-    }
-
-    const filtered = data.filter(
-      (cmd) => typeof cmd.name === "string" && cmd.name.trim().length > 0,
-    );
-    if (filtered.length === 0) {
-      await sendDingTalkMessage(userId, t("commands.empty"));
-      return;
-    }
-
-    const lines = filtered.map((cmd) => {
-      const desc = cmd.description?.trim() || t("commands.no_description");
-      return `• /${cmd.name} — ${desc}`;
-    });
-
-    await sendDingTalkMessage(
-      userId,
-      `📋 **OpenCode Commands** (${filtered.length} available)\n\n${lines.join("\n")}`,
-    );
-  } catch (err) {
-    logger.error("[DingTalk] Error in commands command:", err);
-    await sendDingTalkMessage(userId, t("commands.fetch_error"));
-  }
-}
-
 async function handleOpencodeStartCommand(userId: string): Promise<void> {
   try {
     if (processManager.isRunning()) {
@@ -734,6 +699,15 @@ async function handleTextMessage(userId: string, text: string): Promise<void> {
   // Check if user is in task list flow
   if (isUserInTaskListFlow(userId)) {
     const response = await handleTaskListTextInput(userId, text);
+    if (response !== null) {
+      await sendDingTalkMessage(userId, response);
+      return;
+    }
+  }
+
+  // Check if user is in commands flow
+  if (isUserInCommandsFlow(userId)) {
+    const response = await handleCommandsTextInput(userId, text);
     if (response !== null) {
       await sendDingTalkMessage(userId, response);
       return;
@@ -978,7 +952,10 @@ function processMessage(userId: string, text: string, sessionWebhook: string): v
     const arg = text.slice(7).trim();
     void handleAgentSwitchCommand(userId, arg);
   } else if (text.startsWith("/commands")) {
-    void handleCommandsCommand(userId);
+    void (async () => {
+      const message = await handleCommandsCommand(userId);
+      await sendDingTalkMessage(userId, message);
+    })();
   } else if (text.startsWith("/opencode_start")) {
     void handleOpencodeStartCommand(userId);
   } else if (text.startsWith("/opencode_stop")) {
