@@ -130,6 +130,7 @@ npm run dev
 | `/abort`          | Abort the current task                                  |
 | `/sessions`       | Browse and switch between recent sessions               |
 | `/projects`       | Switch between OpenCode projects                        |
+| `/open`           | Add a project by browsing directories                   |
 | `/tts`            | Toggle audio replies                                    |
 | `/rename`         | Rename the current session                              |
 | `/commands`       | Browse and run custom commands                          |
@@ -268,6 +269,7 @@ When installed via npm, the configuration wizard handles the initial setup. The 
 | `BOT_LOCALE`                    | Bot UI language (e.g. `en`, `de`, `es`, `ru`, `zh`, `zh-TW`)                                   |    No    | `en`                     |
 | `SESSIONS_LIST_LIMIT`           | Sessions per page in `/sessions`                                                               |    No    | `10`                     |
 | `PROJECTS_LIST_LIMIT`           | Projects per page in `/projects`                                                               |    No    | `10`                     |
+| `OPEN_BROWSER_ROOTS`            | Comma-separated paths `/open` is allowed to browse (supports `~`)                              |    No    | `~` (home directory)     |
 | `COMMANDS_LIST_LIMIT`           | Commands per page in `/commands`                                                               |    No    | `10`                     |
 | `TASK_LIMIT`                    | Maximum scheduled tasks at once                                                                |    No    | `10`                     |
 | `BASH_TOOL_DISPLAY_MAX_LENGTH`  | Max displayed length for bash tool commands (truncated if longer)                              |    No    | `128`                    |
@@ -287,6 +289,13 @@ When installed via npm, the configuration wizard handles the initial setup. The 
 | `TTS_MODEL`                     | TTS model name                                                                                 |    No    | `gpt-4o-mini-tts`        |
 | `TTS_VOICE`                     | OpenAI-compatible TTS voice name                                                               |    No    | `alloy`                  |
 | `LOG_LEVEL`                     | Log level (`debug`, `info`, `warn`, `error`)                                                   |    No    | `info`                   |
+| `TTS_API_URL`                   | TTS API base URL                                                                               |    No    | —                        |
+| `TTS_API_KEY`                   | TTS API key                                                                                    |    No    | —                        |
+| `TTS_MODEL`                     | TTS model name passed to `/audio/speech`                                                       |    No    | `gpt-4o-mini-tts`        |
+| `TTS_VOICE`                     | OpenAI-compatible TTS voice name                                                               |    No    | `alloy`                  |
+| `LOG_LEVEL`                     | Log level (`debug`, `info`, `warn`, `error`)                                                   |    No    | `info`                   |
+
+> > > > > > > upstream/main
 
 > **\*At least one platform must be configured:** Telegram (`TELEGRAM_BOT_TOKEN`), Slack (`SLACK_BOT_TOKEN` + `SLACK_APP_TOKEN`), or DingTalk (`DINGTALK_APP_KEY` + `DINGTALK_APP_SECRET`).
 
