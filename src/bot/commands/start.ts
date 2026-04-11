@@ -10,6 +10,7 @@ import { clearProject } from "../../settings/manager.js";
 import { foregroundSessionState } from "../../scheduled-task/foreground-state.js";
 import { abortCurrentOperation } from "./abort.js";
 import { t } from "../../i18n/index.js";
+import { assistantRunState } from "../assistant-run-state.js";
 
 export async function startCommand(ctx: Context): Promise<void> {
   if (ctx.chat) {
@@ -21,6 +22,7 @@ export async function startCommand(ctx: Context): Promise<void> {
 
   await abortCurrentOperation(ctx, { notifyUser: false });
   foregroundSessionState.clearAll("start_command_reset");
+  assistantRunState.clearAll("start_command_reset");
 
   clearSession();
   clearProject();

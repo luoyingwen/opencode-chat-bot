@@ -8,7 +8,7 @@ describe("bot/utils/finalize-assistant-response", () => {
     };
     const flushPendingServiceMessages = vi.fn().mockResolvedValue(undefined);
     const sendText = vi.fn().mockResolvedValue(undefined);
-    const deleteMessages = vi.fn().mockResolvedValue(undefined);
+    const keyboard = { keyboard: [[{ text: "A" }]] };
 
     await finalizeAssistantResponse({
       sessionId: "s1",
@@ -20,43 +20,40 @@ describe("bot/utils/finalize-assistant-response", () => {
       formatSummary: vi.fn(() => ["part 1", "part 2"]),
       formatRawSummary: vi.fn(() => ["part 1", "part 2"]),
       resolveFormat: vi.fn(() => "markdown_v2" as const),
-      getReplyKeyboard: vi.fn(() => ({ keyboard: [[{ text: "A" }]] })),
+      getReplyKeyboard: vi.fn(() => keyboard),
       sendText,
-      deleteMessages,
     });
 
     expect(responseStreamer.complete).toHaveBeenCalledWith("s1", "m1", {
       parts: ["final reply"],
       format: "raw",
-      sendOptions: { disable_notification: true },
+      sendOptions: { disable_notification: true, reply_markup: keyboard },
       editOptions: undefined,
     });
     expect(flushPendingServiceMessages).toHaveBeenCalledTimes(1);
-    expect(deleteMessages).not.toHaveBeenCalled();
     expect(sendText).toHaveBeenCalledTimes(2);
     expect(sendText).toHaveBeenNthCalledWith(
       1,
       "part 1",
       "part 1",
-      { reply_markup: { keyboard: [[{ text: "A" }]] } },
+      { reply_markup: keyboard },
       "markdown_v2",
     );
     expect(sendText).toHaveBeenNthCalledWith(
       2,
       "part 2",
       "part 2",
-      { reply_markup: { keyboard: [[{ text: "A" }]] } },
+      { reply_markup: keyboard },
       "markdown_v2",
     );
   });
 
-  it("deletes streamed messages and re-sends with keyboard when streaming delivered the message", async () => {
+  it("finalizes streamed messages in place without re-sending", async () => {
     const responseStreamer = {
       complete: vi.fn().mockResolvedValue({ streamed: true, telegramMessageIds: [101] }),
     };
     const flushPendingServiceMessages = vi.fn().mockResolvedValue(undefined);
     const sendText = vi.fn().mockResolvedValue(undefined);
-    const deleteMessages = vi.fn().mockResolvedValue(undefined);
     const prepareStreamingPayload = vi.fn(() => ({ parts: ["reply"], format: "raw" as const }));
     const keyboard = { keyboard: [[{ text: "ctx" }]] };
 
@@ -72,19 +69,16 @@ describe("bot/utils/finalize-assistant-response", () => {
       resolveFormat: vi.fn(() => "raw" as const),
       getReplyKeyboard: vi.fn(() => keyboard),
       sendText,
-      deleteMessages,
     });
 
     expect(responseStreamer.complete).toHaveBeenCalledWith("s1", "m1", {
       parts: ["reply"],
       format: "raw",
-      sendOptions: { disable_notification: true },
+      sendOptions: { disable_notification: true, reply_markup: keyboard },
       editOptions: undefined,
     });
     expect(flushPendingServiceMessages).toHaveBeenCalledTimes(1);
-    expect(deleteMessages).toHaveBeenCalledWith([101]);
-    expect(sendText).toHaveBeenCalledTimes(1);
-    expect(sendText).toHaveBeenCalledWith("reply", "reply", { reply_markup: keyboard }, "raw");
+    expect(sendText).not.toHaveBeenCalled();
   });
 
   it("still sends with keyboard when streamer reports not streamed", async () => {
@@ -93,7 +87,6 @@ describe("bot/utils/finalize-assistant-response", () => {
     };
     const flushPendingServiceMessages = vi.fn().mockResolvedValue(undefined);
     const sendText = vi.fn().mockResolvedValue(undefined);
-    const deleteMessages = vi.fn().mockResolvedValue(undefined);
     const prepareStreamingPayload = vi.fn(() => ({ parts: ["reply"], format: "raw" as const }));
 
     await finalizeAssistantResponse({
@@ -108,10 +101,8 @@ describe("bot/utils/finalize-assistant-response", () => {
       resolveFormat: vi.fn(() => "raw" as const),
       getReplyKeyboard: vi.fn(() => undefined),
       sendText,
-      deleteMessages,
     });
 
-    expect(deleteMessages).not.toHaveBeenCalled();
     expect(sendText).toHaveBeenCalledTimes(1);
     expect(sendText).toHaveBeenCalledWith("reply", "reply", undefined, "raw");
   });

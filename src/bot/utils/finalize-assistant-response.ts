@@ -19,7 +19,6 @@ interface FinalizeAssistantResponseOptions {
     options: { reply_markup: unknown } | undefined,
     format: TelegramTextFormat,
   ) => Promise<void>;
-  deleteMessages: (messageIds: number[]) => Promise<void>;
 }
 
 export async function finalizeAssistantResponse({
@@ -34,13 +33,17 @@ export async function finalizeAssistantResponse({
   resolveFormat,
   getReplyKeyboard,
   sendText,
-  deleteMessages,
 }: FinalizeAssistantResponseOptions): Promise<boolean> {
-  let streamedMessageIds: number[] = [];
+  const keyboard = getReplyKeyboard();
+  const replyOptions = keyboard ? { reply_markup: keyboard } : undefined;
+  const streamSendOptions = {
+    disable_notification: true,
+    ...(replyOptions ?? {}),
+  } as StreamingMessagePayload["sendOptions"];
 
   const preparedStreamPayload = prepareStreamingPayload(messageText);
   if (preparedStreamPayload) {
-    preparedStreamPayload.sendOptions = { disable_notification: true };
+    preparedStreamPayload.sendOptions = streamSendOptions;
     preparedStreamPayload.editOptions = undefined;
   }
 
@@ -50,23 +53,13 @@ export async function finalizeAssistantResponse({
     preparedStreamPayload ?? undefined,
   );
 
-  if (result.streamed) {
-    streamedMessageIds = result.telegramMessageIds;
-  }
-
   await flushPendingServiceMessages();
 
-  // When the response was streamed, delete the streamed messages and re-send
-  // via the non-streamed path so the reply keyboard carries the latest context.
-  if (streamedMessageIds.length > 0) {
-    try {
-      await deleteMessages(streamedMessageIds);
-    } catch (err) {
-      logger.warn(
-        "[FinalizeResponse] Failed to delete streamed messages, sending with keyboard anyway:",
-        err,
-      );
-    }
+  if (result.streamed) {
+    logger.debug(
+      `[FinalizeResponse] Finalized streamed assistant message in place: session=${sessionId}, message=${messageId}, telegramMessages=${result.telegramMessageIds.length}`,
+    );
+    return true;
   }
 
   const parts = formatSummary(messageText);
@@ -76,9 +69,7 @@ export async function finalizeAssistantResponse({
   for (let partIndex = 0; partIndex < parts.length; partIndex++) {
     const part = parts[partIndex];
     const rawFallbackText = rawParts[partIndex];
-    const keyboard = getReplyKeyboard();
-    const options = keyboard ? { reply_markup: keyboard } : undefined;
-    await sendText(part, rawFallbackText, options, format);
+    await sendText(part, rawFallbackText, replyOptions, format);
   }
 
   return false;

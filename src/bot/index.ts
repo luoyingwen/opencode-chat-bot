@@ -73,11 +73,13 @@ import { finalizeAssistantResponse } from "./utils/finalize-assistant-response.j
 import { sendTtsResponseForSession } from "./utils/send-tts-response.js";
 import { deliverThinkingMessage } from "./utils/thinking-message.js";
 import { sendBotText } from "./utils/telegram-text.js";
+import { formatAssistantRunFooter } from "./utils/assistant-run-footer.js";
 import { getModelCapabilities, supportsInput } from "../model/capabilities.js";
 import { getStoredModel } from "../model/manager.js";
 import type { FilePartInput } from "@opencode-ai/sdk/v2";
 import { foregroundSessionState } from "../scheduled-task/foreground-state.js";
 import { scheduledTaskRuntime } from "../scheduled-task/runtime.js";
+import { assistantRunState } from "./assistant-run-state.js";
 import { ResponseStreamer } from "./streaming/response-streamer.js";
 import type { StreamingMessagePayload } from "./streaming/response-streamer.js";
 import { ToolCallStreamer, type ToolStreamKey } from "./streaming/tool-call-streamer.js";
@@ -98,6 +100,7 @@ const SUBAGENT_STREAM_PREFIX = "🧩";
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const TEMP_DIR = path.join(__dirname, "..", ".tmp");
+const sessionCompletionTasks = new Map<string, Promise<void>>();
 
 function getCurrentReplyKeyboard() {
   if (!keyboardManager.isInitialized()) {
@@ -121,11 +124,7 @@ function prepareDocumentCaption(caption: string): string {
 }
 
 function prepareStreamingPayload(messageText: string): StreamingMessagePayload | null {
-  const parts = formatSummaryWithMode(
-    messageText,
-    config.bot.messageFormatMode,
-    RESPONSE_STREAM_TEXT_LIMIT,
-  );
+  const parts = formatSummaryWithMode(messageText, "raw", RESPONSE_STREAM_TEXT_LIMIT);
   if (parts.length === 0) {
     return null;
   }
@@ -134,6 +133,38 @@ function prepareStreamingPayload(messageText: string): StreamingMessagePayload |
     parts,
     format: "raw",
   };
+}
+
+function prepareFinalStreamingPayload(messageText: string): StreamingMessagePayload | null {
+  const format = getAssistantParseMode() === "MarkdownV2" ? "markdown_v2" : "raw";
+  const parts = formatSummaryWithMode(
+    messageText,
+    format === "markdown_v2" ? "markdown" : "raw",
+    RESPONSE_STREAM_TEXT_LIMIT,
+  );
+  if (parts.length === 0) {
+    return null;
+  }
+
+  return {
+    parts,
+    format,
+  };
+}
+
+function enqueueSessionCompletionTask(sessionId: string, task: () => Promise<void>): Promise<void> {
+  const previousTask = sessionCompletionTasks.get(sessionId) ?? Promise.resolve();
+  const nextTask = previousTask
+    .catch(() => undefined)
+    .then(task)
+    .finally(() => {
+      if (sessionCompletionTasks.get(sessionId) === nextTask) {
+        sessionCompletionTasks.delete(sessionId);
+      }
+    });
+
+  sessionCompletionTasks.set(sessionId, nextTask);
+  return nextTask;
 }
 
 const toolMessageBatcher = new ToolMessageBatcher({
@@ -381,88 +412,92 @@ async function ensureEventSubscription(directory: string): Promise<void> {
       return;
     }
 
+    // Reply keyboards make the first streamed message non-editable in Telegram,
+    // so partial chunks must be sent without reply_markup and finalized later.
     preparedStreamPayload.sendOptions = { disable_notification: true };
     preparedStreamPayload.editOptions = undefined;
 
     responseStreamer.enqueue(sessionId, messageId, preparedStreamPayload);
   });
 
-  summaryAggregator.setOnComplete(async (sessionId, messageId, messageText) => {
-    if (!botInstance || !chatIdInstance) {
-      logger.error("Bot or chat ID not available for sending message");
-      clearPromptResponseMode(sessionId);
-      responseStreamer.clearMessage(sessionId, messageId, "bot_context_missing");
-      toolCallStreamer.clearSession(sessionId, "bot_context_missing");
-      foregroundSessionState.markIdle(sessionId);
-      return;
-    }
+  summaryAggregator.setOnComplete((sessionId, messageId, messageText, completionInfo) => {
+    void enqueueSessionCompletionTask(sessionId, async () => {
+      if (!botInstance || !chatIdInstance) {
+        logger.error("Bot or chat ID not available for sending message");
+        clearPromptResponseMode(sessionId);
+        responseStreamer.clearMessage(sessionId, messageId, "bot_context_missing");
+        toolCallStreamer.clearSession(sessionId, "bot_context_missing");
+        assistantRunState.clearRun(sessionId, "bot_context_missing");
+        foregroundSessionState.markIdle(sessionId);
+        return;
+      }
 
-    const currentSession = getCurrentSession();
-    if (currentSession?.id !== sessionId) {
-      clearPromptResponseMode(sessionId);
-      responseStreamer.clearMessage(sessionId, messageId, "session_mismatch");
-      toolCallStreamer.clearSession(sessionId, "session_mismatch");
-      foregroundSessionState.markIdle(sessionId);
-      await scheduledTaskRuntime.flushDeferredDeliveries();
-      return;
-    }
+      const currentSession = getCurrentSession();
+      if (currentSession?.id !== sessionId) {
+        clearPromptResponseMode(sessionId);
+        responseStreamer.clearMessage(sessionId, messageId, "session_mismatch");
+        toolCallStreamer.clearSession(sessionId, "session_mismatch");
+        assistantRunState.clearRun(sessionId, "session_mismatch");
+        foregroundSessionState.markIdle(sessionId);
+        await scheduledTaskRuntime.flushDeferredDeliveries();
+        return;
+      }
 
-    const botApi = botInstance.api;
-    const chatId = chatIdInstance;
+      const botApi = botInstance.api;
+      const chatId = chatIdInstance;
 
-    try {
-      await finalizeAssistantResponse({
-        sessionId,
-        messageId,
-        messageText,
-        responseStreamer,
-        flushPendingServiceMessages: () =>
-          Promise.all([
-            toolMessageBatcher.flushSession(sessionId, "assistant_message_completed"),
-            toolCallStreamer.flushSession(sessionId, "assistant_message_completed"),
-          ]).then(() => undefined),
-        prepareStreamingPayload,
-        formatSummary,
-        formatRawSummary: (text) => formatSummaryWithMode(text, "raw"),
-        resolveFormat: () => (getAssistantParseMode() === "MarkdownV2" ? "markdown_v2" : "raw"),
-        getReplyKeyboard: getCurrentReplyKeyboard,
-        sendText: async (text, rawFallbackText, options, format) => {
-          await sendBotText({
-            api: botApi,
-            chatId,
-            text,
-            rawFallbackText,
-            options: options as Parameters<typeof sendBotText>[0]["options"],
-            format,
-          });
-        },
-        deleteMessages: async (messageIds) => {
-          for (const msgId of messageIds) {
-            try {
-              await botApi.deleteMessage(chatId, msgId);
-            } catch (err) {
-              logger.warn(`[Bot] Failed to delete streamed message ${msgId}:`, err);
-            }
-          }
-        },
-      });
+      try {
+        assistantRunState.markResponseCompleted(sessionId, {
+          agent: completionInfo.agent,
+          providerID: completionInfo.providerID,
+          modelID: completionInfo.modelID,
+        });
 
-      await sendTtsResponseForSession({
-        api: botApi,
-        sessionId,
-        chatId,
-        text: messageText,
-      });
-    } catch (err) {
-      clearPromptResponseMode(sessionId);
-      logger.error("Failed to send message to Telegram:", err);
-      // Stop processing events after critical error to prevent infinite loop
-      logger.error("[Bot] CRITICAL: Stopping event processing due to error");
-      summaryAggregator.clear();
-    } finally {
-      foregroundSessionState.markIdle(sessionId);
-      await scheduledTaskRuntime.flushDeferredDeliveries();
-    }
+        await finalizeAssistantResponse({
+          sessionId,
+          messageId,
+          messageText,
+          responseStreamer,
+          flushPendingServiceMessages: () =>
+            Promise.all([
+              toolMessageBatcher.flushSession(sessionId, "assistant_message_completed"),
+              toolCallStreamer.flushSession(sessionId, "assistant_message_completed"),
+            ]).then(() => undefined),
+          prepareStreamingPayload: prepareFinalStreamingPayload,
+          formatSummary,
+          formatRawSummary: (text) => formatSummaryWithMode(text, "raw"),
+          resolveFormat: () => (getAssistantParseMode() === "MarkdownV2" ? "markdown_v2" : "raw"),
+          getReplyKeyboard: getCurrentReplyKeyboard,
+          sendText: async (text, rawFallbackText, options, format) => {
+            await sendBotText({
+              api: botApi,
+              chatId,
+              text,
+              rawFallbackText,
+              options: options as Parameters<typeof sendBotText>[0]["options"],
+              format,
+            });
+          },
+        });
+
+        await sendTtsResponseForSession({
+          api: botApi,
+          sessionId,
+          chatId,
+          text: messageText,
+        });
+      } catch (err) {
+        clearPromptResponseMode(sessionId);
+        assistantRunState.clearRun(sessionId, "assistant_finalize_failed");
+        logger.error("Failed to send message to Telegram:", err);
+        // Stop processing events after critical error to prevent infinite loop
+        logger.error("[Bot] CRITICAL: Stopping event processing due to error");
+        summaryAggregator.clear();
+        foregroundSessionState.markIdle(sessionId);
+      } finally {
+        await scheduledTaskRuntime.flushDeferredDeliveries();
+      }
+    });
   });
 
   summaryAggregator.setOnTool(async (toolInfo) => {
@@ -705,9 +740,64 @@ async function ensureEventSubscription(directory: string): Promise<void> {
     }
   });
 
+  summaryAggregator.setOnSessionIdle(async (sessionId) => {
+    await sessionCompletionTasks.get(sessionId)?.catch(() => undefined);
+
+    const completedRun = assistantRunState.finishRun(sessionId, "session_idle");
+    clearPromptResponseMode(sessionId);
+
+    if (!botInstance || !chatIdInstance) {
+      foregroundSessionState.markIdle(sessionId);
+      return;
+    }
+
+    const currentSession = getCurrentSession();
+    if (!currentSession || currentSession.id !== sessionId) {
+      foregroundSessionState.markIdle(sessionId);
+      await scheduledTaskRuntime.flushDeferredDeliveries();
+      return;
+    }
+
+    try {
+      await Promise.all([
+        toolMessageBatcher.flushSession(sessionId, "session_idle"),
+        toolCallStreamer.flushSession(sessionId, "session_idle"),
+      ]);
+
+      if (completedRun?.hasCompletedResponse) {
+        const agent = completedRun.actualAgent || completedRun.configuredAgent;
+        const providerID = completedRun.actualProviderID || completedRun.configuredProviderID;
+        const modelID = completedRun.actualModelID || completedRun.configuredModelID;
+
+        if (agent && providerID && modelID) {
+          const keyboard = getCurrentReplyKeyboard();
+          await botInstance.api.sendMessage(
+            chatIdInstance,
+            formatAssistantRunFooter({
+              agent,
+              providerID,
+              modelID,
+              elapsedMs: Date.now() - completedRun.startedAt,
+            }),
+            {
+              disable_notification: true,
+              ...(keyboard ? { reply_markup: keyboard } : {}),
+            },
+          );
+        }
+      }
+    } catch (err) {
+      logger.error("[Bot] Failed to send session idle footer:", err);
+    } finally {
+      foregroundSessionState.markIdle(sessionId);
+      await scheduledTaskRuntime.flushDeferredDeliveries();
+    }
+  });
+
   summaryAggregator.setOnSessionError(async (sessionId, message) => {
     if (!botInstance || !chatIdInstance) {
       clearPromptResponseMode(sessionId);
+      assistantRunState.clearRun(sessionId, "session_error_no_bot_context");
       foregroundSessionState.markIdle(sessionId);
       return;
     }
@@ -717,6 +807,7 @@ async function ensureEventSubscription(directory: string): Promise<void> {
       clearPromptResponseMode(sessionId);
       responseStreamer.clearSession(sessionId, "session_error_not_current");
       toolCallStreamer.clearSession(sessionId, "session_error_not_current");
+      assistantRunState.clearRun(sessionId, "session_error_not_current");
       foregroundSessionState.markIdle(sessionId);
       await scheduledTaskRuntime.flushDeferredDeliveries();
       return;
@@ -724,6 +815,7 @@ async function ensureEventSubscription(directory: string): Promise<void> {
 
     responseStreamer.clearSession(sessionId, "session_error");
     clearPromptResponseMode(sessionId);
+    assistantRunState.clearRun(sessionId, "session_error");
     await Promise.all([
       toolMessageBatcher.flushSession(sessionId, "session_error"),
       toolCallStreamer.flushSession(sessionId, "session_error"),
@@ -817,6 +909,8 @@ async function ensureEventSubscription(directory: string): Promise<void> {
 
 export function createBot(): Bot<Context> {
   clearAllInteractionState("bot_startup");
+  sessionCompletionTasks.clear();
+  assistantRunState.clearAll("bot_startup");
 
   const botOptions: ConstructorParameters<typeof Bot<Context>>[1] = {};
 

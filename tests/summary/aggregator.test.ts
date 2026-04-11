@@ -28,6 +28,7 @@ describe("summary/aggregator", () => {
     summaryAggregator.setOnPartial(() => {});
     summaryAggregator.setOnThinking(() => {});
     summaryAggregator.setOnSubagent(() => {});
+    summaryAggregator.setOnSessionIdle(() => {});
     summaryAggregator.setOnSessionError(() => {});
     summaryAggregator.setOnSessionRetry(() => {});
   });
@@ -587,7 +588,12 @@ describe("summary/aggregator", () => {
     } as unknown as Event);
 
     expect(onPartial).toHaveBeenCalledWith("session-1", "message-stream-1", "Partial answer");
-    expect(onComplete).toHaveBeenCalledWith("session-1", "message-stream-1", "Partial answer");
+    expect(onComplete).toHaveBeenCalledWith(
+      "session-1",
+      "message-stream-1",
+      "Partial answer",
+      expect.objectContaining({}),
+    );
   });
 
   it("combines multiple text parts into a single final message", () => {
@@ -651,7 +657,12 @@ describe("summary/aggregator", () => {
     } as unknown as Event);
 
     expect(onPartial).toHaveBeenLastCalledWith("session-1", "message-multipart-1", "Hello world");
-    expect(onComplete).toHaveBeenCalledWith("session-1", "message-multipart-1", "Hello world");
+    expect(onComplete).toHaveBeenCalledWith(
+      "session-1",
+      "message-multipart-1",
+      "Hello world",
+      expect.objectContaining({}),
+    );
   });
 
   it("starts optimistic partial streaming after second unknown text update", () => {
@@ -747,7 +758,92 @@ describe("summary/aggregator", () => {
     } as unknown as Event);
 
     expect(onPartial).not.toHaveBeenCalled();
-    expect(onComplete).toHaveBeenCalledWith("session-1", "message-pending-complete", "Final text");
+    expect(onComplete).toHaveBeenCalledWith(
+      "session-1",
+      "message-pending-complete",
+      "Final text",
+      expect.objectContaining({}),
+    );
+  });
+
+  it("reports root session.idle through callback", async () => {
+    const onSessionIdle = vi.fn();
+    summaryAggregator.setOnSessionIdle(onSessionIdle);
+    summaryAggregator.setSession("session-1");
+
+    summaryAggregator.processEvent({
+      type: "session.idle",
+      properties: {
+        sessionID: "session-1",
+      },
+    } as unknown as Event);
+
+    await new Promise<void>((resolve) => setImmediate(resolve));
+
+    expect(onSessionIdle).toHaveBeenCalledWith("session-1");
+  });
+
+  it("passes assistant metadata to onComplete", () => {
+    const onComplete = vi.fn();
+    summaryAggregator.setOnComplete(onComplete);
+    summaryAggregator.setSession("session-1");
+
+    summaryAggregator.processEvent({
+      type: "message.updated",
+      properties: {
+        info: {
+          id: "message-meta-1",
+          sessionID: "session-1",
+          role: "assistant",
+          agent: "plan",
+          providerID: "openai",
+          modelID: "gpt-5.4",
+          time: { created: 1000 },
+        },
+      },
+    } as unknown as Event);
+
+    summaryAggregator.processEvent({
+      type: "message.part.updated",
+      properties: {
+        part: {
+          id: "part-meta-1",
+          sessionID: "session-1",
+          messageID: "message-meta-1",
+          type: "text",
+          text: "Done",
+          time: { start: Date.now() },
+        },
+      },
+    } as unknown as Event);
+
+    summaryAggregator.processEvent({
+      type: "message.updated",
+      properties: {
+        info: {
+          id: "message-meta-1",
+          sessionID: "session-1",
+          role: "assistant",
+          agent: "plan",
+          providerID: "openai",
+          modelID: "gpt-5.4",
+          time: { created: 1000, completed: 2500 },
+        },
+      },
+    } as unknown as Event);
+
+    expect(onComplete).toHaveBeenCalledWith(
+      "session-1",
+      "message-meta-1",
+      "Done",
+      expect.objectContaining({
+        agent: "plan",
+        providerID: "openai",
+        modelID: "gpt-5.4",
+        createdAt: 1000,
+        completedAt: 2500,
+      }),
+    );
   });
 
   it("streams text from message.part.delta events", () => {
