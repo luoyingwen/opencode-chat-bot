@@ -462,4 +462,21 @@ export const es: I18nDictionary = {
     "🎤 El reconocimiento de voz no está configurado.\n\nConfigura STT_API_URL y STT_API_KEY en .env para habilitarlo.",
   "stt.error": "🔴 No se pudo reconocer el audio: {error}",
   "stt.empty_result": "🎤 No se detectó voz en el mensaje de audio.",
+
+  "cmd.description.open": "Añadir proyecto navegando directorios",
+  "open.back": "⬆️ Subir",
+  "open.roots": "📋 Volver a raíces",
+  "open.prev_page": "⬅️ Anterior",
+  "open.next_page": "Siguiente ➡️",
+  "open.select_current": "✅ Seleccionar esta carpeta",
+  "open.select_root": "📂 Selecciona un directorio raíz para explorar:",
+  "open.access_denied": "⛔ Acceso denegado: la ruta está fuera de los directorios permitidos",
+  "open.scan_error": "🔴 No se puede explorar el directorio: {error}",
+  "open.open_error": "🔴 No se pudo abrir el explorador de directorios.",
+  "open.selected":
+    "✅ Proyecto añadido: {project}\n\n📋 Usa /sessions o /new para empezar a trabajar.",
+  "open.select_error": "🔴 No se pudo añadir el proyecto.",
+  "open.no_subfolders": "📭 Sin subcarpetas",
+  "open.subfolder_count": "{count} subcarpeta",
+  "open.subfolders_count": "{count} subcarpetas",
 };

@@ -450,4 +450,21 @@ export const ru: I18nDictionary = {
     "🎤 Распознавание голоса не настроено.\n\nУстановите STT_API_URL и STT_API_KEY в .env для включения.",
   "stt.error": "🔴 Не удалось распознать аудио: {error}",
   "stt.empty_result": "🎤 В аудиосообщении не обнаружена речь.",
+
+  "cmd.description.open": "Добавить проект через обзор папок",
+  "open.back": "⬆️ Наверх",
+  "open.roots": "📋 К списку корней",
+  "open.prev_page": "⬅️ Назад",
+  "open.next_page": "Далее ➡️",
+  "open.select_current": "✅ Выбрать эту папку",
+  "open.select_root": "📂 Выберите корневой каталог для просмотра:",
+  "open.access_denied": "⛔ Доступ запрещён: путь за пределами разрешённых каталогов",
+  "open.scan_error": "🔴 Не удалось открыть каталог: {error}",
+  "open.open_error": "🔴 Не удалось открыть обозреватель каталогов.",
+  "open.selected":
+    "✅ Проект добавлен: {project}\n\n📋 Используйте /sessions или /new для начала работы.",
+  "open.select_error": "🔴 Не удалось добавить проект.",
+  "open.no_subfolders": "📭 Нет подпапок",
+  "open.subfolder_count": "{count} подпапка",
+  "open.subfolders_count": "{count} подпапок",
 };
