@@ -16,7 +16,12 @@ interface FinalizeAssistantResponseOptions {
   sendText: (
     text: string,
     rawFallbackText: string | undefined,
-    options: { reply_markup: unknown } | undefined,
+    options:
+      | {
+          reply_markup?: unknown;
+          disable_notification?: boolean;
+        }
+      | undefined,
     format: TelegramTextFormat,
   ) => Promise<void>;
 }
@@ -36,9 +41,12 @@ export async function finalizeAssistantResponse({
 }: FinalizeAssistantResponseOptions): Promise<boolean> {
   const keyboard = getReplyKeyboard();
   const replyOptions = keyboard ? { reply_markup: keyboard } : undefined;
-  const streamSendOptions = {
+  const silentReplyOptions = {
     disable_notification: true,
     ...(replyOptions ?? {}),
+  };
+  const streamSendOptions = {
+    ...silentReplyOptions,
   } as StreamingMessagePayload["sendOptions"];
 
   const preparedStreamPayload = prepareStreamingPayload(messageText);
@@ -69,7 +77,7 @@ export async function finalizeAssistantResponse({
   for (let partIndex = 0; partIndex < parts.length; partIndex++) {
     const part = parts[partIndex];
     const rawFallbackText = rawParts[partIndex];
-    await sendText(part, rawFallbackText, replyOptions, format);
+    await sendText(part, rawFallbackText, silentReplyOptions, format);
   }
 
   return false;

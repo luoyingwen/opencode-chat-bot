@@ -36,14 +36,14 @@ describe("bot/utils/finalize-assistant-response", () => {
       1,
       "part 1",
       "part 1",
-      { reply_markup: keyboard },
+      { disable_notification: true, reply_markup: keyboard },
       "markdown_v2",
     );
     expect(sendText).toHaveBeenNthCalledWith(
       2,
       "part 2",
       "part 2",
-      { reply_markup: keyboard },
+      { disable_notification: true, reply_markup: keyboard },
       "markdown_v2",
     );
   });
@@ -104,6 +104,6 @@ describe("bot/utils/finalize-assistant-response", () => {
     });
 
     expect(sendText).toHaveBeenCalledTimes(1);
-    expect(sendText).toHaveBeenCalledWith("reply", "reply", undefined, "raw");
+    expect(sendText).toHaveBeenCalledWith("reply", "reply", { disable_notification: true }, "raw");
   });
 });

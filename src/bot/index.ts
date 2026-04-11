@@ -780,7 +780,6 @@ async function ensureEventSubscription(directory: string): Promise<void> {
               elapsedMs: Date.now() - completedRun.startedAt,
             }),
             {
-              disable_notification: true,
               ...(keyboard ? { reply_markup: keyboard } : {}),
             },
           );
