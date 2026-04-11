@@ -65,6 +65,7 @@ export async function resetSingletonState(): Promise<void> {
     { processManager },
     { stopEventListening },
     { __resetSessionDirectoryCacheForTests },
+    loggerModule,
   ] = await Promise.all([
     import("../../src/question/manager.js"),
     import("../../src/permission/manager.js"),
@@ -76,6 +77,7 @@ export async function resetSingletonState(): Promise<void> {
     import("../../src/process/manager.js"),
     import("../../src/opencode/events.js"),
     import("../../src/session/cache-manager.js"),
+    import("../../src/utils/logger.js"),
   ]);
 
   stopEventListening();
@@ -140,4 +142,11 @@ export async function resetSingletonState(): Promise<void> {
   };
 
   __resetSessionDirectoryCacheForTests();
+
+  if (
+    "__resetLoggerForTests" in loggerModule &&
+    typeof loggerModule.__resetLoggerForTests === "function"
+  ) {
+    loggerModule.__resetLoggerForTests();
+  }
 }

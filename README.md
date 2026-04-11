@@ -181,8 +181,11 @@ When installed via npm, the configuration wizard handles the initial setup. The 
 | `TTS_MODEL`                     | TTS model name passed to `/audio/speech`                                                                     |    No    | `gpt-4o-mini-tts`        |
 | `TTS_VOICE`                     | OpenAI-compatible TTS voice name                                                                             |    No    | `alloy`                  |
 | `LOG_LEVEL`                     | Log level (`debug`, `info`, `warn`, `error`)                                                                 |    No    | `info`                   |
+| `LOG_RETENTION`                 | Number of log files to keep: launch files in `sources`, daily files in `installed`                           |    No    | `10`                     |
 
 > **Keep your `.env` file private.** It contains your bot token. Never commit it to version control.
+
+Logs are written to `./logs` when running from sources and to the runtime config directory `logs/` folder in `installed` mode. Log rotation depends on runtime mode: `sources` creates one file per bot launch, while `installed` appends to one file per day. Old log files are removed according to `LOG_RETENTION`.
 
 ### Voice and Audio Transcription (Optional)
 

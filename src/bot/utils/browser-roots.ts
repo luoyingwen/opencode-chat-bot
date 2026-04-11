@@ -19,6 +19,10 @@ function isWindows(): boolean {
   return process.platform === "win32";
 }
 
+function resolveConfiguredPath(p: string): string {
+  return path.resolve(expandTilde(p));
+}
+
 /**
  * Expand a leading `~` or `~/` to the user's home directory.
  * Does not handle `~user/` syntax — only the current user's home.
@@ -37,7 +41,7 @@ function expandTilde(p: string): string {
  * Normalize a path for comparison: expand tilde, resolve, then lowercase on Windows.
  */
 function normalizePath(p: string): string {
-  const resolved = path.resolve(expandTilde(p));
+  const resolved = resolveConfiguredPath(p);
   return isWindows() ? resolved.toLowerCase() : resolved;
 }
 
@@ -49,7 +53,7 @@ function normalizePath(p: string): string {
  */
 export function initBrowserRoots(raw?: string): void {
   if (!raw || raw.trim() === "") {
-    resolvedRoots = [normalizePath(os.homedir())];
+    resolvedRoots = [resolveConfiguredPath(os.homedir())];
     logger.debug(
       `[BrowserRoots] No OPEN_BROWSER_ROOTS configured, defaulting to home: ${resolvedRoots[0]}`,
     );
@@ -63,12 +67,11 @@ export function initBrowserRoots(raw?: string): void {
 
   const roots: string[] = [];
   for (const entry of entries) {
-    const normalized = normalizePath(entry);
-    roots.push(normalized);
+    roots.push(resolveConfiguredPath(entry));
   }
 
   if (roots.length === 0) {
-    resolvedRoots = [normalizePath(os.homedir())];
+    resolvedRoots = [resolveConfiguredPath(os.homedir())];
     logger.warn("[BrowserRoots] All configured roots were invalid, falling back to home directory");
   } else {
     resolvedRoots = roots;
@@ -111,12 +114,18 @@ export function isWithinAllowedRoot(targetPath: string): boolean {
   const roots = getBrowserRoots();
 
   for (const root of roots) {
-    if (normalizedTarget === root) {
+    const normalizedRoot = normalizePath(root);
+
+    if (normalizedTarget === normalizedRoot) {
       return true;
     }
+
     // Check both separators — `path.sep` is always `/` on Unix but a
     // lowercased Windows path may contain either `\` or `/`.
-    if (normalizedTarget.startsWith(root + "/") || normalizedTarget.startsWith(root + "\\")) {
+    if (
+      normalizedTarget.startsWith(normalizedRoot + "/") ||
+      normalizedTarget.startsWith(normalizedRoot + "\\")
+    ) {
       return true;
     }
   }
@@ -143,7 +152,7 @@ export async function isWithinAllowedRootSafe(targetPath: string): Promise<boole
  */
 export function isAllowedRoot(targetPath: string): boolean {
   const normalizedTarget = normalizePath(targetPath);
-  return getBrowserRoots().includes(normalizedTarget);
+  return getBrowserRoots().some((root) => normalizePath(root) === normalizedTarget);
 }
 
 /** Reset state — for testing only. */

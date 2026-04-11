@@ -9,7 +9,7 @@ import { warmupSessionDirectoryCache } from "../session/cache-manager.js";
 import { reconcileStoredModelSelection } from "../model/manager.js";
 import { getRuntimeMode } from "../runtime/mode.js";
 import { getRuntimePaths } from "../runtime/paths.js";
-import { logger } from "../utils/logger.js";
+import { getLogFilePath, initializeLogger, logger } from "../utils/logger.js";
 
 async function getBotVersion(): Promise<string> {
   try {
@@ -25,12 +25,18 @@ async function getBotVersion(): Promise<string> {
 }
 
 export async function startBotApp(): Promise<void> {
+  await initializeLogger();
+
   const mode = getRuntimeMode();
   const runtimePaths = getRuntimePaths();
   const version = await getBotVersion();
+  const logFilePath = getLogFilePath();
 
   logger.info(`Starting OpenCode Telegram Bot v${version}...`);
   logger.info(`Config loaded from ${runtimePaths.envFilePath}`);
+  if (logFilePath) {
+    logger.info(`Logs are written to ${logFilePath}`);
+  }
   logger.info(`Allowed User ID: ${config.telegram.allowedUserId}`);
   logger.debug(`[Runtime] Application start mode: ${mode}`);
 
