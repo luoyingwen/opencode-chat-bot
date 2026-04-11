@@ -461,7 +461,7 @@ async function ensureEventSubscription(directory: string): Promise<void> {
           flushPendingServiceMessages: () =>
             Promise.all([
               toolMessageBatcher.flushSession(sessionId, "assistant_message_completed"),
-              toolCallStreamer.flushSession(sessionId, "assistant_message_completed"),
+              toolCallStreamer.breakSession(sessionId, "assistant_message_completed"),
             ]).then(() => undefined),
           prepareStreamingPayload: prepareFinalStreamingPayload,
           formatSummary,
