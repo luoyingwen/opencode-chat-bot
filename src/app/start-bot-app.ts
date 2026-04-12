@@ -5,7 +5,8 @@ import { getCurrentProject, loadSettings, setCurrentProject } from "../settings/
 import { processManager } from "../process/manager.js";
 import { warmupSessionDirectoryCache } from "../session/cache-manager.js";
 import { getRuntimeMode } from "../runtime/mode.js";
-import { logger } from "../utils/logger.js";
+import { getRuntimePaths } from "../runtime/paths.js";
+import { getLogFilePath, initializeLogger, logger } from "../utils/logger.js";
 import { config } from "../config.js";
 import { opencodeClient } from "../opencode/client.js";
 import { getProjects } from "../project/manager.js";
@@ -25,8 +26,12 @@ async function getBotVersion(): Promise<string> {
 }
 
 export async function startBotApp(): Promise<void> {
+  await initializeLogger();
+
   const mode = getRuntimeMode();
+  const runtimePaths = getRuntimePaths();
   const version = await getBotVersion();
+  const logFilePath = getLogFilePath();
 
   const hasTelegram = !!config.telegram.token;
   const hasSlack = !!(config.slack.botToken && config.slack.appToken);
@@ -44,6 +49,33 @@ export async function startBotApp(): Promise<void> {
   }
 
   logger.info(`Starting OpenCode Bot v${version}...`);
+  logger.info(`Config loaded from ${runtimePaths.envFilePath}`);
+  if (logFilePath) {
+    logger.info(`Logs are written to ${logFilePath}`);
+  }
+  logger.info(`Allowed User ID: Telegram=${config.telegram.allowedUserId ?? "disabled"}, DingTalk=${config.dingtalk.allowedUserId ?? "disabled"}`);
+  logger.debug(`[Runtime] Application start mode: ${mode}`);
+  logger.info(`[App] OpenCode API: ${config.opencode.apiUrl}`);
+  logger.info(
+    `[App] Platforms: Telegram=${hasTelegram ? "enabled" : "disabled"}, Slack=${hasSlack ? "enabled" : "disabled"}, DingTalk=${hasDingTalk ? "enabled" : "disabled"}, Feishu=${hasFeishu ? "enabled" : "disabled"}`,
+  );
+  const hasFeishu = !!(config.feishu.appId && config.feishu.appSecret);
+
+  if (!hasTelegram && !hasSlack && !hasDingTalk && !hasFeishu) {
+    throw new Error(
+      "No bot platform configured. Set TELEGRAM_BOT_TOKEN, SLACK_BOT_TOKEN + SLACK_APP_TOKEN, DINGTALK_APP_KEY + DINGTALK_APP_SECRET + DINGTALK_ALLOWED_USER_ID, or FEISHU_APP_ID + FEISHU_APP_SECRET.",
+    );
+  }
+
+  logger.info(`Starting OpenCode Bot v${version}...`);
+=======
+  logger.info(`Starting OpenCode Telegram Bot v${version}...`);
+  logger.info(`Config loaded from ${runtimePaths.envFilePath}`);
+  if (logFilePath) {
+    logger.info(`Logs are written to ${logFilePath}`);
+  }
+  logger.info(`Allowed User ID: ${config.telegram.allowedUserId}`);
+>>>>>>> upstream/main
   logger.debug(`[Runtime] Application start mode: ${mode}`);
   logger.info(`[App] OpenCode API: ${config.opencode.apiUrl}`);
   logger.info(

@@ -33,6 +33,7 @@ describe("runtime/paths", () => {
     expect(runtimePaths.appHome).toBe(process.cwd());
     expect(runtimePaths.envFilePath).toBe(path.join(process.cwd(), ".env"));
     expect(runtimePaths.settingsFilePath).toBe(path.join(process.cwd(), "settings.json"));
+    expect(runtimePaths.logsDirPath).toBe(path.join(process.cwd(), "logs"));
   });
 
   it("uses OPENCODE_TELEGRAM_HOME when override is set", () => {

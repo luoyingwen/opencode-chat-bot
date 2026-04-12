@@ -28,6 +28,7 @@ const TEST_ENV_DEFAULTS: Record<string, string> = {
   OPENCODE_MODEL_PROVIDER: "test-provider",
   OPENCODE_MODEL_ID: "test-model",
   LOG_LEVEL: "error",
+  LOG_RETENTION: "10",
   OPENCODE_TELEGRAM_HOME: getDefaultTestHome(),
 };
 

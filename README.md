@@ -246,60 +246,57 @@ When installed via npm, the configuration wizard handles the initial setup. The 
 - **Windows:** `%APPDATA%\opencode-telegram-bot\.env`
 - **Linux:** `~/.config/opencode-telegram-bot/.env`
 
-| Variable                        | Description                                                                                    | Required | Default                  |
+<<<<<<< HEAD
+| Variable | Description | Required | Default |
 | ------------------------------- | ---------------------------------------------------------------------------------------------- | :------: | ------------------------ |
-| `TELEGRAM_BOT_TOKEN`            | Bot token from @BotFather                                                                      |   No\*   | —                        |
-| `TELEGRAM_ALLOWED_USER_ID`      | Your numeric Telegram user ID                                                                  |    No    | —                        |
-| `TELEGRAM_PROXY_URL`            | Proxy URL for Telegram API (SOCKS5/HTTP)                                                       |    No    | —                        |
-| `SLACK_BOT_TOKEN`               | Slack Bot Token (xoxb-...)                                                                     |   No\*   | —                        |
-| `SLACK_APP_TOKEN`               | Slack App Token for Socket Mode (xapp-...)                                                     |   No\*   | —                        |
-| `SLACK_SIGNING_SECRET`          | Slack App Signing Secret                                                                       |    No    | —                        |
-| `SLACK_ALLOWED_CHANNEL_ID`      | Allowed Slack channel ID                                                                       |    No    | —                        |
-| `SLACK_PROXY_URL`               | Proxy URL for Slack API                                                                        |    No    | —                        |
-| `DINGTALK_APP_KEY`              | DingTalk App Key                                                                               |   No\*   | —                        |
-| `DINGTALK_APP_SECRET`           | DingTalk App Secret                                                                            |   No\*   | —                        |
-| `DINGTALK_AGENT_ID`             | DingTalk Agent ID                                                                              |    No    | —                        |
-| `DINGTALK_ALLOWED_USER_ID`      | Allowed DingTalk staff ID                                                                      |    No    | —                        |
-| `DINGTALK_DEBUG`                | Enable DingTalk SDK debug logs                                                                 |    No    | `false`                  |
-| `OPENCODE_API_URL`              | OpenCode server URL                                                                            |    No    | `http://localhost:4096`  |
-| `OPENCODE_SERVER_USERNAME`      | Server auth username                                                                           |    No    | `opencode`               |
-| `OPENCODE_SERVER_PASSWORD`      | Server auth password                                                                           |    No    | —                        |
-| `OPENCODE_MODEL_PROVIDER`       | Default model provider                                                                         |   Yes    | `opencode`               |
-| `OPENCODE_MODEL_ID`             | Default model ID                                                                               |   Yes    | `big-pickle`             |
-| `BOT_LOCALE`                    | Bot UI language (e.g. `en`, `de`, `es`, `ru`, `zh`, `zh-TW`)                                   |    No    | `en`                     |
-| `SESSIONS_LIST_LIMIT`           | Sessions per page in `/sessions`                                                               |    No    | `10`                     |
-| `PROJECTS_LIST_LIMIT`           | Projects per page in `/projects`                                                               |    No    | `10`                     |
-| `OPEN_BROWSER_ROOTS`            | Comma-separated paths `/open` is allowed to browse (supports `~`)                              |    No    | `~` (home directory)     |
-| `COMMANDS_LIST_LIMIT`           | Commands per page in `/commands`                                                               |    No    | `10`                     |
-| `TASK_LIMIT`                    | Maximum scheduled tasks at once                                                                |    No    | `10`                     |
-| `BASH_TOOL_DISPLAY_MAX_LENGTH`  | Max displayed length for bash tool commands (truncated if longer)                              |    No    | `128`                    |
-| `SERVICE_MESSAGES_INTERVAL_SEC` | Service messages interval (thinking + tool calls); `>=2` to avoid rate limits, `0` = immediate |    No    | `5`                      |
-| `HIDE_THINKING_MESSAGES`        | Hide `💭 Thinking...` service messages                                                         |    No    | `false`                  |
-| `HIDE_TOOL_CALL_MESSAGES`       | Hide tool-call service messages (`💻 bash ...`, `📖 read ...`, etc.)                           |    No    | `false`                  |
-| `RESPONSE_STREAMING`            | Stream assistant replies while generated                                                       |    No    | `true`                   |
-| `RESPONSE_STREAM_THROTTLE_MS`   | Stream edit throttle (ms) for updates                                                          |    No    | `500`                    |
-| `MESSAGE_FORMAT_MODE`           | Assistant reply formatting: `markdown` (Telegram MarkdownV2) or `raw`                          |    No    | `markdown`               |
-| `CODE_FILE_MAX_SIZE_KB`         | Max file size (KB) to send as document                                                         |    No    | `100`                    |
-| `STT_API_URL`                   | Whisper-compatible API base URL (enables voice transcription)                                  |    No    | —                        |
-| `STT_API_KEY`                   | API key for STT provider                                                                       |    No    | —                        |
-| `STT_MODEL`                     | STT model name                                                                                 |    No    | `whisper-large-v3-turbo` |
-| `STT_LANGUAGE`                  | Optional language hint for STT                                                                 |    No    | —                        |
-| `TTS_API_URL`                   | TTS API base URL                                                                               |    No    | —                        |
-| `TTS_API_KEY`                   | TTS API key                                                                                    |    No    | —                        |
-| `TTS_MODEL`                     | TTS model name                                                                                 |    No    | `gpt-4o-mini-tts`        |
-| `TTS_VOICE`                     | OpenAI-compatible TTS voice name                                                               |    No    | `alloy`                  |
-| `LOG_LEVEL`                     | Log level (`debug`, `info`, `warn`, `error`)                                                   |    No    | `info`                   |
-| `TTS_API_URL`                   | TTS API base URL                                                                               |    No    | —                        |
-| `TTS_API_KEY`                   | TTS API key                                                                                    |    No    | —                        |
-| `TTS_MODEL`                     | TTS model name passed to `/audio/speech`                                                       |    No    | `gpt-4o-mini-tts`        |
-| `TTS_VOICE`                     | OpenAI-compatible TTS voice name                                                               |    No    | `alloy`                  |
-| `LOG_LEVEL`                     | Log level (`debug`, `info`, `warn`, `error`)                                                   |    No    | `info`                   |
-
-> > > > > > > upstream/main
+| `TELEGRAM_BOT_TOKEN` | Bot token from @BotFather | No\* | — |
+| `TELEGRAM_ALLOWED_USER_ID` | Your numeric Telegram user ID | No | — |
+| `TELEGRAM_PROXY_URL` | Proxy URL for Telegram API (SOCKS5/HTTP) | No | — |
+| `SLACK_BOT_TOKEN` | Slack Bot Token (xoxb-...) | No\* | — |
+| `SLACK_APP_TOKEN` | Slack App Token for Socket Mode (xapp-...) | No\* | — |
+| `SLACK_SIGNING_SECRET` | Slack App Signing Secret | No | — |
+| `SLACK_ALLOWED_CHANNEL_ID` | Allowed Slack channel ID | No | — |
+| `SLACK_PROXY_URL` | Proxy URL for Slack API | No | — |
+| `DINGTALK_APP_KEY` | DingTalk App Key | No\* | — |
+| `DINGTALK_APP_SECRET` | DingTalk App Secret | No\* | — |
+| `DINGTALK_AGENT_ID` | DingTalk Agent ID | No | — |
+| `DINGTALK_ALLOWED_USER_ID` | Allowed DingTalk staff ID | No | — |
+| `DINGTALK_DEBUG` | Enable DingTalk SDK debug logs | No | `false` |
+| `OPENCODE_API_URL` | OpenCode server URL | No | `http://localhost:4096` |
+| `OPENCODE_SERVER_USERNAME` | Server auth username | No | `opencode` |
+| `OPENCODE_SERVER_PASSWORD` | Server auth password | No | — |
+| `OPENCODE_MODEL_PROVIDER` | Default model provider | Yes | `opencode` |
+| `OPENCODE_MODEL_ID` | Default model ID | Yes | `big-pickle` |
+| `BOT_LOCALE` | Bot UI language (e.g. `en`, `de`, `es`, `ru`, `zh`, `zh-TW`) | No | `en` |
+| `SESSIONS_LIST_LIMIT` | Sessions per page in `/sessions` | No | `10` |
+| `PROJECTS_LIST_LIMIT` | Projects per page in `/projects` | No | `10` |
+| `OPEN_BROWSER_ROOTS` | Comma-separated paths `/open` is allowed to browse (supports `~`) | No | `~` (home directory) |
+| `COMMANDS_LIST_LIMIT` | Commands per page in `/commands` | No | `10` |
+| `TASK_LIMIT` | Maximum scheduled tasks at once | No | `10` |
+| `BASH_TOOL_DISPLAY_MAX_LENGTH` | Max displayed length for bash tool commands (truncated if longer) | No | `128` |
+| `SERVICE_MESSAGES_INTERVAL_SEC` | Service messages interval (thinking + tool calls); `>=2` to avoid rate limits, `0` = immediate | No | `5` |
+| `HIDE_THINKING_MESSAGES` | Hide `💭 Thinking...` service messages | No | `false` |
+| `HIDE_TOOL_CALL_MESSAGES` | Hide tool-call service messages (`💻 bash ...`, `📖 read ...`, etc.) | No | `false` |
+| `RESPONSE_STREAMING` | Stream assistant replies while generated | No | `true` |
+| `RESPONSE_STREAM_THROTTLE_MS` | Stream edit throttle (ms) for updates | No | `500` |
+| `MESSAGE_FORMAT_MODE` | Assistant reply formatting: `markdown` (Telegram MarkdownV2) or `raw` | No | `markdown` |
+| `CODE_FILE_MAX_SIZE_KB` | Max file size (KB) to send as document | No | `100` |
+| `STT_API_URL` | Whisper-compatible API base URL (enables voice transcription) | No | — |
+| `STT_API_KEY` | API key for STT provider | No | — |
+| `STT_MODEL` | STT model name | No | `whisper-large-v3-turbo` |
+| `STT_LANGUAGE` | Optional language hint for STT | No | — |
+| `TTS_API_URL` | TTS API base URL | No | — |
+| `TTS_API_KEY` | TTS API key | No | — |
+| `TTS_MODEL` | TTS model name passed to `/audio/speech` | No | `gpt-4o-mini-tts` |
+| `TTS_VOICE` | OpenAI-compatible TTS voice name | No | `alloy` |
+| `LOG_LEVEL` | Log level (`debug`, `info`, `warn`, `error`) | No | `info` |
+| `LOG_RETENTION` | Number of log files to keep: launch files in `sources`, daily files in `installed` | No | `10` |
 
 > **\*At least one platform must be configured:** Telegram (`TELEGRAM_BOT_TOKEN`), Slack (`SLACK_BOT_TOKEN` + `SLACK_APP_TOKEN`), or DingTalk (`DINGTALK_APP_KEY` + `DINGTALK_APP_SECRET`).
 
 > **Keep your `.env` file private.** It contains your bot tokens. Never commit it to version control.
+
+Logs are written to `./logs` when running from sources and to the runtime config directory `logs/` folder in `installed` mode. Log rotation depends on runtime mode: `sources` creates one file per bot launch, while `installed` appends to one file per day. Old log files are removed according to `LOG_RETENTION`.
 
 ### Voice and Audio Transcription (Optional - Telegram Only)
 

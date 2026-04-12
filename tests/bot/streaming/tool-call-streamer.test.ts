@@ -216,6 +216,37 @@ describe("bot/streaming/tool-call-streamer", () => {
     expect(sendText).toHaveBeenNthCalledWith(2, "s1", "after file");
   });
 
+  it("starts a new tool stream after an assistant reply boundary break", async () => {
+    vi.useFakeTimers();
+
+    let nextMessageId = 60;
+    const sendText = vi.fn(async () => nextMessageId++);
+    const editText = vi.fn().mockResolvedValue(undefined);
+    const deleteText = vi.fn().mockResolvedValue(undefined);
+    const streamer = new ToolCallStreamer({
+      throttleMs: 0,
+      sendText,
+      editText,
+      deleteText,
+    });
+
+    streamer.append("s1", "before reply");
+    await vi.waitFor(() => {
+      expect(sendText).toHaveBeenCalledTimes(1);
+    });
+
+    await streamer.breakSession("s1", "assistant_message_completed");
+
+    streamer.append("s1", "after reply");
+    await vi.waitFor(() => {
+      expect(sendText).toHaveBeenCalledTimes(2);
+    });
+
+    expect(editText).not.toHaveBeenCalled();
+    expect(deleteText).not.toHaveBeenCalled();
+    expect(sendText).toHaveBeenNthCalledWith(2, "s1", "after reply");
+  });
+
   it("flushes all stream keys for the same session", async () => {
     vi.useFakeTimers();
 

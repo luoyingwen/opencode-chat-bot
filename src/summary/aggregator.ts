@@ -15,7 +15,20 @@ export interface SummaryInfo {
   lastUpdated: number;
 }
 
-type MessageCompleteCallback = (sessionId: string, messageId: string, messageText: string) => void;
+export interface MessageCompletionInfo {
+  agent?: string;
+  providerID?: string;
+  modelID?: string;
+  createdAt?: number;
+  completedAt?: number;
+}
+
+type MessageCompleteCallback = (
+  sessionId: string,
+  messageId: string,
+  messageText: string,
+  completionInfo: MessageCompletionInfo,
+) => void;
 
 type MessagePartialCallback = (sessionId: string, messageId: string, messageText: string) => void;
 
@@ -113,7 +126,7 @@ export interface SessionRetryInfo {
 
 type SessionRetryCallback = (retryInfo: SessionRetryInfo) => void;
 
-type IdleCallback = (sessionId: string) => void;
+type SessionIdleCallback = (sessionId: string) => void;
 
 type PermissionCallback = (request: PermissionRequest) => void;
 
@@ -188,7 +201,7 @@ class SummaryAggregator {
   private onSessionCompactedCallback: SessionCompactedCallback | null = null;
   private onSessionErrorCallback: SessionErrorCallback | null = null;
   private onSessionRetryCallback: SessionRetryCallback | null = null;
-  private onIdleCallback: IdleCallback | null = null;
+  private onSessionIdleCallback: SessionIdleCallback | null = null;
   private onPermissionCallback: PermissionCallback | null = null;
   private onSessionDiffCallback: SessionDiffCallback | null = null;
   private onFileChangeCallback: FileChangeCallback | null = null;
@@ -266,8 +279,8 @@ class SummaryAggregator {
     this.onSessionRetryCallback = callback;
   }
 
-  setOnIdle(callback: IdleCallback): void {
-    this.onIdleCallback = callback;
+  setOnSessionIdle(callback: SessionIdleCallback): void {
+    this.onSessionIdleCallback = callback;
   }
 
   setOnPermission(callback: PermissionCallback): void {
@@ -960,7 +973,12 @@ class SummaryAggregator {
 
       const textState = this.getOrCreateTextMessageState(messageID);
 
-      const assistantMessage = info as { time?: { created: number; completed?: number } };
+      const assistantMessage = info as {
+        agent?: string;
+        providerID?: string;
+        modelID?: string;
+        time?: { created: number; completed?: number };
+      };
       const time = assistantMessage.time;
       const isCompleted = Boolean(time?.completed);
       const messageText = this.getCombinedMessageText(messageID);
@@ -1010,7 +1028,13 @@ class SummaryAggregator {
         }
 
         if (this.onCompleteCallback && finalText.length > 0) {
-          this.onCompleteCallback(this.currentSessionId!, messageID, finalText);
+          this.onCompleteCallback(this.currentSessionId!, messageID, finalText, {
+            agent: assistantMessage.agent,
+            providerID: assistantMessage.providerID,
+            modelID: assistantMessage.modelID,
+            createdAt: time?.created,
+            completedAt: time?.completed,
+          });
         }
 
         this.textMessageStates.delete(messageID);
@@ -1573,9 +1597,11 @@ class SummaryAggregator {
     // Stop typing indicator when session goes idle
     this.stopTypingIndicator();
 
-    // Notify callback that session is idle
-    if (this.onIdleCallback) {
-      this.onIdleCallback(sessionID);
+    if (this.onSessionIdleCallback) {
+      const callback = this.onSessionIdleCallback;
+      setImmediate(() => {
+        callback(sessionID);
+      });
     }
   }
 
