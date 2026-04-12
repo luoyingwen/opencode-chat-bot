@@ -44,15 +44,15 @@ describe("feishu/events", () => {
     (
       summaryAggregator as unknown as {
         setOnThinking: (callback: ((sessionId: string) => void) | null) => void;
-        setOnIdle: (callback: ((sessionId: string) => void) | null) => void;
+        setOnSessionIdle: (callback: ((sessionId: string) => void) | null) => void;
       }
     ).setOnThinking(null);
     (
       summaryAggregator as unknown as {
         setOnThinking: (callback: ((sessionId: string) => void) | null) => void;
-        setOnIdle: (callback: ((sessionId: string) => void) | null) => void;
+        setOnSessionIdle: (callback: ((sessionId: string) => void) | null) => void;
       }
-    ).setOnIdle(null);
+    ).setOnSessionIdle(null);
     setCurrentSession({
       id: "session-1",
       title: "Test Session",
@@ -74,13 +74,13 @@ describe("feishu/events", () => {
   it("sends done message and clears active target when session goes idle", async () => {
     const aggregator = summaryAggregator as unknown as SummaryAggregatorTestState;
 
-    aggregator.onIdleCallback?.("session-1");
+    aggregator.onSessionIdleCallback?.("session-1");
     await vi.waitFor(() => {
       expect(sendMarkdownMessage).toHaveBeenCalledWith("chat-1", "✅ Done");
     });
 
     sendMarkdownMessage.mockClear();
-    aggregator.onIdleCallback?.("session-1");
+    aggregator.onSessionIdleCallback?.("session-1");
     await vi.waitFor(() => {
       expect(sendMarkdownMessage).not.toHaveBeenCalled();
     });
