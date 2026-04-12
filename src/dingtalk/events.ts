@@ -47,7 +47,7 @@ interface OriginalCallbacks {
   onTokens: ((tokens: TokensInfo) => void) | null;
   onSessionError: ((sessionId: string, message: string) => void) | null;
   onSessionRetry: ((retryInfo: SessionRetryInfo) => void) | null;
-  onIdle: ((sessionId: string) => void) | null;
+  onSessionIdle: ((sessionId: string) => void) | null;
 }
 
 const originalCallbacks: OriginalCallbacks = {
@@ -57,7 +57,7 @@ const originalCallbacks: OriginalCallbacks = {
   onTokens: null,
   onSessionError: null,
   onSessionRetry: null,
-  onIdle: null,
+  onSessionIdle: null,
 };
 
 let callbacksInstalled = false;
@@ -72,7 +72,7 @@ export function installDingTalkEventRouting(): void {
   patchAggregatorCallback("setOnTokens", "onTokens", handleDingTalkTokens);
   patchAggregatorCallback("setOnSessionError", "onSessionError", handleDingTalkSessionError);
   patchAggregatorCallback("setOnSessionRetry", "onSessionRetry", handleDingTalkSessionRetry);
-  patchAggregatorCallback("setOnIdle", "onIdle", handleDingTalkIdle);
+  patchAggregatorCallback("setOnSessionIdle", "onSessionIdle", handleDingTalkIdle);
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const aggregator = summaryAggregator as any;
@@ -82,7 +82,7 @@ export function installDingTalkEventRouting(): void {
   aggregator.setOnTokens(null);
   aggregator.setOnSessionError(null);
   aggregator.setOnSessionRetry(null);
-  aggregator.setOnIdle(null);
+  aggregator.setOnSessionIdle(null);
 
   logger.info("[DingTalk] Event routing callbacks installed");
 }

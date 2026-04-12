@@ -53,29 +53,9 @@ export async function startBotApp(): Promise<void> {
   if (logFilePath) {
     logger.info(`Logs are written to ${logFilePath}`);
   }
-  logger.info(`Allowed User ID: Telegram=${config.telegram.allowedUserId ?? "disabled"}, DingTalk=${config.dingtalk.allowedUserId ?? "disabled"}`);
-  logger.debug(`[Runtime] Application start mode: ${mode}`);
-  logger.info(`[App] OpenCode API: ${config.opencode.apiUrl}`);
   logger.info(
-    `[App] Platforms: Telegram=${hasTelegram ? "enabled" : "disabled"}, Slack=${hasSlack ? "enabled" : "disabled"}, DingTalk=${hasDingTalk ? "enabled" : "disabled"}, Feishu=${hasFeishu ? "enabled" : "disabled"}`,
+    `Allowed User ID: Telegram=${config.telegram.allowedUserId ?? "disabled"}, DingTalk=${config.dingtalk.allowedUserId ?? "disabled"}`,
   );
-  const hasFeishu = !!(config.feishu.appId && config.feishu.appSecret);
-
-  if (!hasTelegram && !hasSlack && !hasDingTalk && !hasFeishu) {
-    throw new Error(
-      "No bot platform configured. Set TELEGRAM_BOT_TOKEN, SLACK_BOT_TOKEN + SLACK_APP_TOKEN, DINGTALK_APP_KEY + DINGTALK_APP_SECRET + DINGTALK_ALLOWED_USER_ID, or FEISHU_APP_ID + FEISHU_APP_SECRET.",
-    );
-  }
-
-  logger.info(`Starting OpenCode Bot v${version}...`);
-=======
-  logger.info(`Starting OpenCode Telegram Bot v${version}...`);
-  logger.info(`Config loaded from ${runtimePaths.envFilePath}`);
-  if (logFilePath) {
-    logger.info(`Logs are written to ${logFilePath}`);
-  }
-  logger.info(`Allowed User ID: ${config.telegram.allowedUserId}`);
->>>>>>> upstream/main
   logger.debug(`[Runtime] Application start mode: ${mode}`);
   logger.info(`[App] OpenCode API: ${config.opencode.apiUrl}`);
   logger.info(
