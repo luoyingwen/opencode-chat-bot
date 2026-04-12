@@ -18,6 +18,7 @@ export const zhTW: I18nDictionary = {
   "cmd.description.agent_number": "依序號切換模式",
   "cmd.description.rename": "重新命名目前工作階段",
   "cmd.description.tts": "切換語音回覆",
+  "cmd.description.open": "瀏覽並開啟目錄作為專案",
 
   "callback.unknown_command": "未知命令",
   "callback.processing_error": "處理錯誤",
@@ -392,6 +393,21 @@ export const zhTW: I18nDictionary = {
   "commands.confirm_hint":
     "💡 輸入參數（可選），或：\n• 輸入「執行」無參數執行\n• 輸入「取消」返回列表",
   "commands.invalid_number": "請輸入有效的命令編號（{min}-{max}）。",
+
+  "open.back": "⬆️ 上級",
+  "open.roots": "📋 返回根目錄",
+  "open.prev_page": "⬅️ 上一頁",
+  "open.next_page": "下一頁 ➡️",
+  "open.select_current": "✅ 選擇此資料夾",
+  "open.select_root": "📂 選擇要瀏覽的根目錄：",
+  "open.access_denied": "⛔ 存取被拒：路徑超出允許的根目錄範圍",
+  "open.scan_error": "🔴 無法瀏覽目錄：{error}",
+  "open.open_error": "🔴 無法開啟目錄瀏覽器。",
+  "open.selected": "✅ 專案已新增：{project}\n\n📋 使用 /sessions 或 /new 開始工作。",
+  "open.select_error": "🔴 新增專案失敗。",
+  "open.no_subfolders": "📭 無子資料夾",
+  "open.subfolder_count": "{count} 個子資料夾",
+  "open.subfolders_count": "{count} 個子資料夾",
 
   "cli.usage":
     "用法：\n  opencode-telegram [start] [--mode sources|installed]\n  opencode-telegram status\n  opencode-telegram stop\n  opencode-telegram config\n\n說明：\n  - 不帶命令時預設執行 `start`\n  - `--mode` 目前僅支援 `start` 命令",

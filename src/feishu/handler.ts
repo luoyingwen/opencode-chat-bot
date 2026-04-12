@@ -11,7 +11,7 @@ import { opencodeClient } from "../opencode/client.js";
 import { getCurrentSession, setCurrentSession } from "../session/manager.js";
 import { ingestSessionInfoForCache } from "../session/cache-manager.js";
 import { getCurrentProject, setCurrentProject } from "../settings/manager.js";
-import { getProjects } from "../project/manager.js";
+import { getProjects, ensureProjectByPath } from "../project/manager.js";
 import {
   getStoredAgent,
   fetchCurrentAgent,
@@ -105,40 +105,50 @@ async function handleStatusCommand(chatId: string, userId: string): Promise<void
     }
 
     const healthLabel = data.healthy ? "✅ Healthy" : "❌ Unhealthy";
-    let message = `# OpenCode Status\n\n**Health:** ${healthLabel}\n`;
+    const lines: string[] = [];
+    lines.push("# OpenCode Status");
+    lines.push("");
+    lines.push(`**Health:** ${healthLabel}`);
 
     if (data.version) {
-      message += `**Version:** \`${data.version}\`\n`;
+      lines.push(`**Version:** \`${data.version}\``);
     }
 
     if (processManager.isRunning()) {
       const uptime = processManager.getUptime();
       const uptimeStr = uptime ? Math.floor(uptime / 1000) : 0;
-      message += `**Process:** managed (PID ${processManager.getPID() ?? "-"}, uptime ${uptimeStr}s)\n`;
+      lines.push(
+        `**Process:** managed (PID ${processManager.getPID() ?? "-"}, uptime ${uptimeStr}s)`,
+      );
     }
 
     const currentAgent = await fetchCurrentAgent();
     if (currentAgent) {
-      message += `**Agent:** ${getAgentDisplayName(currentAgent)}\n`;
+      lines.push(`**Agent:** ${getAgentDisplayName(currentAgent)}`);
     }
 
     const currentModel = fetchCurrentModel();
-    message += `**Model:** ${formatModelForDisplay(currentModel.providerID, currentModel.modelID)}\n`;
+    lines.push(
+      `**Model:** ${formatModelForDisplay(currentModel.providerID, currentModel.modelID)}`,
+    );
 
     const currentProject = getCurrentProject();
+    lines.push("");
     if (currentProject) {
-      message += `\n**Project:** ${currentProject.name || currentProject.worktree}\n`;
+      lines.push(`**Project:** ${currentProject.name || currentProject.worktree}`);
     } else {
-      message += "\nNo project selected. Use `/projects` to choose one.\n";
+      lines.push("No project selected. Use `/projects` to choose one.");
     }
 
     const currentSession = getCurrentSession();
     if (currentSession) {
-      message += `**Session:** ${currentSession.title}\n`;
+      lines.push(`**Session:** ${currentSession.title}`);
     } else {
-      message += "No active session. Send a message to create one.\n";
+      lines.push("No active session. Send a message to create one.");
     }
 
+    // Join with double newlines for proper Markdown line breaks
+    const message = lines.join("\n\n");
     await sendFeishuMessage(chatId, userId, message);
   } catch (err) {
     logger.error("[Feishu] Error in status command:", err);
@@ -280,49 +290,105 @@ async function handleProjectsCommand(chatId: string, userId: string): Promise<vo
 }
 
 async function handleProjectCommand(chatId: string, userId: string, arg: string): Promise<void> {
-  const index = parseInt(arg, 10);
-  if (isNaN(index) || index < 1) {
+  const trimmedArg = arg.trim();
+
+  if (!trimmedArg) {
     await sendFeishuMessage(
       chatId,
       userId,
-      "❌ Please provide a valid project number. Use `/projects` to see the list.",
+      "❌ Please provide a project number or path. Use `/projects` to see the list or provide an absolute path.",
     );
     return;
   }
 
-  try {
-    const projects = await getProjects();
+  const index = parseInt(trimmedArg, 10);
 
-    if (index > projects.length) {
+  // Case 1: It's a number - use existing logic
+  if (!isNaN(index) && index >= 1) {
+    try {
+      const projects = await getProjects();
+
+      if (index > projects.length) {
+        await sendFeishuMessage(
+          chatId,
+          userId,
+          `❌ Project #${index} not found. Only ${projects.length} projects available.`,
+        );
+        return;
+      }
+
+      const selected = projects[index - 1];
+
+      setCurrentProject({
+        id: selected.id,
+        worktree: selected.worktree,
+        name: selected.name || selected.worktree,
+      });
+
+      summaryAggregator.clear();
+      clearAllInteractionState("feishu_project_switch");
+
       await sendFeishuMessage(
         chatId,
         userId,
-        `❌ Project #${index} not found. Only ${projects.length} projects available.`,
+        `✅ Project selected: **${selected.name || selected.worktree}**\n\`${selected.worktree}\``,
       );
-      return;
-    }
 
-    const selected = projects[index - 1];
+      logger.info(`[Feishu] Project selected by index: ${selected.name || selected.worktree}`);
+    } catch (err) {
+      logger.error("[Feishu] Error in project command:", err);
+      await sendFeishuMessage(chatId, userId, "❌ Failed to select project.");
+    }
+    return;
+  }
+
+  // Case 2: It's a path - use new logic
+  try {
+    logger.info(`[Feishu] Attempting to select project by path: ${trimmedArg}`);
+
+    const { project, isNew, pathCreated } = await ensureProjectByPath(trimmedArg);
 
     setCurrentProject({
-      id: selected.id,
-      worktree: selected.worktree,
-      name: selected.name || selected.worktree,
+      id: project.id,
+      worktree: project.worktree,
+      name: project.name || project.worktree,
     });
 
     summaryAggregator.clear();
     clearAllInteractionState("feishu_project_switch");
 
+    // Build success message
+    let message = "";
+    if (isNew) {
+      message = `✅ **New project created and selected**\n\n`;
+      if (pathCreated) {
+        message += `📁 Directory created: \`${project.worktree}\`\n`;
+      } else {
+        message += `📁 Directory: \`${project.worktree}\`\n`;
+      }
+      message += `📝 Project: **${project.name || project.worktree}**`;
+    } else {
+      message = `✅ **Project selected**\n\n`;
+      if (pathCreated) {
+        message += `📁 Directory created: \`${project.worktree}\`\n`;
+      }
+      message += `📝 Project: **${project.name || project.worktree}**\n`;
+      message += `\`${project.worktree}\``;
+    }
+
+    await sendFeishuMessage(chatId, userId, message);
+
+    logger.info(
+      `[Feishu] Project selected by path: ${project.worktree} (isNew: ${isNew}, pathCreated: ${pathCreated})`,
+    );
+  } catch (err) {
+    logger.error("[Feishu] Error selecting project by path:", err);
+    const errorMessage = err instanceof Error ? err.message : String(err);
     await sendFeishuMessage(
       chatId,
       userId,
-      `✅ Project selected: **${selected.name || selected.worktree}**\n\`${selected.worktree}\``,
+      `❌ Failed to select project:\n\`\`\`\n${errorMessage}\n\`\`\``,
     );
-
-    logger.info(`[Feishu] Project selected: ${selected.name || selected.worktree}`);
-  } catch (err) {
-    logger.error("[Feishu] Error in project command:", err);
-    await sendFeishuMessage(chatId, userId, "❌ Failed to select project.");
   }
 }
 
