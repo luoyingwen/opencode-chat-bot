@@ -778,6 +778,28 @@ function getLocalizedBotCommandsFeishu(): { command: string; description: string
   ];
 }
 
+function getValidCommands(): string[] {
+  return [
+    "status",
+    "new",
+    "stop",
+    "sessions",
+    "session",
+    "projects",
+    "project",
+    "agents",
+    "agent",
+    "rename",
+    "task",
+    "tasklist",
+    "commands",
+    "opencode_start",
+    "opencode_stop",
+    "exit",
+    "help",
+  ];
+}
+
 async function handleTextMessage(chatId: string, userId: string, text: string): Promise<void> {
   logger.info(
     `[Feishu] handleTextMessage called: userId=${userId}, text="${text.substring(0, 50)}..."`,
@@ -1026,6 +1048,21 @@ function processMessage(userId: string, chatId: string, text: string, _messageId
 
   const client = getFeishuClient();
   client.getLastIncomingMessageId(chatId);
+
+  // Validate slash commands
+  if (text.startsWith("/")) {
+    const validCommands = getValidCommands();
+    const commandName = text.slice(1).split(/\s+/)[0]; // Extract command name after /
+
+    if (!validCommands.includes(commandName)) {
+      // Unknown command - show error with available commands
+      const commands = getLocalizedBotCommandsFeishu();
+      const lines = commands.map((item) => `/${item.command} - ${item.description}`);
+      const message = `⚠️ **Unknown command**: /${commandName}\n\n**Available commands:**\n\n${lines.join("\n\n")}\n\n_Use /help for more details._`;
+      void sendFeishuMessage(chatId, userId, message);
+      return;
+    }
+  }
 
   if (text.startsWith("/status")) {
     void handleStatusCommand(chatId, userId);
