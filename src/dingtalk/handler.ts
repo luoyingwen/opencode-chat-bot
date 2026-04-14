@@ -7,6 +7,8 @@ import {
   installDingTalkEventRouting,
   setUserSessionWebhook,
   getUserSessionWebhook,
+  handleDingTalkPermissionReply,
+  hasDingTalkPendingPermission,
 } from "./events.js";
 import { opencodeClient } from "../opencode/client.js";
 import { getCurrentSession, setCurrentSession } from "../session/manager.js";
@@ -1014,6 +1016,25 @@ function processMessage(userId: string, text: string, sessionWebhook: string): v
   }
 
   setUserSessionWebhook(userId, sessionWebhook);
+
+  // Handle permission replies (/1, /2, /3) first
+  if (text === "/1" || text === "/2" || text === "/3") {
+    if (hasDingTalkPendingPermission(userId)) {
+      const replyMap: Record<string, "once" | "always" | "reject"> = {
+        "/1": "once",
+        "/2": "always",
+        "/3": "reject",
+      };
+      const reply = replyMap[text];
+      const handled = handleDingTalkPermissionReply(userId, reply);
+      if (handled) {
+        return;
+      }
+    }
+    // No pending permission, treat as unknown command
+    void sendDingTalkMessage(userId, "⚠️ No pending permission request.");
+    return;
+  }
 
   // Validate slash commands
   if (text.startsWith("/")) {

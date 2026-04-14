@@ -2,10 +2,13 @@ import type { FeishuClient } from "./client.js";
 import { formatToolInfo } from "../summary/formatter.js";
 import type { ToolInfo, TokensInfo, SessionRetryInfo } from "../summary/aggregator.js";
 import { summaryAggregator } from "../summary/aggregator.js";
+import type { PermissionRequest } from "../permission/types.js";
 import { getCurrentSession } from "../session/manager.js";
 import { logger } from "../utils/logger.js";
 import { t } from "../i18n/index.js";
 import { isSlackActive } from "../slack/events.js";
+import { opencodeClient } from "../opencode/client.js";
+import { safeBackgroundTask } from "../utils/safe-background-task.js";
 
 interface FeishuResponseTarget {
   userId: string;
@@ -24,6 +27,7 @@ interface OriginalCallbacks {
   onSessionError: ((sessionId: string, message: string) => void) | null;
   onSessionRetry: ((retryInfo: SessionRetryInfo) => void) | null;
   onSessionIdle: ((sessionId: string) => void) | null;
+  onPermission: ((request: PermissionRequest) => void) | null;
 }
 
 const originalCallbacks: OriginalCallbacks = {
@@ -34,7 +38,11 @@ const originalCallbacks: OriginalCallbacks = {
   onSessionError: null,
   onSessionRetry: null,
   onSessionIdle: null,
+  onPermission: null,
 };
+
+// Store pending permission requests (userId -> request)
+const pendingPermissionRequests: Map<string, PermissionRequest> = new Map();
 
 export function setFeishuClient(client: FeishuClient): void {
   feishuClient = client;
@@ -67,6 +75,7 @@ export function installFeishuEventRouting(): void {
   patchAggregatorCallback("setOnSessionError", "onSessionError", handleFeishuSessionError);
   patchAggregatorCallback("setOnSessionRetry", "onSessionRetry", handleFeishuSessionRetry);
   patchAggregatorCallback("setOnSessionIdle", "onSessionIdle", handleFeishuIdle);
+  patchAggregatorCallback("setOnPermission", "onPermission", handleFeishuPermission);
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const aggregator = summaryAggregator as any;
@@ -77,6 +86,7 @@ export function installFeishuEventRouting(): void {
   aggregator.setOnSessionError(null);
   aggregator.setOnSessionRetry(null);
   aggregator.setOnSessionIdle(null);
+  aggregator.setOnPermission(null);
 
   logger.info("[Feishu] Event routing callbacks installed");
 }
@@ -251,4 +261,109 @@ function handleFeishuIdle(sessionId: string): void {
 
   void sendMessage(target.chatId, target.userId, "✅ Done");
   activeTarget = null;
+}
+
+function handleFeishuPermission(request: PermissionRequest): void {
+  const target = activeTarget;
+  if (!target || !feishuClient) {
+    logger.debug("[Feishu] handleFeishuPermission: no active target or client, skipping");
+    return;
+  }
+
+  const currentSession = getCurrentSession();
+  if (!currentSession || currentSession.id !== request.sessionID) {
+    logger.debug(
+      `[Feishu] handleFeishuPermission: session mismatch, current=${currentSession?.id}, expected=${request.sessionID}`,
+    );
+    return;
+  }
+
+  // Store the permission request
+  pendingPermissionRequests.set(target.userId, request);
+
+  // Format permission message
+  const permissionEmoji: Record<string, string> = {
+    bash: "💻",
+    edit: "✏️",
+    write: "📝",
+    read: "📖",
+    webfetch: "🌐",
+    websearch: "🔍",
+    glob: "📁",
+    grep: "🔎",
+    list: "📋",
+    task: "📌",
+    lsp: "🔧",
+    external_directory: "📂",
+  };
+  const emoji = permissionEmoji[request.permission] || "🔐";
+  const patterns = request.patterns.join("\n");
+
+  const message = `🔐 **Permission Request**\n\n**Type:** ${emoji} ${request.permission}\n\n**Patterns:**\n\`\`\`\n${patterns}\n\`\`\`\n\nPlease reply with:\n**/1** - Allow once\n**/2** - Always allow\n**/3** - Reject`;
+
+  logger.info(
+    `[Feishu] Sending permission request to user ${target.userId}: ${request.permission}`,
+  );
+  void sendMessage(target.chatId, target.userId, message);
+}
+
+/**
+ * Handle permission reply from user (/1, /2, /3)
+ */
+export function handleFeishuPermissionReply(
+  userId: string,
+  chatId: string,
+  reply: "once" | "always" | "reject",
+): boolean {
+  const request = pendingPermissionRequests.get(userId);
+  if (!request) {
+    logger.debug(`[Feishu] No pending permission request for user ${userId}`);
+    return false;
+  }
+
+  const currentSession = getCurrentSession();
+  if (!currentSession) {
+    logger.warn("[Feishu] No current session for permission reply");
+    return false;
+  }
+
+  logger.info(`[Feishu] Sending permission reply: ${reply}, requestID=${request.id}`);
+
+  // Remove from pending
+  pendingPermissionRequests.delete(userId);
+
+  // Send reply to OpenCode
+  safeBackgroundTask({
+    taskName: "feishu.permission.reply",
+    task: () =>
+      opencodeClient.permission.reply({
+        requestID: request.id,
+        directory: currentSession.directory,
+        reply,
+      }),
+    onSuccess: ({ error }) => {
+      if (error) {
+        logger.error("[Feishu] Failed to send permission reply:", error);
+        void sendMessage(chatId, userId, "❌ Failed to send permission reply. Please try again.");
+        return;
+      }
+      logger.info("[Feishu] Permission reply sent successfully");
+      // Send confirmation to user
+      const replyLabels: Record<string, string> = {
+        once: "✅ Allowed once",
+        always: "✅ Always allowed",
+        reject: "❌ Rejected",
+      };
+      void sendMessage(chatId, userId, replyLabels[reply]);
+    },
+  });
+
+  return true;
+}
+
+/**
+ * Check if user has pending permission request
+ */
+export function hasFeishuPendingPermission(userId: string): boolean {
+  return pendingPermissionRequests.has(userId);
 }

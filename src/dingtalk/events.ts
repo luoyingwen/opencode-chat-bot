@@ -3,9 +3,12 @@ import { formatForDingTalk } from "./formatter.js";
 import { formatToolInfo } from "../summary/formatter.js";
 import type { ToolInfo, TokensInfo, SessionRetryInfo } from "../summary/aggregator.js";
 import { summaryAggregator } from "../summary/aggregator.js";
+import type { PermissionRequest } from "../permission/types.js";
 import { getCurrentSession } from "../session/manager.js";
 import { logger } from "../utils/logger.js";
 import { t } from "../i18n/index.js";
+import { opencodeClient } from "../opencode/client.js";
+import { safeBackgroundTask } from "../utils/safe-background-task.js";
 
 interface DingTalkResponseTarget {
   userId: string;
@@ -48,6 +51,7 @@ interface OriginalCallbacks {
   onSessionError: ((sessionId: string, message: string) => void) | null;
   onSessionRetry: ((retryInfo: SessionRetryInfo) => void) | null;
   onSessionIdle: ((sessionId: string) => void) | null;
+  onPermission: ((request: PermissionRequest) => void) | null;
 }
 
 const originalCallbacks: OriginalCallbacks = {
@@ -58,7 +62,11 @@ const originalCallbacks: OriginalCallbacks = {
   onSessionError: null,
   onSessionRetry: null,
   onSessionIdle: null,
+  onPermission: null,
 };
+
+// Store pending permission requests (userId -> request)
+const pendingPermissionRequests: Map<string, PermissionRequest> = new Map();
 
 let callbacksInstalled = false;
 
@@ -73,6 +81,7 @@ export function installDingTalkEventRouting(): void {
   patchAggregatorCallback("setOnSessionError", "onSessionError", handleDingTalkSessionError);
   patchAggregatorCallback("setOnSessionRetry", "onSessionRetry", handleDingTalkSessionRetry);
   patchAggregatorCallback("setOnSessionIdle", "onSessionIdle", handleDingTalkIdle);
+  patchAggregatorCallback("setOnPermission", "onPermission", handleDingTalkPermission);
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const aggregator = summaryAggregator as any;
@@ -83,6 +92,7 @@ export function installDingTalkEventRouting(): void {
   aggregator.setOnSessionError(null);
   aggregator.setOnSessionRetry(null);
   aggregator.setOnSessionIdle(null);
+  aggregator.setOnPermission(null);
 
   logger.info("[DingTalk] Event routing callbacks installed");
 }
@@ -285,4 +295,108 @@ function handleDingTalkIdle(sessionId: string): void {
   logger.info(`[DingTalk] Sending completion message (Done) to user ${target.userId}`);
   void sendMessage(target.userId, "✅ Done");
   activeTarget = null;
+}
+
+function handleDingTalkPermission(request: PermissionRequest): void {
+  const target = activeTarget;
+  if (!target) {
+    logger.debug("[DingTalk] handleDingTalkPermission: no active target, skipping");
+    return;
+  }
+
+  const currentSession = getCurrentSession();
+  if (!currentSession || currentSession.id !== request.sessionID) {
+    logger.debug(
+      `[DingTalk] handleDingTalkPermission: session mismatch, current=${currentSession?.id}, expected=${request.sessionID}`,
+    );
+    return;
+  }
+
+  // Store the permission request
+  pendingPermissionRequests.set(target.userId, request);
+
+  // Format permission message
+  const permissionEmoji: Record<string, string> = {
+    bash: "💻",
+    edit: "✏️",
+    write: "📝",
+    read: "📖",
+    webfetch: "🌐",
+    websearch: "🔍",
+    glob: "📁",
+    grep: "🔎",
+    list: "📋",
+    task: "📌",
+    lsp: "🔧",
+    external_directory: "📂",
+  };
+  const emoji = permissionEmoji[request.permission] || "🔐";
+  const patterns = request.patterns.join("\n");
+
+  const message = `🔐 **Permission Request**\n\n**Type:** ${emoji} ${request.permission}\n\n**Patterns:**\n\`\`\`\n${patterns}\n\`\`\`\n\nPlease reply with:\n**/1** - Allow once\n**/2** - Always allow\n**/3** - Reject`;
+
+  logger.info(
+    `[DingTalk] Sending permission request to user ${target.userId}: ${request.permission}`,
+  );
+  void sendMessage(target.userId, message);
+}
+
+/**
+ * Handle permission reply from user (/1, /2, /3)
+ */
+export function handleDingTalkPermissionReply(
+  userId: string,
+  reply: "once" | "always" | "reject",
+): boolean {
+  const request = pendingPermissionRequests.get(userId);
+  if (!request) {
+    logger.debug(`[DingTalk] No pending permission request for user ${userId}`);
+    return false;
+  }
+
+  const currentSession = getCurrentSession();
+  if (!currentSession) {
+    logger.warn("[DingTalk] No current session for permission reply");
+    return false;
+  }
+
+  logger.info(`[DingTalk] Sending permission reply: ${reply}, requestID=${request.id}`);
+
+  // Remove from pending
+  pendingPermissionRequests.delete(userId);
+
+  // Send reply to OpenCode
+  safeBackgroundTask({
+    taskName: "dingtalk.permission.reply",
+    task: () =>
+      opencodeClient.permission.reply({
+        requestID: request.id,
+        directory: currentSession.directory,
+        reply,
+      }),
+    onSuccess: ({ error }) => {
+      if (error) {
+        logger.error("[DingTalk] Failed to send permission reply:", error);
+        void sendMessage(userId, "❌ Failed to send permission reply. Please try again.");
+        return;
+      }
+      logger.info("[DingTalk] Permission reply sent successfully");
+      // Send confirmation to user
+      const replyLabels: Record<string, string> = {
+        once: "✅ Allowed once",
+        always: "✅ Always allowed",
+        reject: "❌ Rejected",
+      };
+      void sendMessage(userId, replyLabels[reply]);
+    },
+  });
+
+  return true;
+}
+
+/**
+ * Check if user has pending permission request
+ */
+export function hasDingTalkPendingPermission(userId: string): boolean {
+  return pendingPermissionRequests.has(userId);
 }

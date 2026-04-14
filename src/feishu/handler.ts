@@ -6,6 +6,8 @@ import {
   clearFeishuActive,
   installFeishuEventRouting,
   getActiveChatId,
+  handleFeishuPermissionReply,
+  hasFeishuPendingPermission,
 } from "./events.js";
 import { opencodeClient } from "../opencode/client.js";
 import { getCurrentSession, setCurrentSession } from "../session/manager.js";
@@ -1048,6 +1050,25 @@ function processMessage(userId: string, chatId: string, text: string, _messageId
 
   const client = getFeishuClient();
   client.getLastIncomingMessageId(chatId);
+
+  // Handle permission replies (/1, /2, /3) first
+  if (text === "/1" || text === "/2" || text === "/3") {
+    if (hasFeishuPendingPermission(userId)) {
+      const replyMap: Record<string, "once" | "always" | "reject"> = {
+        "/1": "once",
+        "/2": "always",
+        "/3": "reject",
+      };
+      const reply = replyMap[text];
+      const handled = handleFeishuPermissionReply(userId, chatId, reply);
+      if (handled) {
+        return;
+      }
+    }
+    // No pending permission, treat as unknown command
+    void sendFeishuMessage(chatId, userId, "⚠️ No pending permission request.");
+    return;
+  }
 
   // Validate slash commands
   if (text.startsWith("/")) {
