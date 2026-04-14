@@ -40,6 +40,7 @@ import {
   isUserInTaskListFlow,
 } from "./tasklist.js";
 import { setFeishuNotificationCallback } from "../scheduled-task/runtime.js";
+import { initUserChatStore, storeUserChatMapping, getChatIdForUser } from "./user-chat-store.js";
 import { exitApplication } from "../app/exit-app.js";
 import {
   handleCommandsCommand,
@@ -1146,27 +1147,55 @@ export async function initializeFeishuHandler(): Promise<void> {
     throw new Error("FEISHU_APP_ID and FEISHU_APP_SECRET are required for Feishu integration");
   }
 
+  // Initialize user-chat store from persistent settings
+  await initUserChatStore();
+
   const client = initFeishuClient({ appId, appSecret, domain });
   setFeishuClient(client);
 
-  setFeishuNotificationCallback(async (text: string) => {
-    const activeChatId = getActiveChatId();
-    if (!activeChatId) {
-      logger.warn("[Feishu Task Notification] No active chat available, cannot send notification");
-      return;
-    }
-
+  // Enhanced notification callback that uses stored user-chat mappings
+  setFeishuNotificationCallback(async (text: string, targetUserId?: string) => {
+    // Try to find target user
     const allowedUsers = config.feishu.allowedUsers
       .split(",")
       .map((item) => item.trim())
       .filter(Boolean);
-    const userId = allowedUsers[0] || "feishu";
 
-    await sendFeishuMessage(activeChatId, userId, text);
-    logger.info(`[Feishu Task Notification] Sent scheduled task update to chat ${activeChatId}`);
+    // If specific user requested, try that first
+    let userId = targetUserId;
+    if (!userId && allowedUsers.length > 0) {
+      userId = allowedUsers[0];
+    }
+
+    if (!userId) {
+      logger.warn("[Feishu Task Notification] No target user configured, cannot send notification");
+      return;
+    }
+
+    // Try to get chatId from stored mapping
+    let chatId = getChatIdForUser(userId);
+
+    // Fallback to active chat if available
+    if (!chatId) {
+      chatId = getActiveChatId();
+    }
+
+    if (!chatId) {
+      logger.warn(
+        `[Feishu Task Notification] No chat mapping for user ${userId}. User needs to send a message first.`,
+      );
+      return;
+    }
+
+    await sendFeishuMessage(chatId, userId, text);
+    logger.info(
+      `[Feishu Task Notification] Sent scheduled task update to user ${userId}, chat ${chatId}`,
+    );
   });
 
   client.onMessage((data) => {
+    // Store user-chat mapping when receiving a message
+    void storeUserChatMapping(data.userId, data.chatId);
     processMessage(data.userId, data.chatId, data.text, data.messageId);
   });
 

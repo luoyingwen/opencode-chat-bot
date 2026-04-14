@@ -30,6 +30,11 @@ export interface SessionDirectoryCacheInfo {
   }>;
 }
 
+export interface UserChatMapping {
+  chatId: string;
+  lastUpdated: number; // timestamp
+}
+
 export interface Settings {
   currentProject?: ProjectInfo;
   currentSession?: SessionInfo;
@@ -40,6 +45,7 @@ export interface Settings {
   serverProcess?: ServerProcessInfo;
   sessionDirectoryCache?: SessionDirectoryCacheInfo;
   scheduledTasks?: ScheduledTask[];
+  userChatMappings?: Record<string, UserChatMapping>; // userId -> mapping
 }
 
 function cloneScheduledTasks(tasks: ScheduledTask[] | undefined): ScheduledTask[] | undefined {
@@ -200,6 +206,34 @@ export function getScheduledTasks(): ScheduledTask[] {
 export function setScheduledTasks(tasks: ScheduledTask[]): Promise<void> {
   currentSettings.scheduledTasks = cloneScheduledTasks(tasks);
   return writeSettingsFile(currentSettings);
+}
+
+// User-Chat Mappings for proactive messaging
+export function getUserChatMapping(userId: string): UserChatMapping | undefined {
+  return currentSettings.userChatMappings?.[userId];
+}
+
+export function setUserChatMapping(userId: string, chatId: string): Promise<void> {
+  if (!currentSettings.userChatMappings) {
+    currentSettings.userChatMappings = {};
+  }
+  currentSettings.userChatMappings[userId] = {
+    chatId,
+    lastUpdated: Date.now(),
+  };
+  return writeSettingsFile(currentSettings);
+}
+
+export function getAllUserChatMappings(): Record<string, UserChatMapping> {
+  return currentSettings.userChatMappings ?? {};
+}
+
+export function clearUserChatMapping(userId: string): Promise<void> {
+  if (currentSettings.userChatMappings?.[userId]) {
+    delete currentSettings.userChatMappings[userId];
+    return writeSettingsFile(currentSettings);
+  }
+  return Promise.resolve();
 }
 
 export function __resetSettingsForTests(): void {
