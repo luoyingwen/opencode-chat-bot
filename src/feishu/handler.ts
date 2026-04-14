@@ -555,116 +555,6 @@ async function handleRenameCommand(chatId: string, userId: string): Promise<void
   }
 }
 
-async function handleOpencodeStartCommand(chatId: string, userId: string): Promise<void> {
-  try {
-    if (processManager.isRunning()) {
-      const uptime = processManager.getUptime();
-      const uptimeStr = uptime ? Math.floor(uptime / 1000) : 0;
-      await sendFeishuMessage(
-        chatId,
-        userId,
-        t("opencode_start.already_running_managed", {
-          pid: processManager.getPID() ?? "-",
-          seconds: uptimeStr,
-        }),
-      );
-      return;
-    }
-
-    try {
-      const { data, error } = await opencodeClient.global.health();
-      if (!error && data?.healthy) {
-        await sendFeishuMessage(
-          chatId,
-          userId,
-          t("opencode_start.already_running_external", {
-            version: data.version || t("common.unknown"),
-          }),
-        );
-        return;
-      }
-    } catch {
-      // Continue with start
-    }
-
-    await sendFeishuMessage(chatId, userId, t("opencode_start.starting"));
-
-    const { success, error } = await processManager.start();
-
-    if (!success) {
-      await sendFeishuMessage(
-        chatId,
-        userId,
-        t("opencode_start.start_error", { error: error || t("common.unknown_error") }),
-      );
-      return;
-    }
-
-    const ready = await waitForServerReadyFeishu(10000);
-    if (!ready) {
-      await sendFeishuMessage(
-        chatId,
-        userId,
-        t("opencode_start.started_not_ready", { pid: processManager.getPID() ?? "-" }),
-      );
-      return;
-    }
-
-    const { data: health } = await opencodeClient.global.health();
-    await sendFeishuMessage(
-      chatId,
-      userId,
-      t("opencode_start.success", {
-        pid: processManager.getPID() ?? "-",
-        version: health?.version || t("common.unknown"),
-      }),
-    );
-
-    logger.info(`[Feishu] OpenCode server started, PID=${processManager.getPID()}`);
-  } catch (err) {
-    logger.error("[Feishu] Error in opencode_start command:", err);
-    await sendFeishuMessage(chatId, userId, t("opencode_start.error"));
-  }
-}
-
-async function handleOpencodeStopCommand(chatId: string, userId: string): Promise<void> {
-  try {
-    if (!processManager.isRunning()) {
-      try {
-        const { data, error } = await opencodeClient.global.health();
-        if (!error && data?.healthy) {
-          await sendFeishuMessage(chatId, userId, t("opencode_stop.external_running"));
-          return;
-        }
-      } catch {
-        // Server not accessible
-      }
-      await sendFeishuMessage(chatId, userId, t("opencode_stop.not_running"));
-      return;
-    }
-
-    const pid = processManager.getPID();
-    await sendFeishuMessage(chatId, userId, t("opencode_stop.stopping", { pid: pid ?? "-" }));
-
-    const { success, error } = await processManager.stop(5000);
-
-    if (!success) {
-      await sendFeishuMessage(
-        chatId,
-        userId,
-        t("opencode_stop.stop_error", { error: error || t("common.unknown_error") }),
-      );
-      return;
-    }
-
-    await sendFeishuMessage(chatId, userId, t("opencode_stop.success"));
-    logger.info("[Feishu] OpenCode server stopped");
-  } catch (err) {
-    logger.error("[Feishu] Error in opencode_stop command:", err);
-    await sendFeishuMessage(chatId, userId, t("opencode_stop.error"));
-  }
-}
-
 async function handleHelpCommand(chatId: string, userId: string): Promise<void> {
   const commands = getLocalizedBotCommandsFeishu();
   const lines = commands.map((item) => `/${item.command} - ${item.description}`);
@@ -774,8 +664,6 @@ function getLocalizedBotCommandsFeishu(): { command: string; description: string
     { command: "task", description: t("cmd.description.task") },
     { command: "tasklist", description: t("cmd.description.tasklist") },
     { command: "commands", description: t("cmd.description.commands") },
-    { command: "opencode_start", description: t("cmd.description.opencode_start") },
-    { command: "opencode_stop", description: t("cmd.description.opencode_stop") },
     { command: "exit", description: t("cmd.description.exit") },
     { command: "help", description: t("cmd.description.help") },
   ];
@@ -796,8 +684,6 @@ function getValidCommands(): string[] {
     "task",
     "tasklist",
     "commands",
-    "opencode_start",
-    "opencode_stop",
     "exit",
     "help",
   ];
@@ -1124,10 +1010,6 @@ function processMessage(userId: string, chatId: string, text: string, _messageId
       const message = await handleCommandsCommand(chatId, userId);
       await sendFeishuMessage(chatId, userId, message);
     })();
-  } else if (text.startsWith("/opencode_start")) {
-    void handleOpencodeStartCommand(chatId, userId);
-  } else if (text.startsWith("/opencode_stop")) {
-    void handleOpencodeStopCommand(chatId, userId);
   } else if (text.startsWith("/exit")) {
     void handleExitCommand(chatId, userId);
   } else if (text.startsWith("/help") || text === "help" || text === "帮助" || text === "/帮助") {
