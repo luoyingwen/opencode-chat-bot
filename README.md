@@ -333,6 +333,7 @@ When installed via npm, the configuration wizard handles the initial setup. The 
 | `SERVICE_MESSAGES_INTERVAL_SEC` | Service messages interval (thinking + tool calls); `>=2` to avoid rate limits, `0` = immediate |    No    | `5`                      |
 | `HIDE_THINKING_MESSAGES`        | Hide `💭 Thinking...` service messages                                                         |    No    | `false`                  |
 | `HIDE_TOOL_CALL_MESSAGES`       | Hide tool-call service messages (`💻 bash ...`, `📖 read ...`, etc.)                           |    No    | `false`                  |
+| `HIDE_TOOL_FILE_MESSAGES`       | Hide file edit documents sent as `.txt` attachments (`edit_*.txt`, `write_*.txt`)              |    No    | `false`                  |
 | `RESPONSE_STREAMING`            | Stream assistant replies while generated                                                       |    No    | `true`                   |
 | `RESPONSE_STREAM_THROTTLE_MS`   | Stream edit throttle (ms) for updates                                                          |    No    | `500`                    |
 | `MESSAGE_FORMAT_MODE`           | Assistant reply formatting: `markdown` (Telegram MarkdownV2) or `raw`                          |    No    | `markdown`               |
