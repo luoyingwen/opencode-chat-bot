@@ -1,5 +1,9 @@
 # Linux systemd setup
 
+This guide covers setting up the OpenCode Bot with systemd on Linux.
+
+**Supported Platforms:** This setup works for all supported platforms (Telegram, Slack, DingTalk, Feishu). Make sure you have configured at least one platform in your `.env` file before starting the service.
+
 ## 1. Install and configure the bot
 
 ```bash
