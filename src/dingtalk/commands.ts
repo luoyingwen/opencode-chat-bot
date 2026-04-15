@@ -1,101 +1,174 @@
 /**
  * DingTalk commands implementation
- * Thin wrapper around shared commands flow logic
+ * /commands - list available commands
+ * /command <index> - execute command by index
  */
 
-import {
-  CommandsFlowManager,
-  startCommandsFlow,
-  processCommandsInput,
-  type ExecuteCommandCallback,
-} from "../shared/commands-flow.js";
+import { opencodeClient } from "../opencode/client.js";
 import { getCurrentSession } from "../session/manager.js";
 import { getCurrentProject } from "../settings/manager.js";
-import { opencodeClient } from "../opencode/client.js";
 import { logger } from "../utils/logger.js";
 import { t } from "../i18n/index.js";
 
-// Singleton manager instance
-const commandsManager = new CommandsFlowManager();
+export interface CommandItem {
+  name: string;
+  description: string;
+}
+
+// In-memory cache for command lists (userId -> commands)
+const commandsCache = new Map<string, CommandItem[]>();
 
 /**
- * Handle /commands command - returns message to send
+ * Get cached commands for user
  */
-export async function handleCommandsCommand(userId: string): Promise<string> {
-  return startCommandsFlow(commandsManager, userId);
+export function getCachedCommands(userId: string): CommandItem[] | null {
+  return commandsCache.get(userId) ?? null;
 }
 
 /**
- * Handle text input in commands flow - returns message to send or null if not in flow
+ * Cache commands for user
  */
-export async function handleCommandsTextInput(
-  userId: string,
-  text: string,
-): Promise<string | null> {
-  const result = processCommandsInput(commandsManager, userId, text);
+export function cacheCommands(userId: string, commands: CommandItem[]): void {
+  commandsCache.set(userId, commands);
+}
 
-  switch (result.type) {
-    case "null":
-      return null;
+/**
+ * Clear cached commands for user
+ */
+export function clearCommandsCache(userId: string): void {
+  commandsCache.delete(userId);
+}
 
-    case "message":
-      return result.message;
+/**
+ * Handle /commands command - returns formatted list
+ */
+export async function handleCommandsCommand(userId: string): Promise<string> {
+  const currentProject = getCurrentProject();
+  if (!currentProject) {
+    return t("bot.project_not_selected");
+  }
 
-    case "execute":
-      if (result.commandName) {
-        try {
-          await executeDingTalkCommand(userId, result.commandName, result.args ?? "");
-          return result.message ?? null;
-        } catch (error) {
-          logger.error("[DingTalk Commands] Execution error:", error);
-          return t("commands.execute_error");
-        }
-      }
-      return result.message ?? null;
+  try {
+    const { data, error } = await opencodeClient.command.list({
+      directory: currentProject.worktree.replace(/\\/g, "/"),
+    });
 
-    default:
-      return null;
+    if (error || !data || data.length === 0) {
+      return t("commands.empty");
+    }
+
+    const commands: CommandItem[] = data
+      .filter((cmd) => typeof cmd.name === "string" && cmd.name.trim().length > 0)
+      .map((cmd) => ({
+        name: cmd.name,
+        description: cmd.description?.trim() || t("commands.no_description"),
+      }));
+
+    if (commands.length === 0) {
+      return t("commands.empty");
+    }
+
+    // Cache commands for later selection
+    cacheCommands(userId, commands);
+
+    return formatCommandsList(commands);
+  } catch (err) {
+    logger.error("[DingTalk Commands] Error fetching commands:", err);
+    return t("commands.fetch_error");
   }
 }
 
 /**
- * Execute OpenCode command for DingTalk
+ * Handle /command <index> - execute command by index
  */
-async function executeDingTalkCommand(
+export async function handleCommandByIndex(
   userId: string,
-  commandName: string,
-  args: string,
-): Promise<void> {
+  indexStr: string,
+  args: string = "",
+): Promise<string> {
   const currentProject = getCurrentProject();
   if (!currentProject) {
-    throw new Error("No project selected");
+    return t("bot.project_not_selected");
   }
 
   const currentSession = getCurrentSession();
   if (!currentSession) {
-    throw new Error("No session available");
+    return t("status.session_not_selected");
   }
 
-  await opencodeClient.session.command({
-    sessionID: currentSession.id,
-    directory: currentProject.worktree,
-    command: commandName,
-    arguments: args,
+  // Parse index
+  const index = parseInt(indexStr.trim(), 10);
+  if (isNaN(index) || index < 1) {
+    return t("commands.invalid_number", { min: "1", max: "?" });
+  }
+
+  // Get cached commands or fetch new
+  let commands = getCachedCommands(userId);
+  if (!commands) {
+    try {
+      const { data, error } = await opencodeClient.command.list({
+        directory: currentProject.worktree.replace(/\\/g, "/"),
+      });
+
+      if (error || !data) {
+        return t("commands.fetch_error");
+      }
+
+      commands = data
+        .filter((cmd) => typeof cmd.name === "string" && cmd.name.trim().length > 0)
+        .map((cmd) => ({
+          name: cmd.name,
+          description: cmd.description?.trim() || t("commands.no_description"),
+        }));
+
+      cacheCommands(userId, commands);
+    } catch (err) {
+      logger.error("[DingTalk Commands] Error fetching commands:", err);
+      return t("commands.fetch_error");
+    }
+  }
+
+  if (index > commands.length) {
+    return t("commands.invalid_number", { min: "1", max: String(commands.length) });
+  }
+
+  const command = commands[index - 1];
+
+  try {
+    // Send executing message
+    const cmdText = args.trim() ? `/${command.name} ${args.trim()}` : `/${command.name}`;
+
+    // Execute command
+    await opencodeClient.session.command({
+      sessionID: currentSession.id,
+      directory: currentProject.worktree,
+      command: command.name,
+      arguments: args.trim(),
+    });
+
+    logger.info(`[DingTalk Commands] Executed: ${cmdText}`);
+
+    return `⚡ ${t("commands.executing_prefix")}\n\`${cmdText}\``;
+  } catch (error) {
+    logger.error("[DingTalk Commands] Execution error:", error);
+    return t("commands.execute_error");
+  }
+}
+
+/**
+ * Format commands list message
+ */
+function formatCommandsList(commands: CommandItem[]): string {
+  const lines: string[] = [];
+  lines.push(`📋 **OpenCode Commands** (${commands.length} available)\n`);
+
+  commands.forEach((cmd, index) => {
+    lines.push(`${index + 1}. /${cmd.name} — ${cmd.description}`);
   });
 
-  logger.info(`[DingTalk Commands] Executed: /${commandName} ${args}`);
-}
+  lines.push("");
+  lines.push("Use `/command <number>` to execute a command.");
+  lines.push("Use `/command <number> [args]` to execute with arguments.");
 
-/**
- * Check if user is in commands flow
- */
-export function isUserInCommandsFlow(userId: string): boolean {
-  return commandsManager.isInFlow(userId);
-}
-
-/**
- * Clear commands flow state for user
- */
-export function clearDingTalkCommandsState(userId: string): void {
-  commandsManager.clearState(userId);
+  return lines.join("\n");
 }

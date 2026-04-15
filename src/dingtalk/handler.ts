@@ -40,11 +40,7 @@ import {
   isUserInTaskListFlow,
 } from "./tasklist.js";
 import { setDingTalkNotificationCallback } from "../scheduled-task/runtime.js";
-import {
-  handleCommandsCommand,
-  handleCommandsTextInput,
-  isUserInCommandsFlow,
-} from "./commands.js";
+import { handleCommandsCommand, handleCommandByIndex } from "./commands.js";
 
 function isUserAllowed(userId: string): boolean {
   const allowed = config.dingtalk.allowedUserId;
@@ -634,10 +630,11 @@ function getLocalizedBotCommandsDingTalk(): { command: string; description: stri
     { command: "project <number>", description: "Select a project by number" },
     { command: "agents", description: t("cmd.description.agents") },
     { command: "agent <number>", description: t("cmd.description.agent_number") },
+    { command: "commands", description: t("cmd.description.commands") },
+    { command: "command <number>", description: "Execute a command by number" },
     { command: "rename", description: t("cmd.description.rename") },
     { command: "task", description: t("cmd.description.task") },
     { command: "tasklist", description: t("cmd.description.tasklist") },
-    { command: "commands", description: t("cmd.description.commands") },
     { command: "exit", description: t("cmd.description.exit") },
     { command: "help", description: t("cmd.description.help") },
   ];
@@ -654,10 +651,11 @@ function getValidCommands(): string[] {
     "project",
     "agents",
     "agent",
+    "commands",
+    "command",
     "rename",
     "task",
     "tasklist",
-    "commands",
     "exit",
     "help",
   ];
@@ -680,15 +678,6 @@ async function handleTextMessage(userId: string, text: string): Promise<void> {
   // Check if user is in task list flow
   if (isUserInTaskListFlow(userId)) {
     const response = await handleTaskListTextInput(userId, text);
-    if (response !== null) {
-      await sendDingTalkMessage(userId, response);
-      return;
-    }
-  }
-
-  // Check if user is in commands flow
-  if (isUserInCommandsFlow(userId)) {
-    const response = await handleCommandsTextInput(userId, text);
     if (response !== null) {
       await sendDingTalkMessage(userId, response);
       return;
@@ -969,6 +958,15 @@ function processMessage(userId: string, text: string, sessionWebhook: string): v
   } else if (text.startsWith("/commands")) {
     void (async () => {
       const message = await handleCommandsCommand(userId);
+      await sendDingTalkMessage(userId, message);
+    })();
+  } else if (text.startsWith("/command ")) {
+    const args = text.slice(9).trim();
+    const parts = args.split(/\s+/, 2);
+    const index = parts[0];
+    const commandArgs = parts[1] || "";
+    void (async () => {
+      const message = await handleCommandByIndex(userId, index, commandArgs);
       await sendDingTalkMessage(userId, message);
     })();
   } else if (text.startsWith("/exit")) {

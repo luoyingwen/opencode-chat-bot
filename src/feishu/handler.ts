@@ -42,11 +42,7 @@ import {
 import { setFeishuNotificationCallback } from "../scheduled-task/runtime.js";
 import { initUserChatStore, storeUserChatMapping, getChatIdForUser } from "./user-chat-store.js";
 import { exitApplication } from "../app/exit-app.js";
-import {
-  handleCommandsCommand,
-  handleCommandsTextInput,
-  isUserInCommandsFlow,
-} from "./commands.js";
+import { handleCommandsCommand, handleCommandByIndex } from "./commands.js";
 
 function isUserAllowed(userId: string): boolean {
   const allowed = config.feishu.allowedUsers;
@@ -660,10 +656,11 @@ function getLocalizedBotCommandsFeishu(): { command: string; description: string
     { command: "project <number>", description: "Select a project by number" },
     { command: "agents", description: t("cmd.description.agents") },
     { command: "agent <number>", description: t("cmd.description.agent_number") },
+    { command: "commands", description: t("cmd.description.commands") },
+    { command: "command <number>", description: "Execute a command by number" },
     { command: "rename", description: t("cmd.description.rename") },
     { command: "task", description: t("cmd.description.task") },
     { command: "tasklist", description: t("cmd.description.tasklist") },
-    { command: "commands", description: t("cmd.description.commands") },
     { command: "exit", description: t("cmd.description.exit") },
     { command: "help", description: t("cmd.description.help") },
   ];
@@ -680,10 +677,11 @@ function getValidCommands(): string[] {
     "project",
     "agents",
     "agent",
+    "commands",
+    "command",
     "rename",
     "task",
     "tasklist",
-    "commands",
     "exit",
     "help",
   ];
@@ -704,15 +702,6 @@ async function handleTextMessage(chatId: string, userId: string, text: string): 
 
   if (isUserInTaskListFlow(userId)) {
     const response = await handleTaskListTextInput(userId, text);
-    if (response !== null) {
-      await sendFeishuMessage(chatId, userId, response);
-      return;
-    }
-  }
-
-  // Check if user is in commands flow
-  if (isUserInCommandsFlow(userId)) {
-    const response = await handleCommandsTextInput(chatId, userId, text);
     if (response !== null) {
       await sendFeishuMessage(chatId, userId, response);
       return;
@@ -1008,6 +997,15 @@ function processMessage(userId: string, chatId: string, text: string, _messageId
   } else if (text.startsWith("/commands")) {
     void (async () => {
       const message = await handleCommandsCommand(chatId, userId);
+      await sendFeishuMessage(chatId, userId, message);
+    })();
+  } else if (text.startsWith("/command ")) {
+    const args = text.slice(9).trim();
+    const parts = args.split(/\s+/, 2);
+    const index = parts[0];
+    const commandArgs = parts[1] || "";
+    void (async () => {
+      const message = await handleCommandByIndex(chatId, userId, index, commandArgs);
       await sendFeishuMessage(chatId, userId, message);
     })();
   } else if (text.startsWith("/exit")) {
