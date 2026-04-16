@@ -143,6 +143,9 @@ async function handleStatusCommand(chatId: string, userId: string): Promise<void
     const currentSession = getCurrentSession();
     if (currentSession) {
       lines.push(`**Session:** ${currentSession.title}`);
+      // Add auto-confirm status for current session
+      const autoConfirmStatus = isAutoConfirmEnabled(currentSession.id);
+      lines.push(`**Auto-confirm:** ${autoConfirmStatus ? "✅ ON" : "❌ OFF"}`);
     } else {
       lines.push("No active session. Send a message to create one.");
     }
