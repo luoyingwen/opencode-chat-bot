@@ -9,6 +9,7 @@ import { t } from "../i18n/index.js";
 import { isSlackActive } from "../slack/events.js";
 import { opencodeClient } from "../opencode/client.js";
 import { safeBackgroundTask } from "../utils/safe-background-task.js";
+import { isAutoConfirmEnabled } from "../permission/auto-confirm.js";
 
 interface FeishuResponseTarget {
   userId: string;
@@ -275,6 +276,37 @@ function handleFeishuPermission(request: PermissionRequest): void {
     logger.debug(
       `[Feishu] handleFeishuPermission: session mismatch, current=${currentSession?.id}, expected=${request.sessionID}`,
     );
+    return;
+  }
+
+  // Check if auto-confirm is enabled for this session
+  if (isAutoConfirmEnabled(request.sessionID)) {
+    logger.info(
+      `[Feishu] Auto-confirming permission: ${request.permission} for session ${request.sessionID}`,
+    );
+
+    // Auto-approve with "always"
+    handleFeishuPermissionReply(target.userId, target.chatId, "always");
+
+    // Notify user it was auto-approved
+    const permissionEmoji: Record<string, string> = {
+      bash: "💻",
+      edit: "✏️",
+      write: "📝",
+      read: "📖",
+      webfetch: "🌐",
+      websearch: "🔍",
+      glob: "📁",
+      grep: "🔎",
+      list: "📋",
+      task: "📌",
+      lsp: "🔧",
+      external_directory: "📂",
+    };
+    const emoji = permissionEmoji[request.permission] || "🔐";
+    const notification = `✅ Auto-approved: ${emoji} ${request.permission} permission`;
+    void sendMessage(target.chatId, target.userId, notification);
+
     return;
   }
 

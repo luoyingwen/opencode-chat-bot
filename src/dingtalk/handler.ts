@@ -41,6 +41,7 @@ import {
 } from "./tasklist.js";
 import { setDingTalkNotificationCallback } from "../scheduled-task/runtime.js";
 import { handleCommandsCommand, handleCommandByIndex } from "./commands.js";
+import { isAutoConfirmEnabled, setAutoConfirm } from "../permission/auto-confirm.js";
 
 function isUserAllowed(userId: string): boolean {
   const allowed = config.dingtalk.allowedUserId;
@@ -632,6 +633,10 @@ function getLocalizedBotCommandsDingTalk(): { command: string; description: stri
     { command: "agent <number>", description: t("cmd.description.agent_number") },
     { command: "commands", description: t("cmd.description.commands") },
     { command: "command <number>", description: "Execute a command by number" },
+    {
+      command: "auto_confirm [on|off]",
+      description: "Toggle auto-confirmation for current session",
+    },
     { command: "rename", description: t("cmd.description.rename") },
     { command: "task", description: t("cmd.description.task") },
     { command: "tasklist", description: t("cmd.description.tasklist") },
@@ -653,6 +658,7 @@ function getValidCommands(): string[] {
     "agent",
     "commands",
     "command",
+    "auto_confirm",
     "rename",
     "task",
     "tasklist",
@@ -969,6 +975,22 @@ function processMessage(userId: string, text: string, sessionWebhook: string): v
       const message = await handleCommandByIndex(userId, index, commandArgs);
       await sendDingTalkMessage(userId, message);
     })();
+  } else if (text.startsWith("/auto_confirm")) {
+    const arg = text.slice(13).trim();
+    const currentSession = getCurrentSession();
+
+    if (!currentSession) {
+      void sendDingTalkMessage(userId, "❌ No active session");
+    } else if (arg === "on") {
+      setAutoConfirm(currentSession.id, true);
+      void sendDingTalkMessage(userId, "✅ Auto-confirm enabled for this session");
+    } else if (arg === "off") {
+      setAutoConfirm(currentSession.id, false);
+      void sendDingTalkMessage(userId, "✅ Auto-confirm disabled");
+    } else {
+      const status = isAutoConfirmEnabled(currentSession.id);
+      void sendDingTalkMessage(userId, `Auto-confirm status: ${status ? "✅ ON" : "❌ OFF"}`);
+    }
   } else if (text.startsWith("/exit")) {
     void handleExitCommand(userId);
   } else if (text.startsWith("/tasklist")) {

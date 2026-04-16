@@ -4,6 +4,7 @@ import {
   clearSession as clearSettingsSession,
   SessionInfo,
 } from "../settings/manager.js";
+import { clearAutoConfirm } from "../permission/auto-confirm.js";
 
 export type { SessionInfo };
 
@@ -16,5 +17,9 @@ export function getCurrentSession(): SessionInfo | null {
 }
 
 export function clearSession(): void {
+  const currentSession = getCurrentSession();
+  if (currentSession) {
+    clearAutoConfirm(currentSession.id);
+  }
   clearSettingsSession();
 }
