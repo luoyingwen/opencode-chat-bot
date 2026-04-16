@@ -14,6 +14,8 @@ import {
 const DEDUP_MAX = 1000;
 const CARD_THROTTLE_MS = 200;
 const TYPING_EMOJI = "Typing";
+const STALE_CONNECTION_THRESHOLD_MS = 600000; // 10 minutes
+const CONNECTION_CHECK_INTERVAL_MS = 30000; // 30 seconds
 
 interface FeishuCardState {
   cardId: string;
@@ -79,6 +81,8 @@ export class FeishuClient {
   private typingReactions = new Map<string, string>();
   private activeCards = new Map<string, FeishuCardState>();
   private cardCreatePromises = new Map<string, Promise<boolean>>();
+  private lastMessageTime = 0; // Track last message time for connection health
+  private connectionCheckInterval: ReturnType<typeof setInterval> | null = null;
 
   constructor(clientConfig: { appId: string; appSecret: string; domain: string }) {
     const domain = clientConfig.domain === "lark" ? lark.Domain.Lark : lark.Domain.Feishu;
@@ -178,7 +182,9 @@ export class FeishuClient {
       appId,
       appSecret,
       domain,
+      autoReconnect: true, // Let SDK handle reconnection automatically
     });
+    logger.info(`[Feishu] WSClient created (autoReconnect=true)`);
 
     const wsClientAny = this.wsClient as unknown as {
       handleEventData: (data: unknown) => void;
@@ -202,13 +208,16 @@ export class FeishuClient {
 
     this.wsClient.start({ eventDispatcher: dispatcher });
     this.running = true;
+    this.lastMessageTime = Date.now();
+    this.startConnectionMonitor();
 
-    logger.info(`[Feishu] Started (botOpenId: ${this.botOpenId || "unknown"})`);
+    logger.info(`[Feishu] Started (botOpenId: ${this.botOpenId || "unknown"}, autoReconnect=true)`);
   }
 
   async disconnect(): Promise<void> {
     if (!this.running) return;
     this.running = false;
+    this.stopConnectionMonitor();
 
     if (this.wsClient) {
       try {
@@ -289,6 +298,7 @@ export class FeishuClient {
 
   private async handleIncomingEvent(data: FeishuMessageEventData): Promise<void> {
     try {
+      this.lastMessageTime = Date.now(); // Track message time for connection health
       const msg = data.message;
       const sender = data.sender;
 
@@ -888,6 +898,40 @@ export class FeishuClient {
 
   getLastIncomingMessageId(chatId: string): string | undefined {
     return this.lastIncomingMessageId.get(chatId);
+  }
+
+  // Connection health monitoring (SDK handles reconnection automatically)
+  private startConnectionMonitor(): void {
+    if (this.connectionCheckInterval) {
+      clearInterval(this.connectionCheckInterval);
+    }
+
+    this.connectionCheckInterval = setInterval(() => {
+      const timeSinceLastMessage = Date.now() - this.lastMessageTime;
+
+      logger.debug(
+        `[Feishu] Connection health: lastMessage=${timeSinceLastMessage > 0 ? `${Math.floor(timeSinceLastMessage / 1000)}s ago` : "n/a"}, running=${this.running}`,
+      );
+
+      // Log warnings for stale connections (SDK handles reconnection automatically)
+      if (this.running && timeSinceLastMessage > STALE_CONNECTION_THRESHOLD_MS) {
+        logger.warn(
+          `[Feishu] Connection stale: no message for ${Math.floor(timeSinceLastMessage / 1000)}s - SDK auto-reconnect in progress if needed`,
+        );
+      }
+    }, CONNECTION_CHECK_INTERVAL_MS);
+
+    logger.debug(
+      "[Feishu] Connection monitor started (checking every 30s, SDK handles reconnection)",
+    );
+  }
+
+  private stopConnectionMonitor(): void {
+    if (this.connectionCheckInterval) {
+      clearInterval(this.connectionCheckInterval);
+      this.connectionCheckInterval = null;
+      logger.debug("[Feishu] Connection monitor stopped");
+    }
   }
 }
 
