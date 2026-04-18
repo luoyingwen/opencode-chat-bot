@@ -7,7 +7,7 @@ export const zhTW: I18nDictionary = {
   "cmd.description.sessions": "列出工作階段",
   "cmd.description.projects": "列出專案",
   "cmd.description.task": "建立排程任務",
-  "cmd.description.tasklist": "列出排程任務",
+  "cmd.description.tasks": "列出排程任務",
   "cmd.description.commands": "自訂命令",
   "cmd.description.opencode_start": "啟動 OpenCode 伺服器",
   "cmd.description.opencode_stop": "停止 OpenCode 伺服器",

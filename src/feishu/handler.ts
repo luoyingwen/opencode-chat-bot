@@ -668,7 +668,7 @@ function getLocalizedBotCommandsFeishu(): { command: string; description: string
     },
     { command: "rename", description: t("cmd.description.rename") },
     { command: "task", description: t("cmd.description.task") },
-    { command: "tasklist", description: t("cmd.description.tasklist") },
+    { command: "tasks", description: t("cmd.description.tasks") },
     { command: "exit", description: t("cmd.description.exit") },
     { command: "help", description: t("cmd.description.help") },
   ];
@@ -690,7 +690,7 @@ function getValidCommands(): string[] {
     "auto_confirm",
     "rename",
     "task",
-    "tasklist",
+    "tasks",
     "exit",
     "help",
   ];
@@ -993,7 +993,7 @@ function processMessage(userId: string, chatId: string, text: string, _messageId
   } else if (text.startsWith("/agent ")) {
     const arg = text.slice(7).trim();
     void handleAgentSwitchCommand(chatId, userId, arg);
-  } else if (text.startsWith("/tasklist")) {
+  } else if (text.startsWith("/tasks")) {
     void (async () => {
       const message = await handleTaskListCommand(userId);
       await sendFeishuMessage(chatId, userId, message);

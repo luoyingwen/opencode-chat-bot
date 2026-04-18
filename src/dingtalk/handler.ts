@@ -642,7 +642,7 @@ function getLocalizedBotCommandsDingTalk(): { command: string; description: stri
     },
     { command: "rename", description: t("cmd.description.rename") },
     { command: "task", description: t("cmd.description.task") },
-    { command: "tasklist", description: t("cmd.description.tasklist") },
+    { command: "tasks", description: t("cmd.description.tasks") },
     { command: "exit", description: t("cmd.description.exit") },
     { command: "help", description: t("cmd.description.help") },
   ];
@@ -664,7 +664,7 @@ function getValidCommands(): string[] {
     "auto_confirm",
     "rename",
     "task",
-    "tasklist",
+    "tasks",
     "exit",
     "help",
   ];
@@ -996,7 +996,7 @@ function processMessage(userId: string, text: string, sessionWebhook: string): v
     }
   } else if (text.startsWith("/exit")) {
     void handleExitCommand(userId);
-  } else if (text.startsWith("/tasklist")) {
+  } else if (text.startsWith("/tasks")) {
     void (async () => {
       const message = await handleTaskListCommand(userId);
       await sendDingTalkMessage(userId, message);

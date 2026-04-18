@@ -28,7 +28,7 @@ const COMMAND_DEFINITIONS: BotCommandI18nDefinition[] = [
   { command: "tts", descriptionKey: "cmd.description.tts" },
   { command: "projects", descriptionKey: "cmd.description.projects" },
   { command: "task", descriptionKey: "cmd.description.task" },
-  { command: "tasklist", descriptionKey: "cmd.description.tasklist" },
+  { command: "tasks", descriptionKey: "cmd.description.tasks" },
   { command: "rename", descriptionKey: "cmd.description.rename" },
   { command: "commands", descriptionKey: "cmd.description.commands" },
   { command: "opencode_start", descriptionKey: "cmd.description.opencode_start" },

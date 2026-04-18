@@ -730,9 +730,9 @@ export async function initializeSlackHandler(): Promise<SlackApp> {
     }
   });
 
-  // ─── Command: /tasklist ─────────────────────────────────────────────
+  // ─── Command: /tasks ─────────────────────────────────────────────
 
-  app.command("/tasklist", async ({ command, ack, say }) => {
+  app.command("/tasks", async ({ command, ack, say }) => {
     await ack();
 
     if (!isChannelAllowed(command.channel_id)) {
