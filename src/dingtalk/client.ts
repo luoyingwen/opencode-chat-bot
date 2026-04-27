@@ -10,6 +10,73 @@ import {
 
 const DINGTALK_PROACTIVE_API = "https://api.dingtalk.com/v1.0/robot/oToMessages/batchSend";
 
+const RETRY_MAX_ATTEMPTS = 3;
+const RETRY_BASE_DELAY_MS = 500;
+
+async function retryWithBackoff<T>(
+  fn: () => Promise<T>,
+  context: string,
+): Promise<T> {
+  let lastError: unknown = null;
+
+  for (let attempt = 1; attempt <= RETRY_MAX_ATTEMPTS; attempt++) {
+    try {
+      return await fn();
+    } catch (err) {
+      lastError = err;
+      const details = extractNetworkErrorDetails(err);
+
+      if (attempt < RETRY_MAX_ATTEMPTS) {
+        const delay = RETRY_BASE_DELAY_MS * Math.pow(2, attempt - 1);
+        logger.warn(
+          `[DingTalk] ${context} failed (attempt ${attempt}/${RETRY_MAX_ATTEMPTS}), retrying in ${delay}ms:\n${details}`,
+        );
+        await new Promise((resolve) => setTimeout(resolve, delay));
+      } else {
+        logger.error(`[DingTalk] ${context} failed after ${RETRY_MAX_ATTEMPTS} attempts:\n${details}`);
+      }
+    }
+  }
+
+  throw lastError;
+}
+
+function extractNetworkErrorDetails(err: unknown): string {
+  if (err instanceof Error) {
+    const details: string[] = [`Error: ${err.message}`];
+
+    if (err instanceof AggregateError) {
+      details.push(`AggregateError with ${err.errors.length} underlying errors:`);
+      for (const subErr of err.errors) {
+        details.push(`  - ${subErr instanceof Error ? subErr.message : String(subErr)}`);
+        if (subErr instanceof Error && subErr.cause) {
+          details.push(`    Cause: ${subErr.cause}`);
+        }
+      }
+    }
+
+    const axiosErr = err as { code?: string; config?: { url?: string } };
+    if (axiosErr.code) {
+      details.push(`Error code: ${axiosErr.code}`);
+    }
+    if (axiosErr.config?.url) {
+      details.push(`Target URL: ${axiosErr.config.url}`);
+    }
+
+    const cause = (err as { cause?: unknown }).cause;
+    if (cause) {
+      details.push(`Cause: ${cause instanceof Error ? cause.message : String(cause)}`);
+    }
+
+    return details.join("\n");
+  }
+  return String(err);
+}
+
+export function formatDingTalkNetworkError(err: unknown): string {
+  return extractNetworkErrorDetails(err);
+}
+
 type MessageHandler = (data: {
   userId: string;
   text: string;
@@ -56,7 +123,10 @@ export class DingTalkClient {
   }
 
   async sendTextMessage(sessionWebhook: string, userId: string, text: string): Promise<void> {
-    const accessToken = await this.getAccessToken();
+    const accessToken = await retryWithBackoff(
+      () => this.getAccessToken(),
+      "getAccessToken for text message",
+    );
     const body = {
       at: { atUserIds: [userId], isAtAll: false },
       text: { content: text },
@@ -84,7 +154,10 @@ export class DingTalkClient {
     title: string,
     markdown: string,
   ): Promise<void> {
-    const accessToken = await this.getAccessToken();
+    const accessToken = await retryWithBackoff(
+      () => this.getAccessToken(),
+      "getAccessToken for markdown message",
+    );
     const body = {
       at: { atUserIds: [userId], isAtAll: false },
       markdown: { title, text: markdown },
@@ -110,7 +183,16 @@ export class DingTalkClient {
     userId: string,
     text: string,
   ): Promise<{ ok: boolean; error?: string }> {
-    const accessToken = await this.getAccessToken();
+    let accessToken: string;
+    try {
+      accessToken = await retryWithBackoff(
+        () => this.getAccessToken(),
+        "getAccessToken for proactive text",
+      );
+    } catch (err) {
+      const details = extractNetworkErrorDetails(err);
+      return { ok: false, error: `Network error after retries: ${details.split("\n")[0]}` };
+    }
     const robotCode = config.dingtalk.appKey;
 
     const body = {
@@ -156,9 +238,9 @@ export class DingTalkClient {
       );
       return { ok: true };
     } catch (err) {
-      const errorMsg = err instanceof Error ? err.message : String(err);
-      logger.error(`[DingTalk] Failed to send proactive text: ${errorMsg}`);
-      return { ok: false, error: errorMsg };
+      const details = extractNetworkErrorDetails(err);
+      logger.error(`[DingTalk] Failed to send proactive text:\n${details}`);
+      return { ok: false, error: details.split("\n")[0] };
     }
   }
 
@@ -167,7 +249,16 @@ export class DingTalkClient {
     title: string,
     markdown: string,
   ): Promise<{ ok: boolean; error?: string }> {
-    const accessToken = await this.getAccessToken();
+    let accessToken: string;
+    try {
+      accessToken = await retryWithBackoff(
+        () => this.getAccessToken(),
+        "getAccessToken for proactive markdown",
+      );
+    } catch (err) {
+      const details = extractNetworkErrorDetails(err);
+      return { ok: false, error: `Network error after retries: ${details.split("\n")[0]}` };
+    }
     const robotCode = config.dingtalk.appKey;
 
     const body = {
@@ -213,9 +304,9 @@ export class DingTalkClient {
       );
       return { ok: true };
     } catch (err) {
-      const errorMsg = err instanceof Error ? err.message : String(err);
-      logger.error(`[DingTalk] Failed to send proactive markdown: ${errorMsg}`);
-      return { ok: false, error: errorMsg };
+      const details = extractNetworkErrorDetails(err);
+      logger.error(`[DingTalk] Failed to send proactive markdown:\n${details}`);
+      return { ok: false, error: details.split("\n")[0] };
     }
   }
 

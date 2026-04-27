@@ -1,5 +1,9 @@
 import { config } from "../config.js";
-import { initDingTalkClient, getDingTalkClient } from "./client.js";
+import {
+  initDingTalkClient,
+  getDingTalkClient,
+  formatDingTalkNetworkError,
+} from "./client.js";
 import {
   setDingTalkClient,
   setDingTalkActive,
@@ -79,16 +83,49 @@ async function ensureEventSubscription(directory: string): Promise<void> {
 }
 
 async function sendDingTalkMessage(userId: string, text: string): Promise<void> {
-  try {
-    const client = getDingTalkClient();
-    const sessionWebhook = getUserSessionWebhook(userId);
-    if (!sessionWebhook) {
-      logger.error(`[DingTalk] No sessionWebhook for user ${userId}`);
+  const client = getDingTalkClient();
+  const sessionWebhook = getUserSessionWebhook(userId);
+
+  if (sessionWebhook) {
+    try {
+      await client.sendMarkdownMessage(sessionWebhook, userId, "OpenCode", text);
+      logger.info(`[DingTalk] Command response sent via webhook to user ${userId}`);
       return;
+    } catch (err) {
+      const details = formatDingTalkNetworkError(err);
+
+      if (
+        details.includes("400502") ||
+        details.includes("400014") ||
+        details.includes("session") ||
+        details.includes("webhook") ||
+        details.includes("expired") ||
+        details.includes("invalid")
+      ) {
+        logger.warn(
+          `[DingTalk] Webhook expired for user ${userId}, falling back to proactive API...`,
+        );
+        setUserSessionWebhook(userId, "");
+      } else {
+        logger.error(`[DingTalk] Failed to send via webhook:\n${details}`);
+      }
     }
-    await client.sendMarkdownMessage(sessionWebhook, userId, "OpenCode", text);
-  } catch (err) {
-    logger.error("[DingTalk] Failed to send message:", err);
+  }
+
+  if (client.hasProactiveRisk(userId)) {
+    logger.warn(
+      `[DingTalk] Skipping proactive send to ${userId} due to recent permission error`,
+    );
+    return;
+  }
+
+  logger.info(`[DingTalk] Using proactive API to send command response to user ${userId}`);
+  const result = await client.sendProactiveMarkdownMessage(userId, "OpenCode", text);
+
+  if (!result.ok) {
+    logger.error(`[DingTalk] Proactive command response failed: ${result.error}`);
+  } else {
+    logger.info(`[DingTalk] Command response sent via proactive API to user ${userId}`);
   }
 }
 
@@ -1052,20 +1089,20 @@ export async function initializeDingTalkHandler(): Promise<void> {
         logger.info(`[DingTalk Task Notification] Sent via webhook to user ${userId}`);
         return;
       } catch (err) {
-        const errorMessage = err instanceof Error ? err.message : String(err);
+        const details = formatDingTalkNetworkError(err);
         if (
-          errorMessage.includes("400502") ||
-          errorMessage.includes("400014") ||
-          errorMessage.includes("session") ||
-          errorMessage.includes("webhook") ||
-          errorMessage.includes("expired") ||
-          errorMessage.includes("invalid")
+          details.includes("400502") ||
+          details.includes("400014") ||
+          details.includes("session") ||
+          details.includes("webhook") ||
+          details.includes("expired") ||
+          details.includes("invalid")
         ) {
           logger.warn(
             `[DingTalk Task Notification] Webhook expired for user ${userId}, falling back to proactive API...`,
           );
         } else {
-          logger.error("[DingTalk Task Notification] Failed to send via webhook:", err);
+          logger.error(`[DingTalk Task Notification] Failed to send via webhook:\n${details}`);
           return;
         }
       }
