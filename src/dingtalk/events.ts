@@ -313,6 +313,9 @@ function handleDingTalkPermission(request: PermissionRequest): void {
     return;
   }
 
+  // Store the permission request first (needed for both auto-confirm and manual)
+  pendingPermissionRequests.set(target.userId, request);
+
   // Check if auto-confirm is enabled for this session
   if (isAutoConfirmEnabled(request.sessionID)) {
     logger.info(
@@ -343,9 +346,6 @@ function handleDingTalkPermission(request: PermissionRequest): void {
 
     return;
   }
-
-  // Store the permission request
-  pendingPermissionRequests.set(target.userId, request);
 
   // Format permission message
   const permissionEmoji: Record<string, string> = {
