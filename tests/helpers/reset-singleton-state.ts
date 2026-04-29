@@ -14,36 +14,6 @@ interface SummaryAggregatorPrivateState {
   onPermissionCallback: null;
   onSessionDiffCallback: null;
   onFileChangeCallback: null;
-  bot: null;
-  chatId: null;
-  typingIndicatorEnabled: boolean;
-}
-
-interface KeyboardManagerPrivateState {
-  state: null;
-  api: null;
-  chatId: null;
-  lastUpdateTime: number;
-}
-
-interface PinnedMessageManagerPrivateState {
-  api: null;
-  chatId: null;
-  contextLimit: null;
-  updateDebounceTimer: ReturnType<typeof setTimeout> | null;
-  onKeyboardUpdateCallback: undefined;
-  state: {
-    messageId: null;
-    chatId: null;
-    sessionId: null;
-    sessionTitle: string;
-    projectName: string;
-    projectBranch: string | null;
-    tokensUsed: number;
-    tokensLimit: number;
-    lastUpdated: number;
-    changedFiles: Array<{ file: string; additions: number; deletions: number }>;
-  };
 }
 
 interface ProcessManagerPrivateState {
@@ -62,8 +32,6 @@ export async function resetSingletonState(): Promise<void> {
     { renameManager },
     { interactionManager },
     { summaryAggregator },
-    { keyboardManager },
-    { pinnedMessageManager },
     { processManager },
     { stopEventListening },
     { __resetSessionDirectoryCacheForTests },
@@ -74,8 +42,6 @@ export async function resetSingletonState(): Promise<void> {
     import("../../src/rename/manager.js"),
     import("../../src/interaction/manager.js"),
     import("../../src/summary/aggregator.js"),
-    import("../../src/keyboard/manager.js"),
-    import("../../src/pinned/manager.js"),
     import("../../src/process/manager.js"),
     import("../../src/opencode/events.js"),
     import("../../src/session/cache-manager.js"),
@@ -105,37 +71,6 @@ export async function resetSingletonState(): Promise<void> {
   aggregator.onPermissionCallback = null;
   aggregator.onSessionDiffCallback = null;
   aggregator.onFileChangeCallback = null;
-  aggregator.bot = null;
-  aggregator.chatId = null;
-  aggregator.typingIndicatorEnabled = true;
-
-  const keyboard = keyboardManager as unknown as KeyboardManagerPrivateState;
-  keyboard.state = null;
-  keyboard.api = null;
-  keyboard.chatId = null;
-  keyboard.lastUpdateTime = 0;
-
-  const pinned = pinnedMessageManager as unknown as PinnedMessageManagerPrivateState;
-  if (pinned.updateDebounceTimer) {
-    clearTimeout(pinned.updateDebounceTimer);
-  }
-  pinned.updateDebounceTimer = null;
-  pinned.api = null;
-  pinned.chatId = null;
-  pinned.contextLimit = null;
-  pinned.onKeyboardUpdateCallback = undefined;
-  pinned.state = {
-    messageId: null,
-    chatId: null,
-    sessionId: null,
-    sessionTitle: "new session",
-    projectName: "",
-    projectBranch: null,
-    tokensUsed: 0,
-    tokensLimit: 0,
-    lastUpdated: 0,
-    changedFiles: [],
-  };
 
   const process = processManager as unknown as ProcessManagerPrivateState;
   process.state = {

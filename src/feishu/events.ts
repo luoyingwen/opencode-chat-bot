@@ -6,7 +6,6 @@ import type { PermissionRequest } from "../permission/types.js";
 import { getCurrentSession } from "../session/manager.js";
 import { logger } from "../utils/logger.js";
 import { t } from "../i18n/index.js";
-import { isSlackActive } from "../slack/events.js";
 import { opencodeClient } from "../opencode/client.js";
 import { safeBackgroundTask } from "../utils/safe-background-task.js";
 import { isAutoConfirmEnabled } from "../permission/auto-confirm.js";
@@ -108,10 +107,6 @@ function patchAggregatorCallback<K extends keyof OriginalCallbacks>(
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     originalSetter((...args: any[]) => {
-      if (isSlackActive()) {
-        // Slack handles its own routing
-        return;
-      }
       if (isFeishuActive()) {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         (feishuHandler as (...a: any[]) => void)(...args);
