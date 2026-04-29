@@ -179,7 +179,7 @@ async function handleStatusCommand(userId: string): Promise<void> {
       lines.push(`**Session:** ${currentSession.title}`);
       // Add auto-confirm status for current session
       const autoConfirmStatus = isAutoConfirmEnabled(currentSession.id);
-      lines.push(`**Auto-confirm:** ${autoConfirmStatus ? "✅ ON" : "❌ OFF"}`);
+      lines.push(`**Auto-confirm:** ${autoConfirmStatus ? "_ON_" : "_OFF_"}`);
     } else {
       lines.push("No active session. Send a message to create one.");
     }
@@ -1023,13 +1023,13 @@ function processMessage(userId: string, text: string, sessionWebhook: string): v
       void sendDingTalkMessage(userId, "❌ No active session");
     } else if (arg === "on") {
       setAutoConfirm(currentSession.id, true);
-      void sendDingTalkMessage(userId, "✅ Auto-confirm enabled for this session");
+      void sendDingTalkMessage(userId, "_Auto-confirm enabled_");
     } else if (arg === "off") {
       setAutoConfirm(currentSession.id, false);
-      void sendDingTalkMessage(userId, "✅ Auto-confirm disabled");
+      void sendDingTalkMessage(userId, "_Auto-confirm disabled_");
     } else {
       const status = isAutoConfirmEnabled(currentSession.id);
-      void sendDingTalkMessage(userId, `Auto-confirm status: ${status ? "✅ ON" : "❌ OFF"}`);
+      void sendDingTalkMessage(userId, `Auto-confirm status: ${status ? "_ON_" : "_OFF_"}`);
     }
   } else if (text.startsWith("/exit")) {
     void handleExitCommand(userId);
