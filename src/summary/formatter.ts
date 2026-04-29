@@ -1,6 +1,6 @@
 import { ToolInfo } from "./aggregator.js";
 import * as path from "path";
-import { convert } from "telegram-markdown-v2";
+
 import { config } from "../config.js";
 import type { MessageFormatMode } from "../config.js";
 import { logger } from "../utils/logger.js";
@@ -238,13 +238,8 @@ export function escapePlainTextForTelegramMarkdownV2(text: string): string {
 }
 
 function formatMarkdownForTelegram(text: string): string {
-  try {
-    const preprocessed = preprocessMarkdownForTelegram(text);
-    return escapeMarkdownV2PipesOutsideCode(convert(preprocessed, "keep"));
-  } catch (error) {
-    logger.warn("[Formatter] Failed to convert markdown summary, falling back to raw text", error);
-    return text;
-  }
+  // Simple markdown formatter without telegram-markdown-v2
+  return text;
 }
 
 function escapeMarkdownV2PipesOutsideCode(text: string): string {
