@@ -1,6 +1,5 @@
 import { readFile } from "node:fs/promises";
 
-import { createBot } from "../bot/index.js";
 import { getCurrentProject, loadSettings, setCurrentProject } from "../settings/manager.js";
 import { processManager } from "../process/manager.js";
 import { warmupSessionDirectoryCache } from "../session/cache-manager.js";
@@ -33,8 +32,6 @@ export async function startBotApp(): Promise<void> {
   const version = await getBotVersion();
   const logFilePath = getLogFilePath();
 
-  const hasTelegram = !!config.telegram.token;
-  const hasSlack = !!(config.slack.botToken && config.slack.appToken);
   const hasDingTalk = !!(
     config.dingtalk.appKey &&
     config.dingtalk.appSecret &&
@@ -42,9 +39,9 @@ export async function startBotApp(): Promise<void> {
   );
   const hasFeishu = !!(config.feishu.appId && config.feishu.appSecret);
 
-  if (!hasTelegram && !hasSlack && !hasDingTalk && !hasFeishu) {
+  if (!hasDingTalk && !hasFeishu) {
     throw new Error(
-      "No bot platform configured. Set TELEGRAM_BOT_TOKEN, SLACK_BOT_TOKEN + SLACK_APP_TOKEN, DINGTALK_APP_KEY + DINGTALK_APP_SECRET + DINGTALK_ALLOWED_USER_ID, or FEISHU_APP_ID + FEISHU_APP_SECRET.",
+      "No bot platform configured. Set DINGTALK_APP_KEY + DINGTALK_APP_SECRET + DINGTALK_ALLOWED_USER_ID, or FEISHU_APP_ID + FEISHU_APP_SECRET.",
     );
   }
 
@@ -54,12 +51,12 @@ export async function startBotApp(): Promise<void> {
     logger.info(`Logs are written to ${logFilePath}`);
   }
   logger.info(
-    `Allowed User ID: Telegram=${config.telegram.allowedUserId ?? "disabled"}, DingTalk=${config.dingtalk.allowedUserId ?? "disabled"}`,
+    `Allowed User ID: DingTalk=${config.dingtalk.allowedUserId ?? "disabled"}`,
   );
   logger.debug(`[Runtime] Application start mode: ${mode}`);
   logger.info(`[App] OpenCode API: ${config.opencode.apiUrl}`);
   logger.info(
-    `[App] Platforms: Telegram=${hasTelegram ? "enabled" : "disabled"}, Slack=${hasSlack ? "enabled" : "disabled"}, DingTalk=${hasDingTalk ? "enabled" : "disabled"}, Feishu=${hasFeishu ? "enabled" : "disabled"}`,
+    `[App] Platforms: DingTalk=${hasDingTalk ? "enabled" : "disabled"}, Feishu=${hasFeishu ? "enabled" : "disabled"}`,
   );
 
   await loadSettings();
@@ -104,61 +101,12 @@ export async function startBotApp(): Promise<void> {
     logger.debug(`[App] Project already set: ${current?.name ?? current?.worktree}`);
   }
 
-  // ─── Start Telegram bot (if configured) ────────────────────────────
-  if (hasTelegram) {
-    logger.info(`Allowed Telegram User ID: ${config.telegram.allowedUserId}`);
-
-    const bot = createBot();
-
-    const webhookInfo = await bot.api.getWebhookInfo();
-    if (webhookInfo.url) {
-      logger.info(`[Bot] Webhook detected: ${webhookInfo.url}, removing...`);
-      await bot.api.deleteWebhook();
-      logger.info("[Bot] Webhook removed, switching to long polling");
-    }
-
-    await bot.start({
-      onStart: (botInfo) => {
-        logger.info(`Bot @${botInfo.username} started!`);
-      },
-    });
-
-    // Initialize scheduled task runtime with Telegram bot
-    try {
-      await scheduledTaskRuntime.initialize(bot);
-      logger.info("[App] Scheduled task runtime initialized with Telegram");
-    } catch (err) {
-      logger.error("[App] Failed to initialize scheduled task runtime:", err);
-    }
-  } else {
-    logger.info("[App] Telegram not configured, skipping");
-  }
-
-  // Initialize scheduled task runtime without Telegram (for DingTalk/Feishu-only mode)
-  if (!hasTelegram) {
-    try {
-      await scheduledTaskRuntime.initialize();
-      logger.info("[App] Scheduled task runtime initialized");
-    } catch (err) {
-      logger.error("[App] Failed to initialize scheduled task runtime:", err);
-    }
-  }
-
-  // ─── Start Slack bot (if configured) ───────────────────────────────
-  if (hasSlack) {
-    try {
-      const { initializeSlackHandler, sendSlackStartupMessage } =
-        await import("../slack/handler.js");
-      const slackApp = await initializeSlackHandler();
-      await sendSlackStartupMessage(slackApp);
-      logger.info("[App] Slack bot started");
-    } catch (err) {
-      logger.error("[App] Failed to start Slack bot:", err);
-      // If Slack is the only platform and it failed, re-throw
-      if (!hasTelegram) throw err;
-    }
-  } else {
-    logger.debug("[App] Slack not configured, skipping");
+  // ─── Initialize scheduled task runtime ────────────────────────────
+  try {
+    await scheduledTaskRuntime.initialize();
+    logger.info("[App] Scheduled task runtime initialized");
+  } catch (err) {
+    logger.error("[App] Failed to initialize scheduled task runtime:", err);
   }
 
   // ─── Start DingTalk bot (if configured) ─────────────────────────────
@@ -171,7 +119,7 @@ export async function startBotApp(): Promise<void> {
       logger.info("[App] DingTalk bot started");
     } catch (err) {
       logger.error("[App] Failed to start DingTalk bot:", err);
-      if (!hasTelegram && !hasSlack) throw err;
+      if (!hasFeishu) throw err;
     }
   } else {
     logger.debug("[App] DingTalk not configured, skipping");
@@ -187,7 +135,7 @@ export async function startBotApp(): Promise<void> {
       logger.info("[App] Feishu bot started");
     } catch (err) {
       logger.error("[App] Failed to start Feishu bot:", err);
-      if (!hasTelegram && !hasSlack && !hasDingTalk) throw err;
+      if (!hasDingTalk) throw err;
     }
   } else {
     logger.debug("[App] Feishu not configured, skipping");

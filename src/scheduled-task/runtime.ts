@@ -1,13 +1,8 @@
-import type { Bot, Context } from "grammy";
 import { config } from "../config.js";
-import {
-  escapePlainTextForTelegramMarkdownV2,
-  formatSummaryWithMode,
-} from "../summary/formatter.js";
+import { formatSummaryWithMode } from "../summary/formatter.js";
 import { t } from "../i18n/index.js";
 import { logger } from "../utils/logger.js";
 import { safeBackgroundTask } from "../utils/safe-background-task.js";
-import { sendBotText } from "../bot/utils/telegram-text.js";
 import { executeScheduledTask } from "./executor.js";
 import { foregroundSessionState } from "./foreground-state.js";
 import { computeNextRunAt, isTaskDue } from "./next-run.js";
@@ -21,7 +16,6 @@ import {
 import type { QueuedScheduledTaskDelivery, ScheduledTask } from "./types.js";
 
 const MAX_TIMER_DELAY_MS = 2_147_483_647;
-const TELEGRAM_MESSAGE_LIMIT = 4096;
 const TASK_DESCRIPTION_PREVIEW_LENGTH = 64;
 const RESTART_INTERRUPTED_ERROR = "Interrupted by bot restart during scheduled task execution.";
 
@@ -51,34 +45,16 @@ export function clearFeishuNotificationCallback(): void {
   feishuNotificationCallback = null;
   logger.info("[ScheduledTaskRuntime] Feishu notification callback cleared");
 }
-function getScheduledTaskDeliveryFormat(): "raw" | "markdown_v2" {
-  return config.bot.messageFormatMode === "markdown" ? "markdown_v2" : "raw";
-}
 
 function buildScheduledTaskSuccessMessageParts(delivery: QueuedScheduledTaskDelivery): string[] {
   if (!delivery.resultText) {
     return [delivery.notificationText];
   }
 
-  if (config.bot.messageFormatMode !== "markdown") {
-    return formatSummaryWithMode(
-      `${delivery.notificationText}\n\n${delivery.resultText}`,
-      config.bot.messageFormatMode,
-    );
-  }
-
-  const header = escapePlainTextForTelegramMarkdownV2(delivery.notificationText);
-  const resultParts = formatSummaryWithMode(delivery.resultText, config.bot.messageFormatMode);
-  if (resultParts.length === 0) {
-    return [header];
-  }
-
-  const firstPart = `${header}\n\n${resultParts[0]}`;
-  if (firstPart.length <= TELEGRAM_MESSAGE_LIMIT) {
-    return [firstPart, ...resultParts.slice(1)];
-  }
-
-  return [header, ...resultParts];
+  return formatSummaryWithMode(
+    `${delivery.notificationText}\n\n${delivery.resultText}`,
+    config.bot.messageFormatMode,
+  );
 }
 
 function normalizeTaskPrompt(prompt: string): string {
@@ -127,23 +103,15 @@ function buildErrorDelivery(
 }
 
 export class ScheduledTaskRuntime {
-  private botApi: Bot<Context>["api"] | null = null;
-  private chatId: number | null = null;
   private initialized = false;
   private timersByTaskId = new Map<string, ReturnType<typeof setTimeout>>();
   private runningTaskIds = new Set<string>();
   private deliveryQueue: QueuedScheduledTaskDelivery[] = [];
   private flushInProgress = false;
 
-  async initialize(bot?: Bot<Context>): Promise<void> {
+  async initialize(): Promise<void> {
     if (this.initialized) {
       return;
-    }
-
-    // Set Telegram bot API if provided
-    if (bot) {
-      this.botApi = bot.api;
-      this.chatId = config.telegram.allowedUserId;
     }
 
     this.initialized = true;
@@ -174,8 +142,6 @@ export class ScheduledTaskRuntime {
   async flushDeferredDeliveries(): Promise<void> {
     if (
       this.flushInProgress ||
-      !this.botApi ||
-      this.chatId === null ||
       foregroundSessionState.isBusy() ||
       this.deliveryQueue.length === 0
     ) {
@@ -204,8 +170,6 @@ export class ScheduledTaskRuntime {
       clearTimeout(timer);
     }
 
-    this.botApi = null;
-    this.chatId = null;
     this.initialized = false;
     this.timersByTaskId.clear();
     this.runningTaskIds.clear();
@@ -481,35 +445,8 @@ export class ScheduledTaskRuntime {
   }
 
   private async sendDelivery(delivery: QueuedScheduledTaskDelivery): Promise<boolean> {
-    let telegramSuccess = false;
     let dingTalkSuccess = false;
     let feishuSuccess = false;
-
-    // Send to Telegram if available
-    if (this.botApi && this.chatId !== null) {
-      try {
-        const messageParts =
-          delivery.status === "success"
-            ? buildScheduledTaskSuccessMessageParts(delivery)
-            : [delivery.notificationText];
-        const format = delivery.status === "success" ? getScheduledTaskDeliveryFormat() : "raw";
-
-        for (const part of messageParts) {
-          await sendBotText({
-            api: this.botApi,
-            chatId: this.chatId,
-            text: part,
-            format,
-          });
-        }
-        telegramSuccess = true;
-      } catch (error) {
-        logger.error(
-          `[ScheduledTaskRuntime] Failed to send delivery to Telegram: id=${delivery.taskId}, status=${delivery.status}`,
-          error,
-        );
-      }
-    }
 
     // Send to DingTalk if callback is registered
     if (dingTalkNotificationCallback) {
@@ -531,6 +468,7 @@ export class ScheduledTaskRuntime {
       }
     }
 
+    // Send to Feishu if callback is registered
     if (feishuNotificationCallback) {
       try {
         const messageParts =
@@ -550,7 +488,7 @@ export class ScheduledTaskRuntime {
       }
     }
 
-    return telegramSuccess || dingTalkSuccess || feishuSuccess;
+    return dingTalkSuccess || feishuSuccess;
   }
 }
 
