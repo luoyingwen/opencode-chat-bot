@@ -6,8 +6,11 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 const {
   configMock,
   providersMock,
+  getConversationStateMock,
   getCurrentModelMock,
   setCurrentModelMock,
+  setConversationState,
+  updateConversationStateMock,
   setCurrentModelState,
   getCurrentModelState,
   resetCurrentModelState,
@@ -17,11 +20,29 @@ const {
   loggerDebugMock,
 } = vi.hoisted(() => {
   let currentModel: { providerID: string; modelID: string; variant?: string } | undefined;
+  const conversationStates: Record<
+    string,
+    { currentModel?: { providerID: string; modelID: string; variant?: string } }
+  > = {};
 
   const getCurrentModelMock = vi.fn(() => currentModel);
+  const getConversationStateMock = vi.fn((routeKey: string) => conversationStates[routeKey]);
   const setCurrentModelMock = vi.fn(
     (modelInfo: { providerID: string; modelID: string; variant?: string }) => {
       currentModel = modelInfo;
+    },
+  );
+  const updateConversationStateMock = vi.fn(
+    (
+      routeKey: string,
+      patch: { currentModel?: { providerID: string; modelID: string; variant?: string } | null },
+    ) => {
+      const nextState = { ...(conversationStates[routeKey] ?? {}) };
+      if (Object.prototype.hasOwnProperty.call(patch, "currentModel")) {
+        nextState.currentModel = patch.currentModel ?? undefined;
+      }
+      conversationStates[routeKey] = nextState;
+      return nextState;
     },
   );
 
@@ -35,8 +56,10 @@ const {
       },
     },
     providersMock: vi.fn(),
+    getConversationStateMock,
     getCurrentModelMock,
     setCurrentModelMock,
+    updateConversationStateMock,
     setCurrentModelState: (modelInfo?: {
       providerID: string;
       modelID: string;
@@ -48,7 +71,18 @@ const {
     resetCurrentModelState: () => {
       currentModel = undefined;
       getCurrentModelMock.mockClear();
+      getConversationStateMock.mockClear();
       setCurrentModelMock.mockClear();
+      updateConversationStateMock.mockClear();
+      for (const key of Object.keys(conversationStates)) {
+        delete conversationStates[key];
+      }
+    },
+    setConversationState: (
+      routeKey: string,
+      state: { currentModel?: { providerID: string; modelID: string; variant?: string } },
+    ) => {
+      conversationStates[routeKey] = state;
     },
     loggerInfoMock: vi.fn(),
     loggerWarnMock: vi.fn(),
@@ -70,8 +104,10 @@ vi.mock("../../src/opencode/client.js", () => ({
 }));
 
 vi.mock("../../src/settings/manager.js", () => ({
+  getConversationState: getConversationStateMock,
   getCurrentModel: getCurrentModelMock,
   setCurrentModel: setCurrentModelMock,
+  updateConversationState: updateConversationStateMock,
 }));
 
 vi.mock("../../src/utils/logger.js", () => ({
@@ -87,7 +123,9 @@ import {
   __resetModelCatalogCacheForTests,
   getFavoriteModels,
   getModelSelectionLists,
+  getStoredModel,
   reconcileStoredModelSelection,
+  selectModel,
 } from "../../src/model/manager.js";
 
 function createProvidersResponse(modelsByProvider: Record<string, string[]>) {
@@ -140,6 +178,24 @@ describe("model/manager", () => {
       await rm(tempDir, { recursive: true, force: true });
       tempDir = "";
     }
+  });
+
+  it("reads and writes model state for the provided route", () => {
+    const route = { channelId: "feishu", accountId: "user-1", conversationId: "chat-1" };
+    setConversationState("feishu:user-1:chat-1", {
+      currentModel: { providerID: "openai", modelID: "gpt-4o" },
+    });
+
+    expect(getStoredModel(route)).toEqual({
+      providerID: "openai",
+      modelID: "gpt-4o",
+      variant: "default",
+    });
+
+    selectModel({ providerID: "anthropic", modelID: "claude-sonnet", variant: "fast" }, route);
+    expect(updateConversationStateMock).toHaveBeenCalledWith("feishu:user-1:chat-1", {
+      currentModel: { providerID: "anthropic", modelID: "claude-sonnet", variant: "fast" },
+    });
   });
 
   async function setupMockModelFile(content: object): Promise<string> {

@@ -1,9 +1,46 @@
-import { getCurrentModel, setCurrentModel } from "../settings/manager.js";
 import { config } from "../config.js";
+import { buildConversationRouteKey } from "../core/runtime/route-key.js";
+import type { ConversationRoute } from "../core/runtime/types.js";
 import { opencodeClient } from "../opencode/client.js";
+import {
+  getConversationState,
+  getCurrentModel,
+  setCurrentModel,
+  updateConversationState,
+} from "../settings/manager.js";
 import { logger } from "../utils/logger.js";
 import type { ModelInfo, FavoriteModel, ModelSelectionLists } from "./types.js";
 import path from "node:path";
+
+function getStoredModelState(routeOrRouteKey?: ConversationRoute | string): ModelInfo | undefined {
+  if (!routeOrRouteKey) {
+    return getCurrentModel();
+  }
+
+  const routeKey =
+    typeof routeOrRouteKey === "string"
+      ? routeOrRouteKey
+      : buildConversationRouteKey(routeOrRouteKey);
+
+  return getConversationState(routeKey)?.currentModel;
+}
+
+function setStoredModelState(
+  modelInfo: ModelInfo,
+  routeOrRouteKey?: ConversationRoute | string,
+): void {
+  if (!routeOrRouteKey) {
+    setCurrentModel(modelInfo);
+    return;
+  }
+
+  const routeKey =
+    typeof routeOrRouteKey === "string"
+      ? routeOrRouteKey
+      : buildConversationRouteKey(routeOrRouteKey);
+
+  updateConversationState(routeKey, { currentModel: modelInfo });
+}
 
 interface OpenCodeModelState {
   favorite?: Array<{ providerID?: string; modelID?: string }>;
@@ -247,8 +284,10 @@ export async function getModelSelectionLists(): Promise<ModelSelectionLists> {
  * Validate stored selected model against OpenCode providers catalog.
  * If selected model is unavailable, fallback to env default model.
  */
-export async function reconcileStoredModelSelection(): Promise<void> {
-  const currentModel = getCurrentModel();
+export async function reconcileStoredModelSelection(
+  route?: ConversationRoute,
+): Promise<void> {
+  const currentModel = getStoredModelState(route);
 
   if (!currentModel?.providerID || !currentModel.modelID) {
     return;
@@ -280,11 +319,14 @@ export async function reconcileStoredModelSelection(): Promise<void> {
     `[ModelManager] Stored model ${currentModelKey} is unavailable, falling back to ${fallbackKey}`,
   );
 
-  setCurrentModel({
-    providerID: envDefaultModel.providerID,
-    modelID: envDefaultModel.modelID,
-    variant: "default",
-  });
+  setStoredModelState(
+    {
+      providerID: envDefaultModel.providerID,
+      modelID: envDefaultModel.modelID,
+      variant: "default",
+    },
+    route,
+  );
 }
 
 export function __resetModelCatalogCacheForTests(): void {
@@ -306,17 +348,17 @@ export async function getFavoriteModels(): Promise<FavoriteModel[]> {
  * Get current model from settings or fallback to config
  * @returns Current model info
  */
-export function fetchCurrentModel(): ModelInfo {
-  return getStoredModel();
+export function fetchCurrentModel(route?: ConversationRoute): ModelInfo {
+  return getStoredModel(route);
 }
 
 /**
  * Select model and persist to settings
  * @param modelInfo Model to select
  */
-export function selectModel(modelInfo: ModelInfo): void {
+export function selectModel(modelInfo: ModelInfo, route?: ConversationRoute | string): void {
   logger.info(`[ModelManager] Selected model: ${modelInfo.providerID}/${modelInfo.modelID}`);
-  setCurrentModel(modelInfo);
+  setStoredModelState(modelInfo, route);
 }
 
 /**
@@ -324,8 +366,8 @@ export function selectModel(modelInfo: ModelInfo): void {
  * ALWAYS returns a model - fallback to config if not found
  * @returns Current model info
  */
-export function getStoredModel(): ModelInfo {
-  const storedModel = getCurrentModel();
+export function getStoredModel(route?: ConversationRoute | string): ModelInfo {
+  const storedModel = getStoredModelState(route);
 
   if (storedModel) {
     // Ensure variant is set (default to "default")

@@ -1,18 +1,27 @@
 import type { DingTalkClient } from "./client.js";
+import { buildConversationRouteKey } from "../core/runtime/route-key.js";
+import {
+  formatTextPermissionMessage,
+  getPermissionEmoji,
+  hasPendingTextPermission,
+  replyToTextPermission,
+  setPendingTextPermission,
+} from "../core/text-interactions/permission.js";
 import { formatForDingTalk } from "./formatter.js";
 import { formatToolInfo } from "../summary/formatter.js";
 import type { ToolInfo, TokensInfo, SessionRetryInfo } from "../summary/aggregator.js";
 import { summaryAggregator } from "../summary/aggregator.js";
 import type { PermissionRequest } from "../permission/types.js";
-import { getCurrentSession } from "../session/manager.js";
 import { logger } from "../utils/logger.js";
 import { t } from "../i18n/index.js";
-import { opencodeClient } from "../opencode/client.js";
 import { safeBackgroundTask } from "../utils/safe-background-task.js";
 import { isAutoConfirmEnabled } from "../permission/auto-confirm.js";
 
 interface DingTalkResponseTarget {
   userId: string;
+  routeKey: string;
+  sessionId: string;
+  directory: string;
 }
 
 let dingTalkClient: DingTalkClient | null = null;
@@ -32,8 +41,8 @@ export function isDingTalkActive(): boolean {
   return activeTarget !== null;
 }
 
-export function setDingTalkActive(userId: string): void {
-  activeTarget = { userId };
+export function setDingTalkActive(target: DingTalkResponseTarget): void {
+  activeTarget = target;
 }
 
 export function clearDingTalkActive(): void {
@@ -66,10 +75,11 @@ const originalCallbacks: OriginalCallbacks = {
   onPermission: null,
 };
 
-// Store pending permission requests (userId -> request)
-const pendingPermissionRequests: Map<string, PermissionRequest> = new Map();
-
 let callbacksInstalled = false;
+
+function getRouteKey(userId: string): string {
+  return buildConversationRouteKey({ channelId: "dingtalk", accountId: userId });
+}
 
 export function installDingTalkEventRouting(): void {
   if (callbacksInstalled) return;
@@ -190,10 +200,9 @@ function handleDingTalkComplete(sessionId: string, _messageId: string, messageTe
     return;
   }
 
-  const currentSession = getCurrentSession();
-  if (currentSession?.id !== sessionId) {
+  if (target.sessionId !== sessionId) {
     logger.debug(
-      `[DingTalk] handleDingTalkComplete: session mismatch, current=${currentSession?.id}, expected=${sessionId}`,
+      `[DingTalk] handleDingTalkComplete: session mismatch, current=${target.sessionId}, expected=${sessionId}`,
     );
     return;
   }
@@ -224,8 +233,7 @@ function handleDingTalkTool(toolInfo: ToolInfo): void {
   const target = activeTarget;
   if (!target) return;
 
-  const currentSession = getCurrentSession();
-  if (!currentSession || currentSession.id !== toolInfo.sessionId) return;
+  if (target.sessionId !== toolInfo.sessionId) return;
 
   const message = formatToolInfo(toolInfo);
   if (!message) return;
@@ -237,8 +245,7 @@ function handleDingTalkThinking(sessionId: string): void {
   const target = activeTarget;
   if (!target) return;
 
-  const currentSession = getCurrentSession();
-  if (!currentSession || currentSession.id !== sessionId) return;
+  if (target.sessionId !== sessionId) return;
 
   void sendMessage(target.userId, t("bot.thinking"));
 }
@@ -249,8 +256,7 @@ function handleDingTalkSessionError(sessionId: string, message: string): void {
   const target = activeTarget;
   if (!target) return;
 
-  const currentSession = getCurrentSession();
-  if (!currentSession || currentSession.id !== sessionId) return;
+  if (target.sessionId !== sessionId) return;
 
   const normalizedMessage = message.trim() || t("common.unknown_error");
   const truncatedMessage =
@@ -266,8 +272,7 @@ function handleDingTalkSessionRetry(retryInfo: SessionRetryInfo): void {
   const target = activeTarget;
   if (!target) return;
 
-  const currentSession = getCurrentSession();
-  if (!currentSession || currentSession.id !== retryInfo.sessionId) return;
+  if (target.sessionId !== retryInfo.sessionId) return;
 
   const normalizedMessage = retryInfo.message.trim() || t("common.unknown_error");
   const truncatedMessage =
@@ -285,10 +290,9 @@ function handleDingTalkIdle(sessionId: string): void {
     return;
   }
 
-  const currentSession = getCurrentSession();
-  if (!currentSession || currentSession.id !== sessionId) {
+  if (target.sessionId !== sessionId) {
     logger.debug(
-      `[DingTalk] handleDingTalkIdle: session mismatch, current=${currentSession?.id}, expected=${sessionId}`,
+      `[DingTalk] handleDingTalkIdle: session mismatch, current=${target.sessionId}, expected=${sessionId}`,
     );
     return;
   }
@@ -305,16 +309,15 @@ function handleDingTalkPermission(request: PermissionRequest): void {
     return;
   }
 
-  const currentSession = getCurrentSession();
-  if (!currentSession || currentSession.id !== request.sessionID) {
+  if (target.sessionId !== request.sessionID) {
     logger.debug(
-      `[DingTalk] handleDingTalkPermission: session mismatch, current=${currentSession?.id}, expected=${request.sessionID}`,
+      `[DingTalk] handleDingTalkPermission: session mismatch, current=${target.sessionId}, expected=${request.sessionID}`,
     );
     return;
   }
 
   // Store the permission request first (needed for both auto-confirm and manual)
-  pendingPermissionRequests.set(target.userId, request);
+  setPendingTextPermission(target.routeKey, request, target.directory);
 
   // Check if auto-confirm is enabled for this session
   if (isAutoConfirmEnabled(request.sessionID)) {
@@ -326,46 +329,14 @@ function handleDingTalkPermission(request: PermissionRequest): void {
     handleDingTalkPermissionReply(target.userId, "always");
 
     // Notify user it was auto-approved
-    const permissionEmoji: Record<string, string> = {
-      bash: "💻",
-      edit: "✏️",
-      write: "📝",
-      read: "📖",
-      webfetch: "🌐",
-      websearch: "🔍",
-      glob: "📁",
-      grep: "🔎",
-      list: "📋",
-      task: "📌",
-      lsp: "🔧",
-      external_directory: "📂",
-    };
-    const emoji = permissionEmoji[request.permission] || "🔐";
+    const emoji = getPermissionEmoji(request.permission);
     const notification = `✅ Auto-approved: ${emoji} ${request.permission} permission`;
     void sendMessage(target.userId, notification);
 
     return;
   }
 
-  // Format permission message
-  const permissionEmoji: Record<string, string> = {
-    bash: "💻",
-    edit: "✏️",
-    write: "📝",
-    read: "📖",
-    webfetch: "🌐",
-    websearch: "🔍",
-    glob: "📁",
-    grep: "🔎",
-    list: "📋",
-    task: "📌",
-    lsp: "🔧",
-    external_directory: "📂",
-  };
-  const emoji = permissionEmoji[request.permission] || "🔐";
-  const patterns = request.patterns.join("\n");
-
-  const message = `🔐 **Permission Request**\n\n**Type:** ${emoji} ${request.permission}\n\n**Patterns:**\n\`\`\`\n${patterns}\n\`\`\`\n\nPlease reply with:\n**/1** - Allow once\n**/2** - Always allow\n**/3** - Reject`;
+  const message = formatTextPermissionMessage(request);
 
   logger.info(
     `[DingTalk] Sending permission request to user ${target.userId}: ${request.permission}`,
@@ -380,46 +351,26 @@ export function handleDingTalkPermissionReply(
   userId: string,
   reply: "once" | "always" | "reject",
 ): boolean {
-  const request = pendingPermissionRequests.get(userId);
-  if (!request) {
+  const routeKey = getRouteKey(userId);
+  if (!hasPendingTextPermission(routeKey)) {
     logger.debug(`[DingTalk] No pending permission request for user ${userId}`);
     return false;
   }
 
-  const currentSession = getCurrentSession();
-  if (!currentSession) {
-    logger.warn("[DingTalk] No current session for permission reply");
-    return false;
-  }
-
-  logger.info(`[DingTalk] Sending permission reply: ${reply}, requestID=${request.id}`);
-
-  // Remove from pending
-  pendingPermissionRequests.delete(userId);
+  logger.info(`[DingTalk] Sending permission reply: ${reply}, routeKey=${routeKey}`);
 
   // Send reply to OpenCode
   safeBackgroundTask({
     taskName: "dingtalk.permission.reply",
-    task: () =>
-      opencodeClient.permission.reply({
-        requestID: request.id,
-        directory: currentSession.directory,
-        reply,
-      }),
-    onSuccess: ({ error }) => {
-      if (error) {
-        logger.error("[DingTalk] Failed to send permission reply:", error);
-        void sendMessage(userId, "❌ Failed to send permission reply. Please try again.");
+    task: () => replyToTextPermission({ routeKey, reply }),
+    onSuccess: (result) => {
+      if (!result.ok) {
+        logger.error("[DingTalk] Failed to send permission reply");
+        void sendMessage(userId, result.label);
         return;
       }
       logger.info("[DingTalk] Permission reply sent successfully");
-      // Send confirmation to user
-      const replyLabels: Record<string, string> = {
-        once: "✅ Allowed once",
-        always: "✅ Always allowed",
-        reject: "❌ Rejected",
-      };
-      void sendMessage(userId, replyLabels[reply]);
+      void sendMessage(userId, result.label);
     },
   });
 
@@ -430,5 +381,5 @@ export function handleDingTalkPermissionReply(
  * Check if user has pending permission request
  */
 export function hasDingTalkPendingPermission(userId: string): boolean {
-  return pendingPermissionRequests.has(userId);
+  return hasPendingTextPermission(getRouteKey(userId));
 }

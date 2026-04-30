@@ -52,23 +52,23 @@ export const en = {
   "common.unknown_error": "unknown error",
 
   "start.welcome":
-    "👋 Welcome to OpenCode Bot!\n\nUse commands:\n/projects — select project\n/sessions — session list\n/new — new session\n/task — scheduled task\n/tasks — scheduled tasks\n/status — status\n/help — help\n\nUse the bottom buttons to select the agent, model, and variant.",
+    "👋 Welcome to OpenCode Bot!\n\nUse commands:\n/projects — select project\n/sessions — session list\n/session new — new session\n/task — scheduled task\n/tasks — scheduled tasks\n/status — status\n/help — help\n\nUse the bottom buttons to select the agent, model, and variant.",
   "help.keyboard_hint":
     "💡 Use the bottom keyboard buttons for the agent, model, variant, and context actions.",
   "help.text":
-    "📖 **Help**\n\n/status - Check server status\n/sessions - Session list\n/new - Create new session\n/help - Help",
+    "📖 **Help**\n\n/status - Check server status\n/sessions - Session list\n/session new - Create new session\n/help - Help",
 
   "bot.thinking": "💭 Thinking...",
   "bot.project_not_selected":
     "🏗 Project is not selected.\n\nFirst select a project with /projects.",
   "bot.creating_session": "🔄 Creating a new session...",
   "bot.create_session_error":
-    "🔴 Failed to create session. Try /new or check server status with /status.",
+    "🔴 Failed to create session. Try /session new or check server status with /status.",
   "bot.session_created": "✅ Session created: {title}",
   "bot.session_busy":
     "⏳ Agent is already running a task. Wait for completion or use /abort to interrupt current run.",
   "bot.session_reset_project_mismatch":
-    "⚠️ Active session does not match the selected project, so it was reset. Use /sessions to pick one or /new to create a new session.",
+    "⚠️ Active session does not match the selected project, so it was reset. Use /sessions to pick one or /session new to create a new session.",
   "bot.prompt_send_error": "Failed to send request to OpenCode.",
   "bot.session_error": "🔴 OpenCode returned an error: {message}",
   "bot.session_retry":
@@ -105,7 +105,7 @@ export const en = {
   "status.project_hint": "Use /projects to select a project",
   "status.session_selected": "Current session: {title}",
   "status.session_not_selected": "Current session: not selected",
-  "status.session_hint": "Use /sessions to select one or /new to create one",
+  "status.session_hint": "Use /sessions to select one or /session new to create one",
   "status.server_unavailable":
     "🔴 OpenCode Server is unavailable\n\nUse /opencode_start to start the server.",
 
@@ -126,12 +126,12 @@ export const en = {
     "🔴 OpenCode Server is unavailable or an error occurred while loading projects.",
   "projects.page_load_error": "Cannot load this page. Please try again.",
   "projects.selected":
-    "✅ Project selected: {project}\n\n📋 Session was reset. Use /sessions or /new for this project.",
+    "✅ Project selected: {project}\n\n📋 Session was reset. Use /sessions or /session new for this project.",
   "projects.select_error": "🔴 Failed to select project.",
 
   "sessions.project_not_selected":
     "🏗 Project is not selected.\n\nFirst select a project with /projects.",
-  "sessions.empty": "📭 No sessions found.\n\nCreate a new session with /new.",
+  "sessions.empty": "📭 No sessions found.\n\nCreate a new session with /session new.",
   "sessions.select": "Select a session:",
   "sessions.select_page": "Select a session (page {page}):",
   "sessions.fetch_error":
@@ -156,7 +156,7 @@ export const en = {
     "🔴 OpenCode Server is unavailable or an error occurred while creating session.",
 
   "stop.no_active_session":
-    "🛑 Agent was not started\n\nCreate a session with /new or select one via /sessions.",
+    "🛑 Agent was not started\n\nCreate a session with /session new or select one via /sessions.",
   "stop.in_progress":
     "🛑 Event stream stopped, sending abort signal...\n\nWaiting for agent to stop.",
   "stop.warn_unconfirmed":
@@ -231,7 +231,7 @@ export const en = {
   "variant.menu.error": "🔴 Failed to get variants list",
 
   "context.button.confirm": "✅ Yes, compact context",
-  "context.no_active_session": "⚠️ No active session. Create a session with /new",
+  "context.no_active_session": "⚠️ No active session. Create a session with /session new",
   "context.confirm_text":
     '📊 Context compaction for session "{title}"\n\nThis will reduce context usage by removing old messages from history. Current task will not be interrupted.\n\nContinue?',
   "context.callback_session_not_found": "Session not found",
@@ -356,13 +356,13 @@ export const en = {
   "rename.error": "🔴 Failed to rename session.",
   "rename.cancelled": "❌ Rename cancelled.",
   "rename.inactive_callback": "Rename request is inactive",
-  "rename.inactive": "⚠️ Rename request is not active. Run /rename again.",
+  "rename.inactive": "⚠️ Rename request is not active. Run /session rename again.",
   "rename.blocked.expected_name":
     "⚠️ Enter a new session name as text or tap Cancel in rename message.",
   "rename.blocked.command_not_allowed":
     "⚠️ This command is not available while rename is waiting for a new name.",
   "rename.button.cancel": "❌ Cancel",
-  "rename.hint_abort": "Send /abort to cancel renaming.",
+  "rename.hint_abort": "Type \"cancel\" or /cancel to cancel renaming.",
 
   "task.prompt.schedule":
     "⏰ Send the task schedule in natural language.\n\nExamples:\n- every 5 minutes\n- every day at 17:00\n- tomorrow at 12:00",
@@ -428,12 +428,12 @@ export const en = {
   "commands.button.next_page": "Next ➡️",
   "commands.page_empty_callback": "No commands on this page",
   "commands.page_load_error_callback": "Cannot load this page. Please try again.",
-  "commands.hint_select": '💡 Enter command number to select, or type "cancel" to exit.',
+  "commands.hint_select": '💡 Use `/command <number>` to execute a command, or `/command <number> [args]` to run it with arguments.',
   "commands.confirm_hint":
     '💡 Enter arguments (optional), or:\n• Type "run" to execute without arguments\n• Type "cancel" to go back',
   "commands.invalid_number": "Please enter a valid command number ({min}-{max}).",
 
-  "cmd.description.rename": "Rename current session",
+  "cmd.description.rename": "Rename current session via /session rename",
 
   "cli.usage":
     "Usage:\n  opencode-bot [start] [--mode sources|installed]\n  opencode-bot status\n  opencode-bot stop\n  opencode-bot config\n\nNotes:\n  - No command defaults to `start`\n  - `--mode` is currently supported for `start` only",
@@ -473,7 +473,7 @@ export const en = {
   "open.access_denied": "⛔ Access denied: path is outside allowed roots",
   "open.scan_error": "🔴 Cannot browse directory: {error}",
   "open.open_error": "🔴 Failed to open directory browser.",
-  "open.selected": "✅ Project added: {project}\n\n📋 Use /sessions or /new to start working.",
+  "open.selected": "✅ Project added: {project}\n\n📋 Use /sessions or /session new to start working.",
   "open.select_error": "🔴 Failed to add project.",
   "open.no_subfolders": "📭 No subfolders",
   "open.subfolder_count": "{count} subfolder",

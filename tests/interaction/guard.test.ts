@@ -225,7 +225,7 @@ describe("interaction guard", () => {
       allowedCommands: ["/status"],
     });
 
-    const decision = resolveInteractionGuardDecision(createContext({ text: "/new" }));
+    const decision = resolveInteractionGuardDecision(createContext({ text: "/session new" }));
 
     expect(decision.allow).toBe(false);
     expect(decision.reason).toBe("command_not_allowed");
@@ -305,7 +305,7 @@ describe("interaction guard", () => {
     expect(resolveInteractionGuardDecision(createContext({ text: "/status" })).allow).toBe(true);
     expect(resolveInteractionGuardDecision(createContext({ text: "/help" })).allow).toBe(true);
 
-    const blockedDecision = resolveInteractionGuardDecision(createContext({ text: "/new" }));
+    const blockedDecision = resolveInteractionGuardDecision(createContext({ text: "/session new" }));
     expect(blockedDecision.allow).toBe(false);
     expect(blockedDecision.reason).toBe("command_not_allowed");
     expect(blockedDecision.busy).toBe(true);
@@ -341,7 +341,7 @@ describe("interaction guard", () => {
     );
     const textDecision = resolveInteractionGuardDecision(createContext({ text: "custom answer" }));
     const commandDecision = resolveInteractionGuardDecision(createContext({ text: "/status" }));
-    const blockedCommand = resolveInteractionGuardDecision(createContext({ text: "/new" }));
+    const blockedCommand = resolveInteractionGuardDecision(createContext({ text: "/session new" }));
 
     expect(callbackDecision.allow).toBe(true);
     expect(callbackDecision.busy).toBe(true);

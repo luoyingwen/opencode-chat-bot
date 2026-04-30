@@ -2,7 +2,8 @@
  * Variant Manager - manages model variants (reasoning modes)
  */
 import { opencodeClient } from "../opencode/client.js";
-import { getCurrentModel, setCurrentModel } from "../settings/manager.js";
+import type { ConversationRoute } from "../core/runtime/types.js";
+import { getStoredModel, selectModel } from "../model/manager.js";
 import { logger } from "../utils/logger.js";
 import type { VariantInfo } from "../model/types.js";
 
@@ -69,8 +70,8 @@ export async function getAvailableVariants(
  * Get current variant from settings
  * @returns Current variant ID (defaults to "default")
  */
-export function getCurrentVariant(): string {
-  const currentModel = getCurrentModel();
+export function getCurrentVariant(route?: ConversationRoute): string {
+  const currentModel = getStoredModel(route);
   return currentModel?.variant || "default";
 }
 
@@ -78,16 +79,16 @@ export function getCurrentVariant(): string {
  * Set current variant in settings
  * @param variantId Variant ID to set
  */
-export function setCurrentVariant(variantId: string): void {
-  const currentModel = getCurrentModel();
+export function setCurrentVariant(variantId: string, route?: ConversationRoute): void {
+  const currentModel = getStoredModel(route);
 
-  if (!currentModel) {
+  if (!currentModel.providerID || !currentModel.modelID) {
     logger.warn("[VariantManager] Cannot set variant: no current model");
     return;
   }
 
   currentModel.variant = variantId;
-  setCurrentModel(currentModel);
+  selectModel(currentModel, route);
   logger.info(`[VariantManager] Variant set to: ${variantId}`);
 }
 

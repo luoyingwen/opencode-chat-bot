@@ -55,23 +55,23 @@ export const de: I18nDictionary = {
   "common.unknown_error": "unbekannter Fehler",
 
   "start.welcome":
-    "👋 Willkommen beim OpenCode Bot!\n\nNutze Befehle:\n/projects — Projekt auswählen\n/sessions — Sitzungsliste\n/new — neue Sitzung\n/task — geplante Aufgabe\n/tasks — geplante Aufgaben\n/status — Status\n/help — Hilfe\n\nNutze die unteren Buttons, um Agent, Modell und Variante zu wählen.",
+    "👋 Willkommen beim OpenCode Bot!\n\nNutze Befehle:\n/projects — Projekt auswählen\n/sessions — Sitzungsliste\n/session new — neue Sitzung\n/task — geplante Aufgabe\n/tasks — geplante Aufgaben\n/status — Status\n/help — Hilfe\n\nNutze die unteren Buttons, um Agent, Modell und Variante zu wählen.",
   "help.keyboard_hint":
     "💡 Nutze die unteren Buttons für Agent, Modell, Variante und Kontextaktionen.",
   "help.text":
-    "📖 **Hilfe**\n\n/status - Serverstatus prüfen\n/sessions - Sitzungsliste\n/new - Neue Sitzung erstellen\n/help - Hilfe",
+    "📖 **Hilfe**\n\n/status - Serverstatus prüfen\n/sessions - Sitzungsliste\n/session new - Neue Sitzung erstellen\n/help - Hilfe",
 
   "bot.thinking": "💭 Denke...",
   "bot.project_not_selected":
     "🏗 Projekt ist nicht ausgewählt.\n\nWähle zuerst ein Projekt mit /projects.",
   "bot.creating_session": "🔄 Erstelle eine neue Sitzung...",
   "bot.create_session_error":
-    "🔴 Sitzung konnte nicht erstellt werden. Versuche /new oder prüfe den Serverstatus mit /status.",
+    "🔴 Sitzung konnte nicht erstellt werden. Versuche /session new oder prüfe den Serverstatus mit /status.",
   "bot.session_created": "✅ Sitzung erstellt: {title}",
   "bot.session_busy":
     "⏳ Agent führt bereits eine Aufgabe aus. Warte auf Abschluss oder nutze /abort, um den aktuellen Lauf zu unterbrechen.",
   "bot.session_reset_project_mismatch":
-    "⚠️ Die aktive Sitzung passt nicht zum ausgewählten Projekt und wurde daher zurückgesetzt. Nutze /sessions zur Auswahl oder /new, um eine neue Sitzung zu erstellen.",
+    "⚠️ Die aktive Sitzung passt nicht zum ausgewählten Projekt und wurde daher zurückgesetzt. Nutze /sessions zur Auswahl oder /session new, um eine neue Sitzung zu erstellen.",
   "bot.prompt_send_error": "Anfrage konnte nicht an OpenCode gesendet werden.",
   "bot.session_error": "🔴 OpenCode meldete einen Fehler: {message}",
   "bot.session_retry":
@@ -111,7 +111,7 @@ export const de: I18nDictionary = {
   "status.project_hint": "Nutze /projects, um ein Projekt auszuwahlen",
   "status.session_selected": "Aktuelle Sitzung: {title}",
   "status.session_not_selected": "Aktuelle Sitzung: nicht ausgewählt",
-  "status.session_hint": "Nutze /sessions zur Auswahl oder /new zum Erstellen",
+  "status.session_hint": "Nutze /sessions zur Auswahl oder /session new zum Erstellen",
   "status.server_unavailable":
     "🔴 OpenCode-Server ist nicht verfügbar\n\nNutze /opencode_start, um den Server zu starten.",
 
@@ -132,12 +132,12 @@ export const de: I18nDictionary = {
     "🔴 OpenCode-Server ist nicht verfügbar oder beim Laden der Projekte ist ein Fehler aufgetreten.",
   "projects.page_load_error": "Diese Seite konnte nicht geladen werden. Bitte versuche es erneut.",
   "projects.selected":
-    "✅ Projekt ausgewählt: {project}\n\n📋 Sitzung wurde zurückgesetzt. Nutze /sessions oder /new für dieses Projekt.",
+    "✅ Projekt ausgewählt: {project}\n\n📋 Sitzung wurde zurückgesetzt. Nutze /sessions oder /session new für dieses Projekt.",
   "projects.select_error": "🔴 Projekt konnte nicht ausgewählt werden.",
 
   "sessions.project_not_selected":
     "🏗 Projekt ist nicht ausgewählt.\n\nWähle zuerst ein Projekt mit /projects.",
-  "sessions.empty": "📭 Keine Sitzungen gefunden.\n\nErstelle eine neue Sitzung mit /new.",
+  "sessions.empty": "📭 Keine Sitzungen gefunden.\n\nErstelle eine neue Sitzung mit /session new.",
   "sessions.select": "Sitzung auswählen:",
   "sessions.select_page": "Sitzung auswählen (Seite {page}):",
   "sessions.fetch_error":
@@ -163,7 +163,7 @@ export const de: I18nDictionary = {
     "🔴 OpenCode-Server ist nicht verfügbar oder beim Erstellen der Sitzung ist ein Fehler aufgetreten.",
 
   "stop.no_active_session":
-    "🛑 Agent wurde nicht gestartet\n\nErstelle eine Sitzung mit /new oder wähle eine über /sessions aus.",
+    "🛑 Agent wurde nicht gestartet\n\nErstelle eine Sitzung mit /session new oder wähle eine über /sessions aus.",
   "stop.in_progress":
     "🛑 Event-Stream gestoppt, sende Abbruchsignal...\n\nWarte darauf, dass der Agent stoppt.",
   "stop.warn_unconfirmed":
@@ -243,7 +243,7 @@ export const de: I18nDictionary = {
   "variant.menu.error": "🔴 Variantenliste konnte nicht geladen werden",
 
   "context.button.confirm": "✅ Ja, Kontext komprimieren",
-  "context.no_active_session": "⚠️ Keine aktive Sitzung. Erstelle eine Sitzung mit /new",
+  "context.no_active_session": "⚠️ Keine aktive Sitzung. Erstelle eine Sitzung mit /session new",
   "context.confirm_text":
     '📊 Kontext-Komprimierung für Sitzung "{title}"\n\nDadurch wird die Kontextnutzung reduziert, indem alte Nachrichten aus dem Verlauf entfernt werden. Die aktuelle Aufgabe wird nicht unterbrochen.\n\nFortfahren?',
   "context.callback_session_not_found": "Sitzung nicht gefunden",
@@ -369,13 +369,13 @@ export const de: I18nDictionary = {
   "rename.error": "🔴 Sitzung konnte nicht umbenannt werden.",
   "rename.cancelled": "❌ Umbenennen abgebrochen.",
   "rename.inactive_callback": "Umbenennen-Anfrage ist inaktiv",
-  "rename.inactive": "⚠️ Umbenennen-Anfrage ist nicht aktiv. Starte /rename erneut.",
+  "rename.inactive": "⚠️ Umbenennen-Anfrage ist nicht aktiv. Starte /session rename erneut.",
   "rename.blocked.expected_name":
     "⚠️ Sende den neuen Sitzungsnamen als Text oder tippe in der Umbenennen-Nachricht auf Abbrechen.",
   "rename.blocked.command_not_allowed":
     "⚠️ Dieser Befehl ist nicht verfügbar, solange beim Umbenennen auf einen neuen Namen gewartet wird.",
   "rename.button.cancel": "❌ Abbrechen",
-  "rename.hint_abort": "Sende /abort, um das Umbenennen abzubrechen.",
+  "rename.hint_abort": "Gib \"cancel\" oder /cancel ein, um das Umbenennen abzubrechen.",
 
   "task.prompt.schedule":
     "⏰ Sende den Zeitplan der Aufgabe in natürlicher Sprache.\n\nBeispiele:\n- alle 5 Minuten\n- jeden Tag um 17:00\n- morgen um 12:00",
@@ -444,12 +444,12 @@ export const de: I18nDictionary = {
   "commands.page_empty_callback": "Keine Befehle auf dieser Seite",
   "commands.page_load_error_callback":
     "Diese Seite konnte nicht geladen werden. Bitte versuche es erneut.",
-  "commands.hint_select": '💡 Befehlsnummer eingeben oder "abbrechen" zum Beenden.',
+  "commands.hint_select": '💡 Verwende `/command <Nummer>` zum Ausführen oder `/command <Nummer> [Argumente]` für Ausführung mit Argumenten.',
   "commands.confirm_hint":
     '💡 Argumente eingeben (optional), oder:\n• "ausführen" ohne Argumente\n• "abbrechen" zum Zurückgehen',
   "commands.invalid_number": "Bitte gültige Befehlsnummer eingeben ({min}-{max}).",
 
-  "cmd.description.rename": "Aktuelle Sitzung umbenennen",
+  "cmd.description.rename": "Aktuelle Sitzung mit /session rename umbenennen",
 
   "cli.usage":
     "Verwendung:\n  opencode-bot [start] [--mode sources|installed]\n  opencode-bot status\n  opencode-bot stop\n  opencode-bot config\n\nHinweise:\n  - Ohne Befehl wird standardmäßig `start` verwendet\n  - `--mode` wird derzeit nur für `start` unterstützt",
@@ -491,7 +491,7 @@ export const de: I18nDictionary = {
   "open.scan_error": "🔴 Verzeichnis kann nicht durchsucht werden: {error}",
   "open.open_error": "🔴 Verzeichnisbrowser konnte nicht geöffnet werden.",
   "open.selected":
-    "✅ Projekt hinzugefügt: {project}\n\n📋 Verwende /sessions oder /new zum Arbeiten.",
+    "✅ Projekt hinzugefügt: {project}\n\n📋 Verwende /sessions oder /session new zum Arbeiten.",
   "open.select_error": "🔴 Projekt konnte nicht hinzugefügt werden.",
   "open.no_subfolders": "📭 Keine Unterordner",
   "open.subfolder_count": "{count} Unterordner",

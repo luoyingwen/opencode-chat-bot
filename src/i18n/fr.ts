@@ -55,23 +55,23 @@ export const fr: I18nDictionary = {
   "common.unknown_error": "erreur inconnue",
 
   "start.welcome":
-    "👋 Bienvenue dans OpenCode Bot !\n\nUtilisez les commandes :\n/projects — sélectionner un projet\n/sessions — liste des sessions\n/new — nouvelle session\n/task — tâche planifiée\n/tasks — tâches planifiées\n/status — statut\n/help — aide\n\nUtilisez les boutons du bas pour choisir l'agent, le modèle et la variante.",
+    "👋 Bienvenue dans OpenCode Bot !\n\nUtilisez les commandes :\n/projects — sélectionner un projet\n/sessions — liste des sessions\n/session new — nouvelle session\n/task — tâche planifiée\n/tasks — tâches planifiées\n/status — statut\n/help — aide\n\nUtilisez les boutons du bas pour choisir l'agent, le modèle et la variante.",
   "help.keyboard_hint":
     "💡 Utilisez les boutons du bas pour l'agent, le modèle, la variante et les actions de contexte.",
   "help.text":
-    "📖 **Aide**\n\n/status - Vérifier l'état du serveur\n/sessions - Liste des sessions\n/new - Créer une nouvelle session\n/help - Aide",
+    "📖 **Aide**\n\n/status - Vérifier l'état du serveur\n/sessions - Liste des sessions\n/session new - Créer une nouvelle session\n/help - Aide",
 
   "bot.thinking": "💭 Réflexion en cours...",
   "bot.project_not_selected":
     "🏗 Aucun projet n'est sélectionné.\n\nSélectionnez d'abord un projet avec /projects.",
   "bot.creating_session": "🔄 Création d'une nouvelle session...",
   "bot.create_session_error":
-    "🔴 Impossible de créer la session. Essayez /new ou vérifiez l'état du serveur avec /status.",
+    "🔴 Impossible de créer la session. Essayez /session new ou vérifiez l'état du serveur avec /status.",
   "bot.session_created": "✅ Session créée : {title}",
   "bot.session_busy":
     "⏳ L'agent exécute déjà une tâche. Attendez la fin ou utilisez /abort pour interrompre l'exécution en cours.",
   "bot.session_reset_project_mismatch":
-    "⚠️ La session active ne correspond pas au projet sélectionné, elle a donc été réinitialisée. Utilisez /sessions pour en choisir une ou /new pour créer une nouvelle session.",
+    "⚠️ La session active ne correspond pas au projet sélectionné, elle a donc été réinitialisée. Utilisez /sessions pour en choisir une ou /session new pour créer une nouvelle session.",
   "bot.prompt_send_error": "Impossible d'envoyer la requête à OpenCode.",
   "bot.session_error": "🔴 OpenCode a renvoyé une erreur : {message}",
   "bot.session_retry":
@@ -112,7 +112,7 @@ export const fr: I18nDictionary = {
   "status.project_hint": "Utilisez /projects pour sélectionner un projet",
   "status.session_selected": "Session actuelle : {title}",
   "status.session_not_selected": "Session actuelle : non sélectionnée",
-  "status.session_hint": "Utilisez /sessions pour en sélectionner une ou /new pour en créer une",
+  "status.session_hint": "Utilisez /sessions pour en sélectionner une ou /session new pour en créer une",
   "status.server_unavailable":
     "🔴 Le serveur OpenCode est indisponible\n\nUtilisez /opencode_start pour démarrer le serveur.",
 
@@ -133,12 +133,12 @@ export const fr: I18nDictionary = {
     "🔴 Le serveur OpenCode est indisponible ou une erreur s'est produite lors du chargement des projets.",
   "projects.page_load_error": "Impossible de charger cette page. Veuillez réessayer.",
   "projects.selected":
-    "✅ Projet sélectionné : {project}\n\n📋 La session a été réinitialisée. Utilisez /sessions ou /new pour ce projet.",
+    "✅ Projet sélectionné : {project}\n\n📋 La session a été réinitialisée. Utilisez /sessions ou /session new pour ce projet.",
   "projects.select_error": "🔴 Impossible de sélectionner le projet.",
 
   "sessions.project_not_selected":
     "🏗 Aucun projet n'est sélectionné.\n\nSélectionnez d'abord un projet avec /projects.",
-  "sessions.empty": "📭 Aucune session trouvée.\n\nCréez une nouvelle session avec /new.",
+  "sessions.empty": "📭 Aucune session trouvée.\n\nCréez une nouvelle session avec /session new.",
   "sessions.select": "Sélectionnez une session :",
   "sessions.select_page": "Sélectionnez une session (page {page}) :",
   "sessions.fetch_error":
@@ -163,7 +163,7 @@ export const fr: I18nDictionary = {
     "🔴 Le serveur OpenCode est indisponible ou une erreur s'est produite lors de la création de la session.",
 
   "stop.no_active_session":
-    "🛑 L'agent n'a pas été démarré\n\nCréez une session avec /new ou sélectionnez-en une via /sessions.",
+    "🛑 L'agent n'a pas été démarré\n\nCréez une session avec /session new ou sélectionnez-en une via /sessions.",
   "stop.in_progress":
     "🛑 Flux d'événements arrêté, envoi du signal d'abandon...\n\nEn attente de l'arrêt de l'agent.",
   "stop.warn_unconfirmed":
@@ -243,7 +243,7 @@ export const fr: I18nDictionary = {
   "variant.menu.error": "🔴 Impossible de récupérer la liste des variantes",
 
   "context.button.confirm": "✅ Oui, compacter le contexte",
-  "context.no_active_session": "⚠️ Aucune session active. Créez une session avec /new",
+  "context.no_active_session": "⚠️ Aucune session active. Créez une session avec /session new",
   "context.confirm_text":
     "📊 Réduction du contexte pour la session \"{title}\"\n\nCela réduira l'utilisation du contexte en supprimant les anciens messages de l'historique. La tâche en cours ne sera pas interrompue.\n\nContinuer ?",
   "context.callback_session_not_found": "Session introuvable",
@@ -370,13 +370,13 @@ export const fr: I18nDictionary = {
   "rename.error": "🔴 Impossible de renommer la session.",
   "rename.cancelled": "❌ Renommage annulé.",
   "rename.inactive_callback": "La demande de renommage est inactive",
-  "rename.inactive": "⚠️ La demande de renommage n'est pas active. Exécutez /rename à nouveau.",
+  "rename.inactive": "⚠️ La demande de renommage n'est pas active. Exécutez /session rename à nouveau.",
   "rename.blocked.expected_name":
     "⚠️ Entrez le nouveau nom de la session sous forme de texte ou appuyez sur Annuler dans le message de renommage.",
   "rename.blocked.command_not_allowed":
     "⚠️ Cette commande n'est pas disponible tant que le renommage attend un nouveau nom.",
   "rename.button.cancel": "❌ Annuler",
-  "rename.hint_abort": "Envoyez /abort pour annuler le renommage.",
+  "rename.hint_abort": "Saisissez \"cancel\" ou /cancel pour annuler le renommage.",
 
   "task.prompt.schedule":
     "⏰ Envoyez le planning de la tâche en langage naturel.\n\nExemples :\n- toutes les 5 minutes\n- chaque jour à 17:00\n- demain à 12:00",
@@ -444,12 +444,12 @@ export const fr: I18nDictionary = {
   "commands.button.next_page": "Suivant ➡️",
   "commands.page_empty_callback": "Aucune commande sur cette page",
   "commands.page_load_error_callback": "Impossible de charger cette page. Veuillez réessayer.",
-  "commands.hint_select": '💡 Entrez numéro ou "annuler" pour quitter.',
+  "commands.hint_select": '💡 Utilisez `/command <numéro>` pour exécuter une commande, ou `/command <numéro> [args]` avec arguments.',
   "commands.confirm_hint":
     '💡 Entrez arguments (optionnel), ou:\n• "exécuter" sans arguments\n• "annuler" pour revenir',
   "commands.invalid_number": "Entrez numéro valide ({min}-{max}).",
 
-  "cmd.description.rename": "Renommer la session actuelle",
+  "cmd.description.rename": "Renommer la session actuelle via /session rename",
 
   "cli.usage":
     "Utilisation :\n  opencode-bot [start] [--mode sources|installed]\n  opencode-bot status\n  opencode-bot stop\n  opencode-bot config\n\nNotes :\n  - Sans commande, `start` est utilisé par défaut\n  - `--mode` n'est actuellement pris en charge que pour `start`",
@@ -491,7 +491,7 @@ export const fr: I18nDictionary = {
   "open.access_denied": "⛔ Accès refusé : le chemin est en dehors des répertoires autorisés",
   "open.scan_error": "🔴 Impossible de parcourir le répertoire : {error}",
   "open.open_error": "🔴 Impossible d'ouvrir l'explorateur de répertoires.",
-  "open.selected": "✅ Projet ajouté : {project}\n\n📋 Utilisez /sessions ou /new pour commencer.",
+  "open.selected": "✅ Projet ajouté : {project}\n\n📋 Utilisez /sessions ou /session new pour commencer.",
   "open.select_error": "🔴 Impossible d'ajouter le projet.",
   "open.no_subfolders": "📭 Aucun sous-dossier",
   "open.subfolder_count": "{count} sous-dossier",

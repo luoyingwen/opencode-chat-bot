@@ -1,18 +1,27 @@
 import type { FeishuClient } from "./client.js";
+import { buildConversationRouteKey } from "../core/runtime/route-key.js";
+import {
+  formatTextPermissionMessage,
+  getPermissionEmoji,
+  hasPendingTextPermission,
+  replyToTextPermission,
+  setPendingTextPermission,
+} from "../core/text-interactions/permission.js";
 import { formatToolInfo } from "../summary/formatter.js";
 import type { ToolInfo, TokensInfo, SessionRetryInfo } from "../summary/aggregator.js";
 import { summaryAggregator } from "../summary/aggregator.js";
 import type { PermissionRequest } from "../permission/types.js";
-import { getCurrentSession } from "../session/manager.js";
 import { logger } from "../utils/logger.js";
 import { t } from "../i18n/index.js";
-import { opencodeClient } from "../opencode/client.js";
 import { safeBackgroundTask } from "../utils/safe-background-task.js";
 import { isAutoConfirmEnabled } from "../permission/auto-confirm.js";
 
 interface FeishuResponseTarget {
   userId: string;
   chatId: string;
+  routeKey: string;
+  sessionId: string;
+  directory: string;
 }
 
 let feishuClient: FeishuClient | null = null;
@@ -41,8 +50,13 @@ const originalCallbacks: OriginalCallbacks = {
   onPermission: null,
 };
 
-// Store pending permission requests (userId -> request)
-const pendingPermissionRequests: Map<string, PermissionRequest> = new Map();
+function getRouteKey(userId: string, chatId: string): string {
+  return buildConversationRouteKey({
+    channelId: "feishu",
+    accountId: userId,
+    conversationId: chatId,
+  });
+}
 
 export function setFeishuClient(client: FeishuClient): void {
   feishuClient = client;
@@ -52,8 +66,8 @@ export function isFeishuActive(): boolean {
   return activeTarget !== null;
 }
 
-export function setFeishuActive(userId: string, chatId: string): void {
-  activeTarget = { userId, chatId };
+export function setFeishuActive(target: FeishuResponseTarget): void {
+  activeTarget = target;
 }
 
 export function clearFeishuActive(): void {
@@ -139,8 +153,7 @@ async function handleFeishuComplete(
   const target = activeTarget;
   if (!target || !feishuClient) return;
 
-  const currentSession = getCurrentSession();
-  if (currentSession?.id !== sessionId) return;
+  if (target.sessionId !== sessionId) return;
 
   // Finalize streaming card if active
   if (feishuClient.hasActiveCard(target.chatId)) {
@@ -158,8 +171,7 @@ function handleFeishuTool(toolInfo: ToolInfo): void {
   const target = activeTarget;
   if (!target || !feishuClient) return;
 
-  const currentSession = getCurrentSession();
-  if (!currentSession || currentSession.id !== toolInfo.sessionId) return;
+  if (target.sessionId !== toolInfo.sessionId) return;
 
   const toolState = toolInfo.state;
   const status =
@@ -182,8 +194,7 @@ function handleFeishuThinking(sessionId: string): void {
   const target = activeTarget;
   if (!target || !feishuClient) return;
 
-  const currentSession = getCurrentSession();
-  if (!currentSession || currentSession.id !== sessionId) return;
+  if (target.sessionId !== sessionId) return;
 
   if (feishuClient.hasActiveCard(target.chatId)) {
     const lastMsgId = feishuClient.getLastIncomingMessageId(target.chatId);
@@ -202,8 +213,7 @@ function handleFeishuSessionError(sessionId: string, message: string): void {
   const target = activeTarget;
   if (!target || !feishuClient) return;
 
-  const currentSession = getCurrentSession();
-  if (!currentSession || currentSession.id !== sessionId) return;
+  if (target.sessionId !== sessionId) return;
 
   const normalizedMessage = message.trim() || t("common.unknown_error");
   const truncatedMessage =
@@ -227,8 +237,7 @@ function handleFeishuSessionRetry(retryInfo: SessionRetryInfo): void {
   const target = activeTarget;
   if (!target || !feishuClient) return;
 
-  const currentSession = getCurrentSession();
-  if (!currentSession || currentSession.id !== retryInfo.sessionId) return;
+  if (target.sessionId !== retryInfo.sessionId) return;
 
   const normalizedMessage = retryInfo.message.trim() || t("common.unknown_error");
   const truncatedMessage =
@@ -247,8 +256,7 @@ function handleFeishuIdle(sessionId: string): void {
   const target = activeTarget;
   if (!target || !feishuClient) return;
 
-  const currentSession = getCurrentSession();
-  if (!currentSession || currentSession.id !== sessionId) return;
+  if (target.sessionId !== sessionId) return;
 
   if (feishuClient.hasActiveCard(target.chatId)) {
     activeTarget = null;
@@ -266,16 +274,15 @@ function handleFeishuPermission(request: PermissionRequest): void {
     return;
   }
 
-  const currentSession = getCurrentSession();
-  if (!currentSession || currentSession.id !== request.sessionID) {
+  if (target.sessionId !== request.sessionID) {
     logger.debug(
-      `[Feishu] handleFeishuPermission: session mismatch, current=${currentSession?.id}, expected=${request.sessionID}`,
+      `[Feishu] handleFeishuPermission: session mismatch, current=${target.sessionId}, expected=${request.sessionID}`,
     );
     return;
   }
 
   // Store the permission request first (needed for both auto-confirm and manual)
-  pendingPermissionRequests.set(target.userId, request);
+  setPendingTextPermission(target.routeKey, request, target.directory);
 
   // Check if auto-confirm is enabled for this session
   if (isAutoConfirmEnabled(request.sessionID)) {
@@ -287,46 +294,14 @@ function handleFeishuPermission(request: PermissionRequest): void {
     handleFeishuPermissionReply(target.userId, target.chatId, "always");
 
     // Notify user it was auto-approved
-    const permissionEmoji: Record<string, string> = {
-      bash: "💻",
-      edit: "✏️",
-      write: "📝",
-      read: "📖",
-      webfetch: "🌐",
-      websearch: "🔍",
-      glob: "📁",
-      grep: "🔎",
-      list: "📋",
-      task: "📌",
-      lsp: "🔧",
-      external_directory: "📂",
-    };
-    const emoji = permissionEmoji[request.permission] || "🔐";
+    const emoji = getPermissionEmoji(request.permission);
     const notification = `✅ Auto-approved: ${emoji} ${request.permission} permission`;
     void sendMessage(target.chatId, target.userId, notification);
 
     return;
   }
 
-  // Format permission message
-  const permissionEmoji: Record<string, string> = {
-    bash: "💻",
-    edit: "✏️",
-    write: "📝",
-    read: "📖",
-    webfetch: "🌐",
-    websearch: "🔍",
-    glob: "📁",
-    grep: "🔎",
-    list: "📋",
-    task: "📌",
-    lsp: "🔧",
-    external_directory: "📂",
-  };
-  const emoji = permissionEmoji[request.permission] || "🔐";
-  const patterns = request.patterns.join("\n");
-
-  const message = `🔐 **Permission Request**\n\n**Type:** ${emoji} ${request.permission}\n\n**Patterns:**\n\`\`\`\n${patterns}\n\`\`\`\n\nPlease reply with:\n**/1** - Allow once\n**/2** - Always allow\n**/3** - Reject`;
+  const message = formatTextPermissionMessage(request);
 
   logger.info(
     `[Feishu] Sending permission request to user ${target.userId}: ${request.permission}`,
@@ -342,46 +317,26 @@ export function handleFeishuPermissionReply(
   chatId: string,
   reply: "once" | "always" | "reject",
 ): boolean {
-  const request = pendingPermissionRequests.get(userId);
-  if (!request) {
+  const routeKey = getRouteKey(userId, chatId);
+  if (!hasPendingTextPermission(routeKey)) {
     logger.debug(`[Feishu] No pending permission request for user ${userId}`);
     return false;
   }
 
-  const currentSession = getCurrentSession();
-  if (!currentSession) {
-    logger.warn("[Feishu] No current session for permission reply");
-    return false;
-  }
-
-  logger.info(`[Feishu] Sending permission reply: ${reply}, requestID=${request.id}`);
-
-  // Remove from pending
-  pendingPermissionRequests.delete(userId);
+  logger.info(`[Feishu] Sending permission reply: ${reply}, routeKey=${routeKey}`);
 
   // Send reply to OpenCode
   safeBackgroundTask({
     taskName: "feishu.permission.reply",
-    task: () =>
-      opencodeClient.permission.reply({
-        requestID: request.id,
-        directory: currentSession.directory,
-        reply,
-      }),
-    onSuccess: ({ error }) => {
-      if (error) {
-        logger.error("[Feishu] Failed to send permission reply:", error);
-        void sendMessage(chatId, userId, "❌ Failed to send permission reply. Please try again.");
+    task: () => replyToTextPermission({ routeKey, reply }),
+    onSuccess: (result) => {
+      if (!result.ok) {
+        logger.error("[Feishu] Failed to send permission reply");
+        void sendMessage(chatId, userId, result.label);
         return;
       }
       logger.info("[Feishu] Permission reply sent successfully");
-      // Send confirmation to user
-      const replyLabels: Record<string, string> = {
-        once: "✅ Allowed once",
-        always: "✅ Always allowed",
-        reject: "❌ Rejected",
-      };
-      void sendMessage(chatId, userId, replyLabels[reply]);
+      void sendMessage(chatId, userId, result.label);
     },
   });
 
@@ -392,5 +347,14 @@ export function handleFeishuPermissionReply(
  * Check if user has pending permission request
  */
 export function hasFeishuPendingPermission(userId: string): boolean {
-  return pendingPermissionRequests.has(userId);
+  const target = activeTarget;
+  if (!target || target.userId !== userId) {
+    return false;
+  }
+
+  return hasPendingTextPermission(getRouteKey(userId, target.chatId));
+}
+
+export function hasFeishuPendingPermissionForChat(userId: string, chatId: string): boolean {
+  return hasPendingTextPermission(getRouteKey(userId, chatId));
 }

@@ -124,7 +124,7 @@ opencode-bot config
 | Command           | Description                                                          |
 | ----------------- | -------------------------------------------------------------------- |
 | `/status`         | Server health, current project, session, and model info              |
-| `/new`            | Create a new session                                                 |
+| `/session new`    | Create a new session                                                 |
 | `/stop`           | Stop the current task                                            |
 | `/sessions`       | Browse recent sessions                                               |
 | `/session <n>`    | Select a session by number                                           |
@@ -133,7 +133,7 @@ opencode-bot config
 | `/project <path>` | Create/select a project by path (DingTalk/Feishu only)               |
 | `/agents`         | Browse available agents                                              |
 | `/agent <n>`      | Select an agent by number                                            |
-| `/rename`         | Rename the current session                                           |
+| `/session rename [title]` | Rename the current session                                 |
 | `/commands`       | Browse and run custom commands                                       |
 | `/task`           | Create a scheduled task                                              |
 | `/tasklist`       | Browse and delete scheduled tasks                                    |

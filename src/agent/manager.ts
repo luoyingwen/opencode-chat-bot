@@ -1,17 +1,53 @@
 import { opencodeClient } from "../opencode/client.js";
-import { getCurrentProject } from "../settings/manager.js";
+import { buildConversationRouteKey } from "../core/runtime/route-key.js";
+import type { ConversationRoute } from "../core/runtime/types.js";
+import {
+  getConversationState,
+  getCurrentAgent,
+  getCurrentProject,
+  setCurrentAgent,
+  updateConversationState,
+} from "../settings/manager.js";
 import { getCurrentSession } from "../session/manager.js";
-import { getCurrentAgent, setCurrentAgent } from "../settings/manager.js";
 import { logger } from "../utils/logger.js";
 import type { AgentInfo } from "./types.js";
+
+function getRouteState(route?: ConversationRoute) {
+  if (!route) {
+    return undefined;
+  }
+
+  return getConversationState(buildConversationRouteKey(route));
+}
+
+function getProjectForRoute(route?: ConversationRoute) {
+  return route ? getRouteState(route)?.currentProject : getCurrentProject();
+}
+
+function getSessionForRoute(route?: ConversationRoute) {
+  return route ? getRouteState(route)?.currentSession : getCurrentSession();
+}
+
+function getAgentForRoute(route?: ConversationRoute) {
+  return route ? getRouteState(route)?.currentAgent : getCurrentAgent();
+}
+
+function setAgentForRoute(agentName: string, route?: ConversationRoute): void {
+  if (route) {
+    updateConversationState(buildConversationRouteKey(route), { currentAgent: agentName });
+    return;
+  }
+
+  setCurrentAgent(agentName);
+}
 
 /**
  * Get list of available agents from OpenCode API
  * @returns Array of available agents (filtered by mode and hidden flag)
  */
-export async function getAvailableAgents(): Promise<AgentInfo[]> {
+export async function getAvailableAgents(route?: ConversationRoute): Promise<AgentInfo[]> {
   try {
-    const project = getCurrentProject();
+    const project = getProjectForRoute(route);
     const { data: agents, error } = await opencodeClient.app.agents(
       project ? { directory: project.worktree } : undefined,
     );
@@ -49,15 +85,18 @@ function pickFallbackAgent(agents: AgentInfo[]): string {
   return agents[0]?.name ?? DEFAULT_AGENT;
 }
 
-export async function resolveProjectAgent(preferredAgent?: string): Promise<string> {
-  const requestedAgent = preferredAgent ?? getCurrentAgent() ?? DEFAULT_AGENT;
-  const project = getCurrentProject();
+export async function resolveProjectAgent(
+  preferredAgent?: string,
+  route?: ConversationRoute,
+): Promise<string> {
+  const requestedAgent = preferredAgent ?? getAgentForRoute(route) ?? DEFAULT_AGENT;
+  const project = getProjectForRoute(route);
 
   if (!project) {
     return requestedAgent;
   }
 
-  const agents = await getAvailableAgents();
+  const agents = await getAvailableAgents(route);
   if (agents.length === 0) {
     return requestedAgent;
   }
@@ -70,7 +109,7 @@ export async function resolveProjectAgent(preferredAgent?: string): Promise<stri
   logger.warn(
     `[AgentManager] Agent "${requestedAgent}" is not available for project ${project.worktree}. Falling back to "${fallbackAgent}".`,
   );
-  setCurrentAgent(fallbackAgent);
+  setAgentForRoute(fallbackAgent, route);
   return fallbackAgent;
 }
 
@@ -79,10 +118,10 @@ export async function resolveProjectAgent(preferredAgent?: string): Promise<stri
  * Falls back to "build" if nothing is stored.
  * @returns Current agent name
  */
-export async function fetchCurrentAgent(): Promise<string> {
-  const storedAgent = getCurrentAgent();
-  const session = getCurrentSession();
-  const project = getCurrentProject();
+export async function fetchCurrentAgent(route?: ConversationRoute): Promise<string> {
+  const storedAgent = getAgentForRoute(route);
+  const session = getSessionForRoute(route);
+  const project = getProjectForRoute(route);
 
   if (!project) {
     // No active project, return stored agent from settings
@@ -90,7 +129,7 @@ export async function fetchCurrentAgent(): Promise<string> {
   }
 
   if (!session) {
-    return resolveProjectAgent(storedAgent ?? DEFAULT_AGENT);
+    return resolveProjectAgent(storedAgent ?? DEFAULT_AGENT, route);
   }
 
   try {
@@ -102,7 +141,7 @@ export async function fetchCurrentAgent(): Promise<string> {
 
     if (error || !messages || messages.length === 0) {
       logger.debug("[AgentManager] No messages found, using stored agent");
-      return resolveProjectAgent(storedAgent ?? DEFAULT_AGENT);
+      return resolveProjectAgent(storedAgent ?? DEFAULT_AGENT, route);
     }
 
     const lastAgent = messages[0].info.agent;
@@ -114,18 +153,18 @@ export async function fetchCurrentAgent(): Promise<string> {
       logger.debug(
         `[AgentManager] Using stored agent "${storedAgent}" instead of session agent "${lastAgent}"`,
       );
-      return resolveProjectAgent(storedAgent);
+      return resolveProjectAgent(storedAgent, route);
     }
 
     // No stored agent yet: sync from session history
     if (lastAgent && lastAgent !== storedAgent) {
-      setCurrentAgent(lastAgent);
+      setAgentForRoute(lastAgent, route);
     }
 
-    return resolveProjectAgent(lastAgent || storedAgent || DEFAULT_AGENT);
+    return resolveProjectAgent(lastAgent || storedAgent || DEFAULT_AGENT, route);
   } catch (err) {
     logger.error("[AgentManager] Error fetching current agent:", err);
-    return resolveProjectAgent(storedAgent ?? DEFAULT_AGENT);
+    return resolveProjectAgent(storedAgent ?? DEFAULT_AGENT, route);
   }
 }
 
@@ -133,15 +172,15 @@ export async function fetchCurrentAgent(): Promise<string> {
  * Select agent and persist to settings
  * @param agentName Name of the agent to select
  */
-export function selectAgent(agentName: string): void {
+export function selectAgent(agentName: string, route?: ConversationRoute): void {
   logger.info(`[AgentManager] Selected agent: ${agentName}`);
-  setCurrentAgent(agentName);
+  setAgentForRoute(agentName, route);
 }
 
 /**
  * Get stored agent from settings (synchronous)
  * @returns Current agent name or default "build"
  */
-export function getStoredAgent(): string {
-  return getCurrentAgent() ?? "build";
+export function getStoredAgent(route?: ConversationRoute): string {
+  return getAgentForRoute(route) ?? "build";
 }

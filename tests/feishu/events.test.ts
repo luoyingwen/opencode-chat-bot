@@ -1,10 +1,12 @@
 import { beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { t } from "../../src/i18n/index.js";
-import { setCurrentSession } from "../../src/session/manager.js";
+import { clearPendingTextPermission, setPendingTextPermission } from "../../src/core/text-interactions/permission.js";
 import { summaryAggregator } from "../../src/summary/aggregator.js";
 import {
   clearFeishuActive,
+  hasFeishuPendingPermission,
+  hasFeishuPendingPermissionForChat,
   installFeishuEventRouting,
   setFeishuActive,
   setFeishuClient,
@@ -37,6 +39,7 @@ describe("feishu/events", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     clearFeishuActive();
+    clearPendingTextPermission();
     (
       summaryAggregator as unknown as {
         setOnThinking: (callback: ((sessionId: string) => void) | null) => void;
@@ -49,12 +52,13 @@ describe("feishu/events", () => {
         setOnSessionIdle: (callback: ((sessionId: string) => void) | null) => void;
       }
     ).setOnSessionIdle(null);
-    setCurrentSession({
-      id: "session-1",
-      title: "Test Session",
+    setFeishuActive({
+      userId: "user-1",
+      chatId: "chat-1",
+      routeKey: "feishu:user-1:chat-1",
+      sessionId: "session-1",
       directory: "D:/repo",
     });
-    setFeishuActive("user-1", "chat-1");
   });
 
   it("sends thinking text when no streaming card is active", async () => {
@@ -80,5 +84,25 @@ describe("feishu/events", () => {
     await vi.waitFor(() => {
       expect(sendMarkdownMessage).not.toHaveBeenCalled();
     });
+  });
+
+  it("checks pending permission by explicit chat route even without active target", () => {
+    clearFeishuActive();
+    setPendingTextPermission(
+      "feishu:user-1:chat-1",
+      {
+        id: "request-1",
+        sessionID: "session-1",
+        permission: "bash",
+        patterns: ["npm test"],
+        metadata: {},
+        always: [],
+      },
+      "D:/repo",
+    );
+
+    expect(hasFeishuPendingPermissionForChat("user-1", "chat-1")).toBe(true);
+    expect(hasFeishuPendingPermissionForChat("user-1", "chat-2")).toBe(false);
+    expect(hasFeishuPendingPermission("user-1")).toBe(false);
   });
 });

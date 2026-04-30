@@ -16,7 +16,7 @@ export const zhTW: I18nDictionary = {
   "cmd.description.agent": "切換模式",
   "cmd.description.agents": "列出可用模式",
   "cmd.description.agent_number": "依序號切換模式",
-  "cmd.description.rename": "重新命名目前工作階段",
+  "cmd.description.rename": "透過 /session rename 重新命名目前工作階段",
   "cmd.description.tts": "切換語音回覆",
   "cmd.description.open": "瀏覽並開啟目錄作為專案",
 
@@ -50,19 +50,19 @@ export const zhTW: I18nDictionary = {
   "common.unknown_error": "未知錯誤",
 
   "start.welcome":
-    "👋 歡迎使用 OpenCode Bot！\n\n可用命令：\n/projects — 選擇專案\n/sessions — 工作階段清單\n/new — 新建工作階段\n/status — 狀態\n/help — 說明\n\n請使用底部按鈕選擇模式、模型和變體。",
+    "👋 歡迎使用 OpenCode Bot！\n\n可用命令：\n/projects — 選擇專案\n/sessions — 工作階段清單\n/session new — 新建工作階段\n/status — 狀態\n/help — 說明\n\n請使用底部按鈕選擇模式、模型和變體。",
   "help.keyboard_hint": "💡 代理模式、模型、變體和上下文操作請使用底部鍵盤按鈕。",
   "help.text":
-    "📖 **說明**\n\n/status - 查看伺服器狀態\n/sessions - 工作階段清單\n/new - 建立新工作階段\n/help - 說明",
+    "📖 **說明**\n\n/status - 查看伺服器狀態\n/sessions - 工作階段清單\n/session new - 建立新工作階段\n/help - 說明",
 
   "bot.thinking": "💭 思考中...",
   "bot.project_not_selected": "🏗 尚未選擇專案。\n\n請先使用 /projects 選擇一個專案。",
   "bot.creating_session": "🔄 正在建立新工作階段...",
-  "bot.create_session_error": "🔴 建立工作階段失敗。請重試 /new，或使用 /status 檢查伺服器狀態。",
+  "bot.create_session_error": "🔴 建立工作階段失敗。請重試 /session new，或使用 /status 檢查伺服器狀態。",
   "bot.session_created": "✅ 工作階段已建立：{title}",
   "bot.session_busy": "⏳ 代理正在執行任務。請等待完成，或使用 /stop 中斷目前執行。",
   "bot.session_reset_project_mismatch":
-    "⚠️ 作用中的工作階段與所選專案不符，因此已重設。使用 /sessions 選擇一個工作階段，或 /new 建立新的。",
+    "⚠️ 作用中的工作階段與所選專案不符，因此已重設。使用 /sessions 選擇一個工作階段，或 /session new 建立新的。",
   "bot.prompt_send_error": "向 OpenCode 傳送請求失敗。",
   "bot.session_error": "🔴 OpenCode 回傳錯誤：{message}",
   "bot.session_retry": "🔁 {message}\n\n供應商在重複重試時持續回傳同一錯誤。使用 /stop 可停止。",
@@ -98,7 +98,7 @@ export const zhTW: I18nDictionary = {
   "status.project_hint": "使用 /projects 選擇專案",
   "status.session_selected": "📋 目前工作階段：{title}",
   "status.session_not_selected": "📋 目前工作階段：未選擇",
-  "status.session_hint": "使用 /sessions 選擇一個工作階段，或 /new 建立",
+  "status.session_hint": "使用 /sessions 選擇一個工作階段，或 /session new 建立",
   "status.server_unavailable": "🔴 OpenCode 伺服器無法使用\n\n使用 /opencode_start 啟動伺服器。",
 
   "projects.empty":
@@ -111,11 +111,11 @@ export const zhTW: I18nDictionary = {
   "projects.fetch_error": "🔴 OpenCode 伺服器無法使用，或載入專案時發生錯誤。",
   "projects.page_load_error": "無法載入此頁面。請重試。",
   "projects.selected":
-    "✅ 已選擇專案：{project}\n\n📋 工作階段已重設。請在此專案中使用 /sessions 或 /new。",
+    "✅ 已選擇專案：{project}\n\n📋 工作階段已重設。請在此專案中使用 /sessions 或 /session new。",
   "projects.select_error": "🔴 選擇專案失敗。",
 
   "sessions.project_not_selected": "🏗 尚未選擇專案。\n\n請先使用 /projects 選擇一個專案。",
-  "sessions.empty": "📭 找不到工作階段。\n\n使用 /new 建立新工作階段。",
+  "sessions.empty": "📭 找不到工作階段。\n\n使用 /session new 建立新工作階段。",
   "sessions.select": "請選擇一個工作階段：",
   "sessions.select_page": "請選擇一個工作階段（第 {page} 頁）：",
   "sessions.fetch_error": "🔴 OpenCode 伺服器無法使用，或載入工作階段時發生錯誤。",
@@ -137,7 +137,7 @@ export const zhTW: I18nDictionary = {
   "new.create_error": "🔴 OpenCode 伺服器無法使用，或建立工作階段時發生錯誤。",
 
   "stop.no_active_session":
-    "🛑 代理尚未啟動\n\n使用 /new 建立工作階段，或透過 /sessions 選擇一個。",
+    "🛑 代理尚未啟動\n\n使用 /session new 建立工作階段，或透過 /sessions 選擇一個。",
   "stop.in_progress": "🛑 已停止事件串流，正在傳送中止訊號...\n\n等待代理停止。",
   "stop.warn_unconfirmed":
     "⚠️ 事件串流已停止，但伺服器未確認中止。\n\n檢查 /status，並在幾秒後重試 /stop。",
@@ -206,7 +206,7 @@ export const zhTW: I18nDictionary = {
   "variant.menu.error": "🔴 取得變體清單失敗",
 
   "context.button.confirm": "✅ 是的，壓縮上下文",
-  "context.no_active_session": "⚠️ 沒有作用中的工作階段。使用 /new 建立工作階段",
+  "context.no_active_session": "⚠️ 沒有作用中的工作階段。使用 /session new 建立工作階段",
   "context.confirm_text":
     "📊 工作階段「{title}」的上下文壓縮\n\n這會透過移除歷史中的舊訊息來減少上下文佔用。目前任務不會被中斷。\n\n繼續？",
   "context.callback_session_not_found": "找不到工作階段",
@@ -324,11 +324,11 @@ export const zhTW: I18nDictionary = {
   "rename.error": "🔴 重新命名工作階段失敗。",
   "rename.cancelled": "❌ 重新命名已取消。",
   "rename.inactive_callback": "重新命名請求已失效",
-  "rename.inactive": "⚠️ 重新命名請求未啟用。請再次執行 /rename。",
+  "rename.inactive": "⚠️ 重新命名請求未啟用。請再次執行 /session rename。",
   "rename.blocked.expected_name": "⚠️ 請以文字輸入新工作階段名稱，或在重新命名訊息中點選取消。",
   "rename.blocked.command_not_allowed": "⚠️ 重新命名等待新名稱期間無法使用此命令。",
   "rename.button.cancel": "❌ 取消",
-  "rename.hint_abort": "傳送 /abort 取消重新命名。",
+  "rename.hint_abort": "輸入「取消」或 /cancel 取消重新命名。",
 
   "task.prompt.schedule":
     "⏰ 以自然語言傳送任務排程。\n\n範例：\n- 每 5 分鐘\n- 每天 17:00\n- 明天 12:00",
@@ -389,7 +389,7 @@ export const zhTW: I18nDictionary = {
   "commands.button.next_page": "下一頁 ➡️",
   "commands.page_empty_callback": "此頁沒有命令",
   "commands.page_load_error_callback": "無法載入此頁面。請重試。",
-  "commands.hint_select": "💡 輸入命令編號選擇，或輸入「取消」退出。",
+  "commands.hint_select": "💡 使用 `/command <編號>` 執行命令，或使用 `/command <編號> [參數]` 攜帶參數執行。",
   "commands.confirm_hint":
     "💡 輸入參數（可選），或：\n• 輸入「執行」無參數執行\n• 輸入「取消」返回列表",
   "commands.invalid_number": "請輸入有效的命令編號（{min}-{max}）。",
@@ -403,7 +403,7 @@ export const zhTW: I18nDictionary = {
   "open.access_denied": "⛔ 存取被拒：路徑超出允許的根目錄範圍",
   "open.scan_error": "🔴 無法瀏覽目錄：{error}",
   "open.open_error": "🔴 無法開啟目錄瀏覽器。",
-  "open.selected": "✅ 專案已新增：{project}\n\n📋 使用 /sessions 或 /new 開始工作。",
+  "open.selected": "✅ 專案已新增：{project}\n\n📋 使用 /sessions 或 /session new 開始工作。",
   "open.select_error": "🔴 新增專案失敗。",
   "open.no_subfolders": "📭 無子資料夾",
   "open.subfolder_count": "{count} 個子資料夾",

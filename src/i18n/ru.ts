@@ -52,22 +52,22 @@ export const ru: I18nDictionary = {
   "common.unknown_error": "неизвестная ошибка",
 
   "start.welcome":
-    "👋 Добро пожаловать в OpenCode Bot!\n\nИспользуйте команды:\n/projects — выбрать проект\n/sessions — список сессий\n/new — новая сессия\n/task — задача по расписанию\n/tasks — список задач по расписанию\n/status — статус\n/help — справка\n\nАгент, модель и вариант выбираются кнопками внизу.",
+    "👋 Добро пожаловать в OpenCode Bot!\n\nИспользуйте команды:\n/projects — выбрать проект\n/sessions — список сессий\n/session new — новая сессия\n/task — задача по расписанию\n/tasks — список задач по расписанию\n/status — статус\n/help — справка\n\nАгент, модель и вариант выбираются кнопками внизу.",
   "help.keyboard_hint":
     "💡 Агент, модель, вариант и действия с контекстом доступны через нижние кнопки клавиатуры.",
   "help.text":
-    "📖 **Справка**\n\n/status - Проверить статус сервера\n/sessions - Список сессий\n/new - Создать новую сессию\n/help - Справка",
+    "📖 **Справка**\n\n/status - Проверить статус сервера\n/sessions - Список сессий\n/session new - Создать новую сессию\n/help - Справка",
 
   "bot.thinking": "💭 Думаю...",
   "bot.project_not_selected": "🏗 Проект не выбран.\n\nСначала выберите проект командой /projects.",
   "bot.creating_session": "🔄 Создаю новую сессию...",
   "bot.create_session_error":
-    "🔴 Не удалось создать сессию. Попробуйте команду /new или проверьте статус сервера /status.",
+    "🔴 Не удалось создать сессию. Попробуйте команду /session new или проверьте статус сервера /status.",
   "bot.session_created": "✅ Сессия создана: {title}",
   "bot.session_busy":
     "⏳ Агент уже выполняет задачу. Дождитесь завершения или используйте /abort, чтобы прервать текущий запуск.",
   "bot.session_reset_project_mismatch":
-    "⚠️ Активная сессия не соответствует выбранному проекту, поэтому была сброшена. Используйте /sessions для выбора или /new для создания новой сессии.",
+    "⚠️ Активная сессия не соответствует выбранному проекту, поэтому была сброшена. Используйте /sessions для выбора или /session new для создания новой сессии.",
   "bot.prompt_send_error": "Не удалось отправить запрос в OpenCode.",
   "bot.session_error": "🔴 OpenCode вернул ошибку: {message}",
   "bot.session_retry":
@@ -105,7 +105,7 @@ export const ru: I18nDictionary = {
   "status.project_hint": "Используйте /projects для выбора проекта",
   "status.session_selected": "Текущая сессия: {title}",
   "status.session_not_selected": "Текущая сессия: не выбрана",
-  "status.session_hint": "Используйте /sessions для выбора или /new для создания",
+  "status.session_hint": "Используйте /sessions для выбора или /session new для создания",
   "status.server_unavailable":
     "🔴 OpenCode Server недоступен\n\nИспользуйте /opencode_start для запуска сервера.",
 
@@ -125,12 +125,12 @@ export const ru: I18nDictionary = {
     "🔴 OpenCode Server недоступен или произошла ошибка при получении списка проектов.",
   "projects.page_load_error": "Не удалось загрузить эту страницу. Попробуйте снова.",
   "projects.selected":
-    "✅ Проект выбран: {project}\n\n📋 Сессия сброшена. Используйте /sessions или /new для работы с этим проектом.",
+    "✅ Проект выбран: {project}\n\n📋 Сессия сброшена. Используйте /sessions или /session new для работы с этим проектом.",
   "projects.select_error": "🔴 Ошибка при выборе проекта.",
 
   "sessions.project_not_selected":
     "🏗 Проект не выбран.\n\nСначала выберите проект командой /projects.",
-  "sessions.empty": "📭 Сессий нет.\n\nСоздайте новую сессию командой /new.",
+  "sessions.empty": "📭 Сессий нет.\n\nСоздайте новую сессию командой /session new.",
   "sessions.select": "Выберите сессию:",
   "sessions.select_page": "Выберите сессию (страница {page}):",
   "sessions.fetch_error":
@@ -154,7 +154,7 @@ export const ru: I18nDictionary = {
   "new.create_error": "🔴 OpenCode Server недоступен или произошла ошибка при создании сессии.",
 
   "stop.no_active_session":
-    "🛑 Агент не был запущен\n\nСначала создайте сессию командой /new или выберите существующую через /sessions.",
+    "🛑 Агент не был запущен\n\nСначала создайте сессию командой /session new или выберите существующую через /sessions.",
   "stop.in_progress":
     "🛑 Отключил поток событий и отправляю сигнал прерывания...\n\nОжидание остановки агента.",
   "stop.warn_unconfirmed":
@@ -232,7 +232,7 @@ export const ru: I18nDictionary = {
   "variant.menu.error": "🔴 Не удалось получить список вариантов",
 
   "context.button.confirm": "✅ Да, сжать контекст",
-  "context.no_active_session": "⚠️ Нет активной сессии. Создайте сессию командой /new",
+  "context.no_active_session": "⚠️ Нет активной сессии. Создайте сессию командой /session new",
   "context.confirm_text":
     '📊 Сжатие контекста для сессии "{title}"\n\nЭто уменьшит использование контекста, удалив старые сообщения из истории. Текущая задача не будет прервана.\n\nПродолжить?',
   "context.callback_session_not_found": "Сессия не найдена",
@@ -356,13 +356,13 @@ export const ru: I18nDictionary = {
   "rename.error": "🔴 Не удалось переименовать сессию.",
   "rename.cancelled": "❌ Переименование отменено.",
   "rename.inactive_callback": "Запрос переименования неактивен",
-  "rename.inactive": "⚠️ Запрос переименования неактивен. Выполните /rename снова.",
+  "rename.inactive": "⚠️ Запрос переименования неактивен. Выполните /session rename снова.",
   "rename.blocked.expected_name":
     "⚠️ Введите новое название текстом или нажмите Отмена в сообщении переименования.",
   "rename.blocked.command_not_allowed":
     "⚠️ Эта команда недоступна, пока ожидается новое название сессии.",
   "rename.button.cancel": "❌ Отмена",
-  "rename.hint_abort": "Отправьте /abort, чтобы отменить переименование.",
+  "rename.hint_abort": "Введите \"cancel\" или /cancel, чтобы отменить переименование.",
 
   "task.prompt.schedule":
     "⏰ Отправьте расписание задачи обычным языком.\n\nПримеры:\n- каждые 5 минут\n- каждый день в 17:00\n- завтра в 12:00",
@@ -431,12 +431,12 @@ export const ru: I18nDictionary = {
   "commands.page_empty_callback": "На этой странице нет команд",
   "commands.page_load_error_callback":
     "Не удалось загрузить эту страницу. Пожалуйста, попробуйте снова.",
-  "commands.hint_select": '💡 Введите номер команды или "отмена" для выхода.',
+  "commands.hint_select": '💡 Используйте `/command <номер>` для запуска команды или `/command <номер> [аргументы]` для запуска с аргументами.',
   "commands.confirm_hint":
     '💡 Введите аргументы (опционально), или:\n• "выполнить" без аргументов\n• "отмена" для возврата',
   "commands.invalid_number": "Введите правильный номер ({min}-{max}).",
 
-  "cmd.description.rename": "Переименовать текущую сессию",
+  "cmd.description.rename": "Переименовать текущую сессию через /session rename",
 
   "cli.usage":
     "Использование:\n  opencode-bot [start] [--mode sources|installed]\n  opencode-bot status\n  opencode-bot stop\n  opencode-bot config\n\nЗаметки:\n  - Без команды по умолчанию используется `start`\n  - `--mode` сейчас поддерживается только для `start`",
@@ -478,7 +478,7 @@ export const ru: I18nDictionary = {
   "open.scan_error": "🔴 Не удалось открыть каталог: {error}",
   "open.open_error": "🔴 Не удалось открыть обозреватель каталогов.",
   "open.selected":
-    "✅ Проект добавлен: {project}\n\n📋 Используйте /sessions или /new для начала работы.",
+    "✅ Проект добавлен: {project}\n\n📋 Используйте /sessions или /session new для начала работы.",
   "open.select_error": "🔴 Не удалось добавить проект.",
   "open.no_subfolders": "📭 Нет подпапок",
   "open.subfolder_count": "{count} подпапка",

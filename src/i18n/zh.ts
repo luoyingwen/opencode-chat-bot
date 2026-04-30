@@ -48,19 +48,19 @@ export const zh: I18nDictionary = {
   "common.unknown_error": "未知错误",
 
   "start.welcome":
-    "👋 欢迎使用 OpenCode Bot！\n\n可用命令：\n/projects — 选择项目\n/sessions — 会话列表\n/new — 新建会话\n/task — 定时任务\n/tasks — 定时任务列表\n/status — 状态\n/help — 帮助\n\n请使用底部按钮选择 Agent、模型和变体。",
+    "👋 欢迎使用 OpenCode Bot！\n\n可用命令：\n/projects — 选择项目\n/sessions — 会话列表\n/session new — 新建会话\n/task — 定时任务\n/tasks — 定时任务列表\n/status — 状态\n/help — 帮助\n\n请使用底部按钮选择 Agent、模型和变体。",
   "help.keyboard_hint": "💡 Agent、模型、变体和上下文操作请使用底部键盘按钮。",
   "help.text":
-    "📖 **帮助**\n\n/status - 查看服务器状态\n/sessions - 会话列表\n/new - 创建新会话\n/help - 帮助",
+    "📖 **帮助**\n\n/status - 查看服务器状态\n/sessions - 会话列表\n/session new - 创建新会话\n/help - 帮助",
 
   "bot.thinking": "💭 思考中...",
   "bot.project_not_selected": "🏗 未选择项目。\n\n请先使用 /projects 选择一个项目。",
   "bot.creating_session": "🔄 正在创建新会话...",
-  "bot.create_session_error": "🔴 创建会话失败。请重试 /new，或使用 /status 检查服务器状态。",
+  "bot.create_session_error": "🔴 创建会话失败。请重试 /session new，或使用 /status 检查服务器状态。",
   "bot.session_created": "✅ 会话已创建：{title}",
   "bot.session_busy": "⏳ 代理正在执行任务。请等待完成，或使用 /abort 中断当前运行。",
   "bot.session_reset_project_mismatch":
-    "⚠️ 活动会话与所选项目不匹配，因此已重置。使用 /sessions 选择一个会话，或 /new 创建新会话。",
+    "⚠️ 活动会话与所选项目不匹配，因此已重置。使用 /sessions 选择一个会话，或 /session new 创建新会话。",
   "bot.prompt_send_error": "向 OpenCode 发送请求失败。",
   "bot.session_error": "🔴 OpenCode 返回错误：{message}",
   "bot.session_retry": "🔁 {message}\n\n提供方在重复重试时持续返回同一错误。使用 /abort 可停止。",
@@ -96,7 +96,7 @@ export const zh: I18nDictionary = {
   "status.project_hint": "使用 /projects 选择项目",
   "status.session_selected": "当前会话：{title}",
   "status.session_not_selected": "当前会话：未选择",
-  "status.session_hint": "使用 /sessions 选择一个会话，或 /new 创建",
+  "status.session_hint": "使用 /sessions 选择一个会话，或 /session new 创建",
   "status.server_unavailable": "🔴 OpenCode 服务器不可用\n\n使用 /opencode_start 启动服务器。",
 
   "tts.enabled": "🔊 已全局启用语音回复。",
@@ -114,11 +114,11 @@ export const zh: I18nDictionary = {
   "projects.fetch_error": "🔴 OpenCode 服务器不可用，或加载项目时发生错误。",
   "projects.page_load_error": "无法加载此页面。请重试。",
   "projects.selected":
-    "✅ 已选择项目：{project}\n\n📋 会话已重置。请在此项目中使用 /sessions 或 /new。",
+    "✅ 已选择项目：{project}\n\n📋 会话已重置。请在此项目中使用 /sessions 或 /session new。",
   "projects.select_error": "🔴 选择项目失败。",
 
   "sessions.project_not_selected": "🏗 未选择项目。\n\n请先使用 /projects 选择一个项目。",
-  "sessions.empty": "📭 未找到会话。\n\n使用 /new 创建新会话。",
+  "sessions.empty": "📭 未找到会话。\n\n使用 /session new 创建新会话。",
   "sessions.select": "请选择一个会话：",
   "sessions.select_page": "请选择一个会话（第 {page} 页）：",
   "sessions.fetch_error": "🔴 OpenCode 服务器不可用，或加载会话时发生错误。",
@@ -139,7 +139,7 @@ export const zh: I18nDictionary = {
   "new.created": "✅ 新会话已创建：{title}",
   "new.create_error": "🔴 OpenCode 服务器不可用，或创建会话时发生错误。",
 
-  "stop.no_active_session": "🛑 代理尚未启动\n\n使用 /new 创建会话，或通过 /sessions 选择一个。",
+  "stop.no_active_session": "🛑 代理尚未启动\n\n使用 /session new 创建会话，或通过 /sessions 选择一个。",
   "stop.in_progress": "🛑 已停止事件流，正在发送中止信号...\n\n等待代理停止。",
   "stop.warn_unconfirmed":
     "⚠️ 事件流已停止，但服务器未确认中止。\n\n检查 /status，并在几秒后重试 /abort。",
@@ -207,7 +207,7 @@ export const zh: I18nDictionary = {
   "variant.menu.error": "🔴 获取变体列表失败",
 
   "context.button.confirm": "✅ 是的，压缩上下文",
-  "context.no_active_session": "⚠️ 没有活动会话。使用 /new 创建会话",
+  "context.no_active_session": "⚠️ 没有活动会话。使用 /session new 创建会话",
   "context.confirm_text":
     '📊 会话 "{title}" 的上下文压缩\n\n这会通过移除历史中的旧消息来减少上下文占用。当前任务不会被中断。\n\n继续？',
   "context.callback_session_not_found": "未找到会话",
@@ -325,11 +325,11 @@ export const zh: I18nDictionary = {
   "rename.error": "🔴 重命名会话失败。",
   "rename.cancelled": "❌ 重命名已取消。",
   "rename.inactive_callback": "重命名请求已失效",
-  "rename.inactive": "⚠️ 重命名请求未激活。请再次运行 /rename。",
+  "rename.inactive": "⚠️ 重命名请求未激活。请再次运行 /session rename。",
   "rename.blocked.expected_name": "⚠️ 请以文本输入新会话名称，或在重命名消息中点击取消。",
   "rename.blocked.command_not_allowed": "⚠️ 重命名等待新名称期间不可用此命令。",
   "rename.button.cancel": "❌ 取消",
-  "rename.hint_abort": "发送 /abort 取消重命名。",
+  "rename.hint_abort": "输入“取消”或 /cancel 取消重命名。",
 
   "task.prompt.schedule":
     "⏰ 请用自然语言发送任务的时间安排。\n\n示例：\n- 每 5 分钟\n- 每天 17:00\n- 明天 12:00",
@@ -391,12 +391,12 @@ export const zh: I18nDictionary = {
   "commands.button.next_page": "下一页 ➡️",
   "commands.page_empty_callback": "这一页没有命令",
   "commands.page_load_error_callback": "无法加载此页面。请重试。",
-  "commands.hint_select": "💡 输入命令编号选择，或输入「取消」退出。",
+  "commands.hint_select": "💡 使用 `/command <编号>` 执行命令，或使用 `/command <编号> [参数]` 携带参数执行。",
   "commands.confirm_hint":
     "💡 输入参数（可选），或：\n• 输入「执行」无参数执行\n• 输入「取消」返回列表",
   "commands.invalid_number": "请输入有效的命令编号（{min}-{max}）。",
 
-  "cmd.description.rename": "重命名当前会话",
+  "cmd.description.rename": "通过 /session rename 重命名当前会话",
 
   "cli.usage":
     "用法:\n  opencode-bot [start] [--mode sources|installed]\n  opencode-bot status\n  opencode-bot stop\n  opencode-bot config\n\n注意:\n  - 无命令时默认为 `start`\n  - `--mode` 当前仅支持 `start`",
@@ -435,7 +435,7 @@ export const zh: I18nDictionary = {
   "open.access_denied": "⛔ 访问被拒绝：路径超出允许的目录范围",
   "open.scan_error": "🔴 无法浏览目录：{error}",
   "open.open_error": "🔴 无法打开目录浏览器。",
-  "open.selected": "✅ 项目已添加：{project}\n\n📋 使用 /sessions 或 /new 开始工作。",
+  "open.selected": "✅ 项目已添加：{project}\n\n📋 使用 /sessions 或 /session new 开始工作。",
   "open.select_error": "🔴 添加项目失败。",
   "open.no_subfolders": "📭 无子文件夹",
   "open.subfolder_count": "{count} 个子文件夹",

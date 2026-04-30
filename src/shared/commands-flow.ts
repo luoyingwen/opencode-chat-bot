@@ -4,7 +4,7 @@
  */
 
 import { opencodeClient } from "../opencode/client.js";
-import { getCurrentProject } from "../settings/manager.js";
+import { getConversationState } from "../settings/manager.js";
 import { logger } from "../utils/logger.js";
 import { t } from "../i18n/index.js";
 
@@ -32,6 +32,150 @@ export interface CommandsFlowResult {
 export type ExecuteCommandCallback = (commandName: string, args: string) => Promise<void>;
 
 const STATE_TIMEOUT_MS = 5 * 60 * 1000; // 5 minutes
+const commandsCache = new Map<string, CommandItem[]>();
+
+function getCommandsCache(cacheKey: string): CommandItem[] | null {
+  return commandsCache.get(cacheKey) ?? null;
+}
+
+function setCommandsCache(cacheKey: string, commands: CommandItem[]): void {
+  commandsCache.set(cacheKey, commands);
+}
+
+function getProjectDirectory(routeKey: string): string | null {
+  const currentProject = getConversationState(routeKey)?.currentProject;
+  return currentProject?.worktree ?? null;
+}
+
+function getCurrentSessionId(routeKey: string): string | null {
+  return getConversationState(routeKey)?.currentSession?.id ?? null;
+}
+
+async function fetchCommands(directory: string): Promise<CommandItem[] | null> {
+  const { data, error } = await opencodeClient.command.list({
+    directory: directory.replace(/\\/g, "/"),
+  });
+
+  if (error || !data || data.length === 0) {
+    return null;
+  }
+
+  const commands = data
+    .filter((cmd) => typeof cmd.name === "string" && cmd.name.trim().length > 0)
+    .map((cmd) => ({
+      name: cmd.name,
+      description: cmd.description?.trim() || t("commands.no_description"),
+    }));
+
+  return commands.length > 0 ? commands : null;
+}
+
+export async function listCommandsForRoute(cacheKey: string, routeKey: string): Promise<string> {
+  const projectDirectory = getProjectDirectory(routeKey);
+  if (!projectDirectory) {
+    return t("bot.project_not_selected");
+  }
+
+  try {
+    const commands = await fetchCommands(projectDirectory);
+    if (!commands) {
+      return t("commands.empty");
+    }
+
+    setCommandsCache(cacheKey, commands);
+    return formatCommandsList(commands);
+  } catch (err) {
+    logger.error("[CommandsFlow] Error fetching commands:", err);
+    return t("commands.fetch_error");
+  }
+}
+
+export async function executeCommandByIndexForRoute(
+  cacheKey: string,
+  routeKey: string,
+  indexStr: string,
+  args: string = "",
+): Promise<string> {
+  const projectDirectory = getProjectDirectory(routeKey);
+  if (!projectDirectory) {
+    return t("bot.project_not_selected");
+  }
+
+  const currentSessionId = getCurrentSessionId(routeKey);
+  if (!currentSessionId) {
+    return t("status.session_not_selected");
+  }
+
+  const index = parseInt(indexStr.trim(), 10);
+  if (isNaN(index) || index < 1) {
+    return t("commands.invalid_number", { min: "1", max: "?" });
+  }
+
+  try {
+    let commands = getCommandsCache(cacheKey);
+    if (!commands) {
+      commands = await fetchCommands(projectDirectory);
+      if (!commands) {
+        return t("commands.fetch_error");
+      }
+
+      setCommandsCache(cacheKey, commands);
+    }
+
+    if (index > commands.length) {
+      return t("commands.invalid_number", { min: "1", max: String(commands.length) });
+    }
+
+    const command = commands[index - 1];
+    return executeResolvedCommand(routeKey, projectDirectory, currentSessionId, command.name, args);
+  } catch (err) {
+    logger.error("[CommandsFlow] Execution error:", err);
+    return t("commands.execute_error");
+  }
+}
+
+export async function executeCommandByNameForRoute(
+  routeKey: string,
+  commandName: string,
+  args: string = "",
+): Promise<string> {
+  const projectDirectory = getProjectDirectory(routeKey);
+  if (!projectDirectory) {
+    return t("bot.project_not_selected");
+  }
+
+  const currentSessionId = getCurrentSessionId(routeKey);
+  if (!currentSessionId) {
+    return t("status.session_not_selected");
+  }
+
+  try {
+    return executeResolvedCommand(routeKey, projectDirectory, currentSessionId, commandName, args);
+  } catch (err) {
+    logger.error("[CommandsFlow] Execution error:", err);
+    return t("commands.execute_error");
+  }
+}
+
+async function executeResolvedCommand(
+  routeKey: string,
+  projectDirectory: string,
+  currentSessionId: string,
+  commandName: string,
+  args: string,
+): Promise<string> {
+  const trimmedArgs = args.trim();
+
+  await opencodeClient.session.command({
+    sessionID: currentSessionId,
+    directory: projectDirectory,
+    command: commandName,
+    arguments: trimmedArgs,
+  });
+
+  logger.info(`[CommandsFlow] Executed route=${routeKey} command=/${commandName}`);
+  return formatExecutingMessage(commandName, trimmedArgs);
+}
 
 /**
  * Generic state manager for commands flow
@@ -76,36 +220,25 @@ export class CommandsFlowManager {
  */
 export async function startCommandsFlow(
   manager: CommandsFlowManager,
-  userId: string,
+  flowKey: string,
+  routeKey: string,
 ): Promise<string> {
-  const currentProject = getCurrentProject();
-  if (!currentProject) {
+  const projectDirectory = getProjectDirectory(routeKey);
+  if (!projectDirectory) {
     return t("bot.project_not_selected");
   }
 
   try {
-    const { data, error } = await opencodeClient.command.list({
-      directory: currentProject.worktree.replace(/\\/g, "/"),
-    });
-
-    if (error || !data || data.length === 0) {
+    const commands = await fetchCommands(projectDirectory);
+    if (!commands) {
       return t("commands.empty");
     }
 
-    const commands: CommandItem[] = data
-      .filter((cmd) => typeof cmd.name === "string" && cmd.name.trim().length > 0)
-      .map((cmd) => ({
-        name: cmd.name,
-        description: cmd.description?.trim() || t("commands.no_description"),
-      }));
+    setCommandsCache(flowKey, commands);
 
-    if (commands.length === 0) {
-      return t("commands.empty");
-    }
-
-    manager.setState(userId, {
+    manager.setState(flowKey, {
       stage: "list",
-      projectDirectory: currentProject.worktree,
+      projectDirectory,
       commands,
       selectedCommand: null,
       selectedIndex: -1,
@@ -154,20 +287,13 @@ function handleListStage(
 
   const selectedCommand = state.commands[cmdNumber - 1];
 
-  // Update state to confirm stage
-  manager.setState(userId, {
-    ...state,
-    stage: "confirm",
-    selectedCommand,
-    selectedIndex: cmdNumber - 1,
-    lastActivity: Date.now(),
-  });
+  manager.clearState(userId);
 
   return {
-    type: "message",
-    message: formatConfirmMessage(selectedCommand),
-    commandName: null,
-    args: null,
+    type: "execute",
+    message: formatExecutingMessage(selectedCommand.name, ""),
+    commandName: selectedCommand.name,
+    args: "",
   };
 }
 
@@ -261,20 +387,6 @@ function formatCommandsList(commands: CommandItem[]): string {
 
   lines.push("");
   lines.push(t("commands.hint_select"));
-
-  return lines.join("\n");
-}
-
-/**
- * Format confirmation message
- */
-function formatConfirmMessage(command: CommandItem): string {
-  const lines: string[] = [];
-  lines.push("📋 Execute Command\n");
-  lines.push(`Command: /${command.name}`);
-  lines.push(`Description: ${command.description}`);
-  lines.push("");
-  lines.push(t("commands.confirm_hint"));
 
   return lines.join("\n");
 }

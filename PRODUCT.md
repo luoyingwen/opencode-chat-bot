@@ -96,14 +96,14 @@ No public inbound ports are required for normal usage.
 Current command set:
 
 - `/status` - server, project, and session status
-- `/new` - create a new session
+- `/session new` - create a new session
 - `/abort` - stop the current task
 - `/sessions` - show and switch recent sessions
 - `/projects` - show and switch projects
 - `/tts` - toggle global audio replies
 - `/task` - create a scheduled task
 - `/tasklist` - browse and delete scheduled tasks
-- `/rename` - rename current session
+- `/session rename [title]` - rename current session
 - `/commands` - browse and run custom commands (plus built-ins like `init` and `review`)
 - `/opencode_start` - start local OpenCode server
 - `/opencode_stop` - stop local OpenCode server
@@ -115,11 +115,11 @@ Text messages (non-commands) are treated as prompts for OpenCode only when no bl
 
 Interaction routing rules:
 
-- Only one interactive flow can be active at a time (inline menu, permission, question, rename, commands)
+- Only one interactive flow can be active at a time (permission, question, rename, scheduled task, command flows)
 - While an interaction is active, unrelated input is blocked with a contextual hint
 - Allowed utility commands during active interactions: `/help`, `/status`, `/abort`
 - Unknown slash commands return an explicit fallback message
-- Interaction flows do not expire automatically and wait for explicit completion (`answer`, `cancel`, `/abort`, reset/cleanup)
+- Text-first scheduled task and task list flows expire after inactivity; other interaction flows wait for explicit completion (`answer`, `cancel`, `/abort`, reset/cleanup)
 
 Model picker behavior:
 
@@ -132,16 +132,17 @@ Model picker behavior:
 
 - [x] Single-user access control by allowed platform user ID
 - [x] OpenCode server control from chat (`/status`, `/opencode_start`, `/opencode_stop`)
-- [x] Project and session management from chat (`/projects`, `/sessions`, `/new`)
+- [x] Project and session management from chat (`/projects`, `/sessions`, `/session new`)
 - [x] Remote task execution and interruption support (`/abort`)
 - [x] Chat-friendly result delivery, including sending generated code/files when needed
-- [x] Interactive question and permission handling directly in chat (buttons + custom answers)
+- [x] Interactive question and permission handling directly in chat with text-first replies
 - [x] Live pinned session status in chat (project, model, context usage, changed files)
 - [x] In-chat controls for model, agent, variant, and context
 - [x] Built-in and custom command catalog access (`/commands`)
 - [x] Scheduled task creation flow (`/task`)
 - [x] Scheduled task runtime execution with deferred chat delivery
 - [x] Scheduled task list and deletion flow (`/tasklist`)
+- [x] Shared text-first interaction core for `/session rename`, `/task`, `/tasklist`, and permission replies across DingTalk and Feishu
 - [x] Persistent settings between restarts (`settings.json`)
 - [x] UI localization support via i18n files
 - [x] Service message visibility controls (thinking/tool updates)

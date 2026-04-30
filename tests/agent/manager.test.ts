@@ -16,12 +16,44 @@ const mocked = vi.hoisted(() => {
       }
     | undefined;
   let currentAgent: string | undefined;
+  const conversationStates: Record<
+    string,
+    {
+      currentProject?: { id: string; worktree: string; name: string };
+      currentSession?: { id: string; directory: string; title: string };
+      currentAgent?: string;
+    }
+  > = {};
 
   const appAgentsMock = vi.fn();
   const sessionMessagesMock = vi.fn();
   const getCurrentProjectMock = vi.fn(() => currentProject);
   const getCurrentSessionMock = vi.fn(() => currentSession);
   const getCurrentAgentMock = vi.fn(() => currentAgent);
+  const getConversationStateMock = vi.fn((routeKey: string) => conversationStates[routeKey]);
+  const updateConversationStateMock = vi.fn(
+    (
+      routeKey: string,
+      patch: {
+        currentProject?: { id: string; worktree: string; name: string } | null;
+        currentSession?: { id: string; directory: string; title: string } | null;
+        currentAgent?: string | null;
+      },
+    ) => {
+      const nextState = { ...(conversationStates[routeKey] ?? {}) };
+      if (Object.prototype.hasOwnProperty.call(patch, "currentProject")) {
+        nextState.currentProject = patch.currentProject ?? undefined;
+      }
+      if (Object.prototype.hasOwnProperty.call(patch, "currentSession")) {
+        nextState.currentSession = patch.currentSession ?? undefined;
+      }
+      if (Object.prototype.hasOwnProperty.call(patch, "currentAgent")) {
+        nextState.currentAgent = patch.currentAgent ?? undefined;
+      }
+      conversationStates[routeKey] = nextState;
+      return nextState;
+    },
+  );
   const setCurrentAgentMock = vi.fn((agentName: string) => {
     currentAgent = agentName;
   });
@@ -32,6 +64,8 @@ const mocked = vi.hoisted(() => {
     getCurrentProjectMock,
     getCurrentSessionMock,
     getCurrentAgentMock,
+    getConversationStateMock,
+    updateConversationStateMock,
     setCurrentAgentMock,
     loggerDebugMock: vi.fn(),
     loggerErrorMock: vi.fn(),
@@ -45,6 +79,21 @@ const mocked = vi.hoisted(() => {
     },
     setCurrentAgent: (agentName?: string) => {
       currentAgent = agentName;
+    },
+    resetConversationStates: () => {
+      for (const key of Object.keys(conversationStates)) {
+        delete conversationStates[key];
+      }
+    },
+    setConversationState: (
+      routeKey: string,
+      state: {
+        currentProject?: { id: string; worktree: string; name: string };
+        currentSession?: { id: string; directory: string; title: string };
+        currentAgent?: string;
+      },
+    ) => {
+      conversationStates[routeKey] = state;
     },
   };
 });
@@ -63,7 +112,9 @@ vi.mock("../../src/opencode/client.js", () => ({
 vi.mock("../../src/settings/manager.js", () => ({
   getCurrentProject: mocked.getCurrentProjectMock,
   getCurrentAgent: mocked.getCurrentAgentMock,
+  getConversationState: mocked.getConversationStateMock,
   setCurrentAgent: mocked.setCurrentAgentMock,
+  updateConversationState: mocked.updateConversationStateMock,
 }));
 
 vi.mock("../../src/session/manager.js", () => ({
@@ -79,7 +130,13 @@ vi.mock("../../src/utils/logger.js", () => ({
   },
 }));
 
-import { fetchCurrentAgent, getAvailableAgents, resolveProjectAgent } from "../../src/agent/manager.js";
+import {
+  fetchCurrentAgent,
+  getAvailableAgents,
+  getStoredAgent,
+  resolveProjectAgent,
+  selectAgent,
+} from "../../src/agent/manager.js";
 
 function createAgentResponse(
   agents: Array<{ name: string; mode: "primary" | "all" | "subagent"; hidden?: boolean }>,
@@ -97,6 +154,8 @@ describe("agent/manager", () => {
     mocked.getCurrentProjectMock.mockClear();
     mocked.getCurrentSessionMock.mockClear();
     mocked.getCurrentAgentMock.mockClear();
+    mocked.getConversationStateMock.mockClear();
+    mocked.updateConversationStateMock.mockClear();
     mocked.setCurrentAgentMock.mockClear();
     mocked.loggerDebugMock.mockReset();
     mocked.loggerErrorMock.mockReset();
@@ -105,6 +164,7 @@ describe("agent/manager", () => {
     mocked.setCurrentProject(undefined);
     mocked.setCurrentSession(undefined);
     mocked.setCurrentAgent(undefined);
+    mocked.resetConversationStates();
   });
 
   it("filters out hidden agents and subagents", async () => {
@@ -189,5 +249,34 @@ describe("agent/manager", () => {
     expect(result).toBe("build");
     expect(mocked.setCurrentAgentMock).toHaveBeenCalledWith("build");
     expect(mocked.sessionMessagesMock).not.toHaveBeenCalled();
+  });
+
+  it("reads and writes agent state for the provided route", async () => {
+    const route = { channelId: "feishu", accountId: "user-1", conversationId: "chat-1" };
+    mocked.setConversationState("feishu:user-1:chat-1", {
+      currentProject: {
+        id: "project-1",
+        worktree: "/workspace/project-1",
+        name: "project-1",
+      },
+      currentAgent: "orchestrator",
+    });
+    mocked.appAgentsMock.mockResolvedValue(
+      createAgentResponse([
+        { name: "build", mode: "primary" },
+        { name: "plan", mode: "primary" },
+      ]),
+    );
+
+    expect(getStoredAgent(route)).toBe("orchestrator");
+
+    const resolved = await resolveProjectAgent(undefined, route);
+    expect(resolved).toBe("build");
+
+    selectAgent("plan", route);
+    expect(mocked.updateConversationStateMock).toHaveBeenCalledWith(
+      "feishu:user-1:chat-1",
+      { currentAgent: "plan" },
+    );
   });
 });
