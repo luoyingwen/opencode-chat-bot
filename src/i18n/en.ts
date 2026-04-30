@@ -362,7 +362,7 @@ export const en = {
   "rename.blocked.command_not_allowed":
     "⚠️ This command is not available while rename is waiting for a new name.",
   "rename.button.cancel": "❌ Cancel",
-  "rename.hint_abort": "Type \"cancel\" or /cancel to cancel renaming.",
+  "rename.hint_abort": "Type \"cancel\", \"取消\", or /cancel to cancel renaming.",
 
   "task.prompt.schedule":
     "⏰ Send the task schedule in natural language.\n\nExamples:\n- every 5 minutes\n- every day at 17:00\n- tomorrow at 12:00",
@@ -374,6 +374,7 @@ export const en = {
     "✅ Schedule parsed\n\nHow I understood it: {summary}\n{cronLine}Timezone: {timezone}\nType: {kind}\nNext run: {nextRunAt}",
   "task.schedule_preview.cron": "Cron: {cron}",
   "task.prompt.body": "📝 Now send what the bot should do on schedule.",
+  "task.hint_cancel": "Type \"cancel\", \"取消\", or /cancel to cancel.",
   "task.prompt_empty": "⚠️ Task text cannot be empty.",
   "task.created":
     "✅ Scheduled task created\n\nTask: {description}\nProject: {project}\nModel: {model}\nSchedule: {schedule}\n{cronLine}Next run: {nextRunAt}",
@@ -399,6 +400,7 @@ export const en = {
 
   "tasklist.empty": "📭 No scheduled tasks yet.",
   "tasklist.select": "Select a scheduled task:",
+  "tasklist.select_hint": "Type a task number to view details, or \"cancel\", \"取消\", or /cancel to exit.",
   "tasklist.details":
     "⏰ Scheduled task\n\nTask: {prompt}\nProject: {project}\nSchedule: {schedule}\n{cronLine}Timezone: {timezone}\nNext run: {nextRunAt}\nLast run: {lastRunAt}\nRun count: {runCount}",
   "tasklist.details.cron": "Cron: {cron}",
@@ -408,6 +410,10 @@ export const en = {
   "tasklist.cancelled_callback": "Cancelled",
   "tasklist.inactive_callback": "This scheduled task menu is inactive",
   "tasklist.load_error": "🔴 Failed to load scheduled tasks.",
+  "tasklist.invalid_number": "⚠️ Enter a valid task number, or \"cancel\", \"取消\", or /cancel to exit.",
+  "tasklist.not_found": "⚠️ Task #{number} does not exist. There are {count} tasks.",
+  "tasklist.hint_detail": "Type \"delete\" or \"删除\" to delete this task, or \"cancel\", \"取消\", or /cancel to go back.",
+  "tasklist.delete_error": "❌ Failed to delete task.",
 
   "commands.select": "Choose an OpenCode command:",
   "commands.empty": "📭 No OpenCode commands are available for this project.",
@@ -430,7 +436,7 @@ export const en = {
   "commands.page_load_error_callback": "Cannot load this page. Please try again.",
   "commands.hint_select": '💡 Use `/command <number>` to execute a command, or `/command <number> [args]` to run it with arguments.',
   "commands.confirm_hint":
-    '💡 Enter arguments (optional), or:\n• Type "run" to execute without arguments\n• Type "cancel" to go back',
+    '💡 Enter arguments for the command, or type "cancel", "取消", or /cancel to go back.',
   "commands.invalid_number": "Please enter a valid command number ({min}-{max}).",
 
   "cmd.description.rename": "Rename current session via /session rename",

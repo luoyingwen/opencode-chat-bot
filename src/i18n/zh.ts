@@ -329,7 +329,7 @@ export const zh: I18nDictionary = {
   "rename.blocked.expected_name": "⚠️ 请以文本输入新会话名称，或在重命名消息中点击取消。",
   "rename.blocked.command_not_allowed": "⚠️ 重命名等待新名称期间不可用此命令。",
   "rename.button.cancel": "❌ 取消",
-  "rename.hint_abort": "输入“取消”或 /cancel 取消重命名。",
+  "rename.hint_abort": "输入“取消”、\"cancel\" 或 /cancel 取消重命名。",
 
   "task.prompt.schedule":
     "⏰ 请用自然语言发送任务的时间安排。\n\n示例：\n- 每 5 分钟\n- 每天 17:00\n- 明天 12:00",
@@ -340,6 +340,7 @@ export const zh: I18nDictionary = {
     "✅ 时间安排已解析\n\n理解为：{summary}\n{cronLine}时区：{timezone}\n类型：{kind}\n下次运行：{nextRunAt}",
   "task.schedule_preview.cron": "Cron: {cron}",
   "task.prompt.body": "📝 现在发送机器人按此时间安排需要执行的内容。",
+  "task.hint_cancel": "输入“取消”、\"cancel\" 或 /cancel 可退出。",
   "task.prompt_empty": "⚠️ 任务文本不能为空。",
   "task.created":
     "✅ 定时任务已创建\n\n任务：{description}\n项目：{project}\n模型：{model}\n时间安排：{schedule}\n{cronLine}下次运行：{nextRunAt}",
@@ -363,6 +364,7 @@ export const zh: I18nDictionary = {
 
   "tasklist.empty": "📭 还没有定时任务。",
   "tasklist.select": "请选择一个定时任务：",
+  "tasklist.select_hint": "输入任务编号查看详情，或输入“取消”、\"cancel\" 或 /cancel 退出。",
   "tasklist.details":
     "⏰ 定时任务\n\n任务：{prompt}\n项目：{project}\n计划：{schedule}\n{cronLine}时区：{timezone}\n下次运行：{nextRunAt}\n上次运行：{lastRunAt}\n运行次数：{runCount}",
   "tasklist.details.cron": "Cron: {cron}",
@@ -372,6 +374,10 @@ export const zh: I18nDictionary = {
   "tasklist.cancelled_callback": "已取消",
   "tasklist.inactive_callback": "此定时任务菜单已失效",
   "tasklist.load_error": "🔴 无法加载定时任务。",
+  "tasklist.invalid_number": "⚠️ 请输入有效的任务编号，或输入“取消”、\"cancel\" 或 /cancel 退出。",
+  "tasklist.not_found": "⚠️ 任务 #{number} 不存在。当前共有 {count} 个任务。",
+  "tasklist.hint_detail": "输入“删除”或 \"delete\" 删除此任务，或输入“取消”、\"cancel\" 或 /cancel 返回。",
+  "tasklist.delete_error": "❌ 删除任务失败。",
 
   "commands.select": "请选择一个 OpenCode 命令：",
   "commands.empty": "📭 当前项目没有可用的 OpenCode 命令。",
@@ -393,7 +399,7 @@ export const zh: I18nDictionary = {
   "commands.page_load_error_callback": "无法加载此页面。请重试。",
   "commands.hint_select": "💡 使用 `/command <编号>` 执行命令，或使用 `/command <编号> [参数]` 携带参数执行。",
   "commands.confirm_hint":
-    "💡 输入参数（可选），或：\n• 输入「执行」无参数执行\n• 输入「取消」返回列表",
+    "💡 输入命令参数，或输入“取消”、\"cancel\" 或 /cancel 返回列表。",
   "commands.invalid_number": "请输入有效的命令编号（{min}-{max}）。",
 
   "cmd.description.rename": "通过 /session rename 重命名当前会话",

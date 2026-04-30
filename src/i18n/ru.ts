@@ -362,7 +362,7 @@ export const ru: I18nDictionary = {
   "rename.blocked.command_not_allowed":
     "⚠️ Эта команда недоступна, пока ожидается новое название сессии.",
   "rename.button.cancel": "❌ Отмена",
-  "rename.hint_abort": "Введите \"cancel\" или /cancel, чтобы отменить переименование.",
+  "rename.hint_abort": "Введите \"cancel\", \"取消\" или /cancel, чтобы отменить переименование.",
 
   "task.prompt.schedule":
     "⏰ Отправьте расписание задачи обычным языком.\n\nПримеры:\n- каждые 5 минут\n- каждый день в 17:00\n- завтра в 12:00",
@@ -374,6 +374,7 @@ export const ru: I18nDictionary = {
     "✅ Расписание распознано\n\nКак я понял: {summary}\n{cronLine}Часовой пояс: {timezone}\nТип: {kind}\nСледующий запуск: {nextRunAt}",
   "task.schedule_preview.cron": "Cron: {cron}",
   "task.prompt.body": "📝 Теперь отправьте текст задачи, которую нужно выполнять по расписанию.",
+  "task.hint_cancel": "Введите \"cancel\", \"取消\" или /cancel, чтобы отменить.",
   "task.prompt_empty": "⚠️ Текст задачи не может быть пустым.",
   "task.created":
     "✅ Задача по расписанию создана\n\nЗадача: {description}\nПроект: {project}\nМодель: {model}\nРасписание: {schedule}\n{cronLine}Следующий запуск: {nextRunAt}",
@@ -400,6 +401,7 @@ export const ru: I18nDictionary = {
 
   "tasklist.empty": "📭 Задач по расписанию пока нет.",
   "tasklist.select": "Выберите задачу по расписанию:",
+  "tasklist.select_hint": "Введите номер задачи, чтобы посмотреть детали, или \"cancel\", \"取消\" или /cancel для выхода.",
   "tasklist.details":
     "⏰ Задача по расписанию\n\nЗадача: {prompt}\nПроект: {project}\nРасписание: {schedule}\n{cronLine}Часовой пояс: {timezone}\nСледующий запуск: {nextRunAt}\nПоследний запуск: {lastRunAt}\nКоличество запусков: {runCount}",
   "tasklist.details.cron": "Cron: {cron}",
@@ -409,6 +411,10 @@ export const ru: I18nDictionary = {
   "tasklist.cancelled_callback": "Отменено",
   "tasklist.inactive_callback": "Это меню задач по расписанию уже неактивно",
   "tasklist.load_error": "🔴 Не удалось загрузить задачи по расписанию.",
+  "tasklist.invalid_number": "⚠️ Введите корректный номер задачи, или \"cancel\", \"取消\" или /cancel для выхода.",
+  "tasklist.not_found": "⚠️ Задача #{number} не существует. Всего задач: {count}.",
+  "tasklist.hint_detail": "Введите \"delete\" или \"删除\", чтобы удалить эту задачу, или \"cancel\", \"取消\" или /cancel для возврата.",
+  "tasklist.delete_error": "❌ Не удалось удалить задачу.",
 
   "commands.select": "Выберите команду OpenCode:",
   "commands.empty": "📭 Для этого проекта нет доступных команд OpenCode.",
@@ -433,7 +439,7 @@ export const ru: I18nDictionary = {
     "Не удалось загрузить эту страницу. Пожалуйста, попробуйте снова.",
   "commands.hint_select": '💡 Используйте `/command <номер>` для запуска команды или `/command <номер> [аргументы]` для запуска с аргументами.',
   "commands.confirm_hint":
-    '💡 Введите аргументы (опционально), или:\n• "выполнить" без аргументов\n• "отмена" для возврата',
+    '💡 Введите аргументы команды, или используйте "отмена", "cancel", "取消" или /cancel для возврата.',
   "commands.invalid_number": "Введите правильный номер ({min}-{max}).",
 
   "cmd.description.rename": "Переименовать текущую сессию через /session rename",

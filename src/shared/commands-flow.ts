@@ -4,6 +4,7 @@
  */
 
 import { opencodeClient } from "../opencode/client.js";
+import { isTextInteractionCancelInput } from "../core/text-interactions/cancel.js";
 import { getConversationState } from "../settings/manager.js";
 import { logger } from "../utils/logger.js";
 import { t } from "../i18n/index.js";
@@ -14,11 +15,9 @@ export interface CommandItem {
 }
 
 export interface CommandsFlowState {
-  stage: "list" | "confirm";
+  stage: "list";
   projectDirectory: string;
   commands: CommandItem[];
-  selectedCommand: CommandItem | null;
-  selectedIndex: number;
   lastActivity: number;
 }
 
@@ -240,8 +239,6 @@ export async function startCommandsFlow(
       stage: "list",
       projectDirectory,
       commands,
-      selectedCommand: null,
-      selectedIndex: -1,
       lastActivity: Date.now(),
     });
 
@@ -264,7 +261,7 @@ function handleListStage(
   const trimmedInput = input.trim().toLowerCase();
 
   // Check cancel
-  if (trimmedInput === "cancel" || trimmedInput === "/cancel" || trimmedInput === "取消") {
+  if (isTextInteractionCancelInput(trimmedInput)) {
     manager.clearState(userId);
     return {
       type: "message",
@@ -298,57 +295,6 @@ function handleListStage(
 }
 
 /**
- * Handle text input in confirm stage
- */
-function handleConfirmStage(
-  manager: CommandsFlowManager,
-  userId: string,
-  state: CommandsFlowState,
-  input: string,
-): CommandsFlowResult {
-  const trimmedInput = input.trim().toLowerCase();
-
-  // Check cancel
-  if (trimmedInput === "cancel" || trimmedInput === "/cancel" || trimmedInput === "取消") {
-    manager.clearState(userId);
-    return {
-      type: "message",
-      message: t("commands.cancelled_callback"),
-      commandName: null,
-      args: null,
-    };
-  }
-
-  if (!state.selectedCommand) {
-    manager.clearState(userId);
-    return {
-      type: "message",
-      message: t("commands.inactive_callback"),
-      commandName: null,
-      args: null,
-    };
-  }
-
-  const commandName = state.selectedCommand.name;
-  let args = "";
-
-  // If not "run", treat input as arguments
-  if (trimmedInput !== "run" && trimmedInput !== "执行") {
-    args = input.trim();
-  }
-
-  // Clear state before execution
-  manager.clearState(userId);
-
-  return {
-    type: "execute",
-    commandName,
-    args,
-    message: formatExecutingMessage(commandName, args),
-  };
-}
-
-/**
  * Process text input in commands flow
  */
 export function processCommandsInput(
@@ -365,10 +311,6 @@ export function processCommandsInput(
 
   if (state.stage === "list") {
     return handleListStage(manager, userId, state, input);
-  }
-
-  if (state.stage === "confirm") {
-    return handleConfirmStage(manager, userId, state, input);
   }
 
   return { type: "null", message: null, commandName: null, args: null };

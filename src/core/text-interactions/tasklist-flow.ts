@@ -1,5 +1,5 @@
 import { getDateLocale, t } from "../../i18n/index.js";
-import { isTextInteractionCancelInput } from "./cancel.js";
+import { isTextInteractionCancelInput, isTextInteractionDeleteInput } from "./cancel.js";
 import { formatTaskListBadge } from "../../scheduled-task/display.js";
 import { scheduledTaskRuntime } from "../../scheduled-task/runtime.js";
 import {
@@ -106,7 +106,7 @@ export async function handleTextTaskListCommand(flowKey: string): Promise<string
       lines.push(formatTaskListItem(index + 1, task));
     });
     lines.push("");
-    lines.push("输入任务编号查看详情，或输入“取消”或 /cancel 退出");
+    lines.push(t("tasklist.select_hint"));
 
     taskListStates.set(flowKey, {
       stage: "list",
@@ -136,12 +136,12 @@ export async function handleTextTaskListInput(flowKey: string, text: string): Pr
   if (state.stage === "list") {
     const taskNumber = Number.parseInt(trimmedText, 10);
     if (Number.isNaN(taskNumber) || taskNumber < 1) {
-      return "⚠️ 请输入有效的任务编号（数字），或输入“取消”或 /cancel 退出";
+      return t("tasklist.invalid_number");
     }
 
     const tasks = sortTasks(listScheduledTasks());
     if (taskNumber > tasks.length) {
-      return `⚠️ 任务 #${taskNumber} 不存在。共有 ${tasks.length} 个任务。`;
+      return t("tasklist.not_found", { number: String(taskNumber), count: String(tasks.length) });
     }
 
     const task = tasks[taskNumber - 1];
@@ -151,7 +151,7 @@ export async function handleTextTaskListInput(flowKey: string, text: string): Pr
       lastActivity: Date.now(),
     });
 
-    return `${formatTaskDetails(task)}\n\n输入“删除”删除此任务，或输入“取消”或 /cancel 返回列表`;
+    return `${formatTaskDetails(task)}\n\n${t("tasklist.hint_detail")}`;
   }
 
   if (state.stage === "detail") {
@@ -160,7 +160,7 @@ export async function handleTextTaskListInput(flowKey: string, text: string): Pr
       return t("tasklist.inactive_callback");
     }
 
-    if (trimmedText === "删除" || trimmedText === "delete") {
+    if (isTextInteractionDeleteInput(trimmedText)) {
       try {
         const task = getScheduledTask(state.taskId);
         if (!task) {
@@ -174,11 +174,11 @@ export async function handleTextTaskListInput(flowKey: string, text: string): Pr
         return t("tasklist.deleted_callback");
       } catch (error) {
         logger.error(`[TextTaskListFlow] Failed to delete task for ${flowKey}`, error);
-        return "❌ 删除任务失败";
+        return t("tasklist.delete_error");
       }
     }
 
-    return "⚠️ 请输入“删除”删除此任务，或输入“取消”或 /cancel 退出";
+    return t("tasklist.hint_detail");
   }
 
   return null;

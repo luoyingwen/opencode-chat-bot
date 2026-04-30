@@ -36,7 +36,10 @@ import {
   hasPendingTextPermission,
   setPendingTextPermission,
 } from "../../src/core/text-interactions/permission.js";
-import { isTextInteractionCancelInput } from "../../src/core/text-interactions/cancel.js";
+import {
+  isTextInteractionCancelInput,
+  isTextInteractionDeleteInput,
+} from "../../src/core/text-interactions/cancel.js";
 import { handleRenameTextInput, renameSessionTitle } from "../../src/core/text-interactions/rename.js";
 import { renameManager } from "../../src/rename/manager.js";
 
@@ -120,7 +123,22 @@ describe("text interactions", () => {
     expect(isTextInteractionCancelInput("取消")).toBe(true);
     expect(isTextInteractionCancelInput("cancel")).toBe(true);
     expect(isTextInteractionCancelInput("/cancel")).toBe(true);
+    expect(isTextInteractionCancelInput("annuler")).toBe(true);
+    expect(isTextInteractionCancelInput("abbrechen")).toBe(true);
+    expect(isTextInteractionCancelInput("cancelar")).toBe(true);
+    expect(isTextInteractionCancelInput("отмена")).toBe(true);
     expect(isTextInteractionCancelInput("/stop")).toBe(false);
+  });
+
+  it("recognizes the shared text interaction delete aliases", () => {
+    expect(isTextInteractionDeleteInput("delete")).toBe(true);
+    expect(isTextInteractionDeleteInput("删除")).toBe(true);
+    expect(isTextInteractionDeleteInput("刪除")).toBe(true);
+    expect(isTextInteractionDeleteInput("löschen")).toBe(true);
+    expect(isTextInteractionDeleteInput("eliminar")).toBe(true);
+    expect(isTextInteractionDeleteInput("supprimer")).toBe(true);
+    expect(isTextInteractionDeleteInput("удалить")).toBe(true);
+    expect(isTextInteractionDeleteInput("run")).toBe(false);
   });
 
   it("stores pending text permissions by route key", () => {

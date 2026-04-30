@@ -374,7 +374,7 @@ export const es: I18nDictionary = {
   "rename.blocked.command_not_allowed":
     "⚠️ Este comando no está disponible mientras el cambio de nombre espera un nuevo nombre.",
   "rename.button.cancel": "❌ Cancelar",
-  "rename.hint_abort": "Escribe \"cancel\" o /cancel para cancelar el cambio de nombre.",
+  "rename.hint_abort": "Escribe \"cancel\", \"取消\" o /cancel para cancelar el cambio de nombre.",
 
   "task.prompt.schedule":
     "⏰ Envía el horario de la tarea en lenguaje natural.\n\nEjemplos:\n- cada 5 minutos\n- cada día a las 17:00\n- mañana a las 12:00",
@@ -386,6 +386,7 @@ export const es: I18nDictionary = {
     "✅ Horario interpretado\n\nEntendido como: {summary}\n{cronLine}Zona horaria: {timezone}\nTipo: {kind}\nPróxima ejecución: {nextRunAt}",
   "task.schedule_preview.cron": "Cron: {cron}",
   "task.prompt.body": "📝 Ahora envía lo que el bot debe hacer según este horario.",
+  "task.hint_cancel": "Escribe \"cancel\", \"取消\" o /cancel para cancelar.",
   "task.prompt_empty": "⚠️ El texto de la tarea no puede estar vacío.",
   "task.created":
     "✅ Tarea programada creada\n\nTarea: {description}\nProyecto: {project}\nModelo: {model}\nHorario: {schedule}\n{cronLine}Próxima ejecución: {nextRunAt}",
@@ -412,6 +413,7 @@ export const es: I18nDictionary = {
 
   "tasklist.empty": "📭 Aún no hay tareas programadas.",
   "tasklist.select": "Elige una tarea programada:",
+  "tasklist.select_hint": "Escribe el número de la tarea para ver detalles, o \"cancel\", \"取消\" o /cancel para salir.",
   "tasklist.details":
     "⏰ Tarea programada\n\nTarea: {prompt}\nProyecto: {project}\nHorario: {schedule}\n{cronLine}Zona horaria: {timezone}\nPróxima ejecución: {nextRunAt}\nÚltima ejecución: {lastRunAt}\nNúmero de ejecuciones: {runCount}",
   "tasklist.details.cron": "Cron: {cron}",
@@ -421,6 +423,10 @@ export const es: I18nDictionary = {
   "tasklist.cancelled_callback": "Cancelado",
   "tasklist.inactive_callback": "Este menú de tareas programadas está inactivo",
   "tasklist.load_error": "🔴 No se pudieron cargar las tareas programadas.",
+  "tasklist.invalid_number": "⚠️ Introduce un número de tarea válido, o \"cancel\", \"取消\" o /cancel para salir.",
+  "tasklist.not_found": "⚠️ La tarea #{number} no existe. Hay {count} tareas en total.",
+  "tasklist.hint_detail": "Escribe \"delete\" o \"删除\" para eliminar esta tarea, o \"cancel\", \"取消\" o /cancel para volver.",
+  "tasklist.delete_error": "❌ No se pudo eliminar la tarea.",
 
   "commands.select": "Elige un comando de OpenCode:",
   "commands.empty": "📭 No hay comandos de OpenCode disponibles para este proyecto.",
@@ -445,7 +451,7 @@ export const es: I18nDictionary = {
     "No se pudo cargar esta página. Por favor, inténtalo de nuevo.",
   "commands.hint_select": '💡 Usa `/command <número>` para ejecutar un comando o `/command <número> [args]` para ejecutarlo con argumentos.',
   "commands.confirm_hint":
-    '💡 Introduce argumentos (opcional), o:\n• "ejecutar" sin argumentos\n• "cancelar" para volver',
+    '💡 Introduce argumentos del comando, o usa "cancelar", "cancel", "取消" o /cancel para volver.',
   "commands.invalid_number": "Introduce número válido ({min}-{max}).",
 
   "cmd.description.rename": "Renombrar la sesión actual con /session rename",

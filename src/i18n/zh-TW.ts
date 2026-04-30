@@ -328,7 +328,7 @@ export const zhTW: I18nDictionary = {
   "rename.blocked.expected_name": "⚠️ 請以文字輸入新工作階段名稱，或在重新命名訊息中點選取消。",
   "rename.blocked.command_not_allowed": "⚠️ 重新命名等待新名稱期間無法使用此命令。",
   "rename.button.cancel": "❌ 取消",
-  "rename.hint_abort": "輸入「取消」或 /cancel 取消重新命名。",
+  "rename.hint_abort": "輸入「取消」、\"cancel\" 或 /cancel 取消重新命名。",
 
   "task.prompt.schedule":
     "⏰ 以自然語言傳送任務排程。\n\n範例：\n- 每 5 分鐘\n- 每天 17:00\n- 明天 12:00",
@@ -339,6 +339,7 @@ export const zhTW: I18nDictionary = {
     "✅ 排程已解析\n\n我的理解：{summary}\n{cronLine}時區：{timezone}\n類型：{kind}\n下次執行：{nextRunAt}",
   "task.schedule_preview.cron": "Cron：{cron}",
   "task.prompt.body": "📝 現在傳送排程時機器人應該執行的內容。",
+  "task.hint_cancel": "輸入「取消」、\"cancel\" 或 /cancel 可退出。",
   "task.prompt_empty": "⚠️ 任務文字不可為空。",
   "task.created":
     "✅ 排程任務已建立\n\n任務：{description}\n專案：{project}\n模型：{model}\n排程：{schedule}\n{cronLine}下次執行：{nextRunAt}",
@@ -361,6 +362,7 @@ export const zhTW: I18nDictionary = {
 
   "tasklist.empty": "📭 目前沒有排程任務。",
   "tasklist.select": "請選擇一個排程任務：",
+  "tasklist.select_hint": "輸入任務編號查看詳情，或輸入「取消」、\"cancel\" 或 /cancel 退出。",
   "tasklist.details":
     "⏰ 排程任務\n\n任務：{prompt}\n專案：{project}\n排程：{schedule}\n{cronLine}時區：{timezone}\n下次執行：{nextRunAt}\n上次執行：{lastRunAt}\n執行次數：{runCount}",
   "tasklist.details.cron": "Cron：{cron}",
@@ -370,6 +372,10 @@ export const zhTW: I18nDictionary = {
   "tasklist.cancelled_callback": "已取消",
   "tasklist.inactive_callback": "此排程任務選單已失效",
   "tasklist.load_error": "🔴 載入排程任務失敗。",
+  "tasklist.invalid_number": "⚠️ 請輸入有效的任務編號，或輸入「取消」、\"cancel\" 或 /cancel 退出。",
+  "tasklist.not_found": "⚠️ 任務 #{number} 不存在。目前共有 {count} 個任務。",
+  "tasklist.hint_detail": "輸入「刪除」或 \"delete\" 刪除此任務，或輸入「取消」、\"cancel\" 或 /cancel 返回。",
+  "tasklist.delete_error": "❌ 刪除任務失敗。",
 
   "commands.select": "請選擇一個 OpenCode 命令：",
   "commands.empty": "📭 目前專案沒有可用的 OpenCode 命令。",
@@ -391,7 +397,7 @@ export const zhTW: I18nDictionary = {
   "commands.page_load_error_callback": "無法載入此頁面。請重試。",
   "commands.hint_select": "💡 使用 `/command <編號>` 執行命令，或使用 `/command <編號> [參數]` 攜帶參數執行。",
   "commands.confirm_hint":
-    "💡 輸入參數（可選），或：\n• 輸入「執行」無參數執行\n• 輸入「取消」返回列表",
+    "💡 輸入命令參數，或輸入「取消」、\"cancel\" 或 /cancel 返回列表。",
   "commands.invalid_number": "請輸入有效的命令編號（{min}-{max}）。",
 
   "open.back": "⬆️ 上級",

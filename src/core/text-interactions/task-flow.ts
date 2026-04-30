@@ -279,11 +279,11 @@ export async function handleTextTaskInput(flowKey: string, text: string): Promis
       state.parsedSchedule = parsedSchedule;
       state.stage = "awaiting_prompt";
 
-      return `${formatParsedScheduleMessage(parsedSchedule)}\n\n${t("task.prompt.body")}\n\n（输入“取消”或 /cancel 可退出）`;
+      return `${formatParsedScheduleMessage(parsedSchedule)}\n\n${t("task.prompt.body")}\n\n${t("task.hint_cancel")}`;
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : t("common.unknown_error");
       logger.warn(`[TextTaskFlow] Failed to parse schedule for ${flowKey}: ${errorMessage}`);
-      return `${t("task.parse_error", { message: errorMessage })}\n\n（输入“取消”或 /cancel 可退出）`;
+      return `${t("task.parse_error", { message: errorMessage })}\n\n${t("task.hint_cancel")}`;
     }
   }
 

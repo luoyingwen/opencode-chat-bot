@@ -375,7 +375,7 @@ export const de: I18nDictionary = {
   "rename.blocked.command_not_allowed":
     "⚠️ Dieser Befehl ist nicht verfügbar, solange beim Umbenennen auf einen neuen Namen gewartet wird.",
   "rename.button.cancel": "❌ Abbrechen",
-  "rename.hint_abort": "Gib \"cancel\" oder /cancel ein, um das Umbenennen abzubrechen.",
+  "rename.hint_abort": "Gib \"cancel\", \"取消\" oder /cancel ein, um das Umbenennen abzubrechen.",
 
   "task.prompt.schedule":
     "⏰ Sende den Zeitplan der Aufgabe in natürlicher Sprache.\n\nBeispiele:\n- alle 5 Minuten\n- jeden Tag um 17:00\n- morgen um 12:00",
@@ -387,6 +387,7 @@ export const de: I18nDictionary = {
     "✅ Zeitplan erkannt\n\nVerstanden als: {summary}\n{cronLine}Zeitzone: {timezone}\nTyp: {kind}\nNächster Lauf: {nextRunAt}",
   "task.schedule_preview.cron": "Cron: {cron}",
   "task.prompt.body": "📝 Sende jetzt, was der Bot nach Zeitplan tun soll.",
+  "task.hint_cancel": "Gib \"cancel\", \"取消\" oder /cancel ein, um abzubrechen.",
   "task.prompt_empty": "⚠️ Der Aufgabentext darf nicht leer sein.",
   "task.created":
     "✅ Geplante Aufgabe erstellt\n\nAufgabe: {description}\nProjekt: {project}\nModell: {model}\nZeitplan: {schedule}\n{cronLine}Nächster Lauf: {nextRunAt}",
@@ -413,6 +414,7 @@ export const de: I18nDictionary = {
 
   "tasklist.empty": "📭 Noch keine geplanten Aufgaben.",
   "tasklist.select": "Wähle eine geplante Aufgabe:",
+  "tasklist.select_hint": "Gib eine Aufgabennummer ein, um Details zu sehen, oder \"cancel\", \"取消\" bzw. /cancel zum Beenden.",
   "tasklist.details":
     "⏰ Geplante Aufgabe\n\nAufgabe: {prompt}\nProjekt: {project}\nZeitplan: {schedule}\n{cronLine}Zeitzone: {timezone}\nNächster Lauf: {nextRunAt}\nLetzter Lauf: {lastRunAt}\nAnzahl Läufe: {runCount}",
   "tasklist.details.cron": "Cron: {cron}",
@@ -422,6 +424,10 @@ export const de: I18nDictionary = {
   "tasklist.cancelled_callback": "Abgebrochen",
   "tasklist.inactive_callback": "Dieses Menü für geplante Aufgaben ist inaktiv",
   "tasklist.load_error": "🔴 Geplante Aufgaben konnten nicht geladen werden.",
+  "tasklist.invalid_number": "⚠️ Gib eine gültige Aufgabennummer ein oder \"cancel\", \"取消\" bzw. /cancel zum Beenden.",
+  "tasklist.not_found": "⚠️ Aufgabe #{number} existiert nicht. Es gibt insgesamt {count} Aufgaben.",
+  "tasklist.hint_detail": "Gib \"delete\" oder \"删除\" ein, um diese Aufgabe zu löschen, oder \"cancel\", \"取消\" bzw. /cancel zum Zurückgehen.",
+  "tasklist.delete_error": "❌ Aufgabe konnte nicht gelöscht werden.",
 
   "commands.select": "Wähle einen OpenCode-Befehl:",
   "commands.empty": "📭 Für dieses Projekt sind keine OpenCode-Befehle verfügbar.",
@@ -446,7 +452,7 @@ export const de: I18nDictionary = {
     "Diese Seite konnte nicht geladen werden. Bitte versuche es erneut.",
   "commands.hint_select": '💡 Verwende `/command <Nummer>` zum Ausführen oder `/command <Nummer> [Argumente]` für Ausführung mit Argumenten.',
   "commands.confirm_hint":
-    '💡 Argumente eingeben (optional), oder:\n• "ausführen" ohne Argumente\n• "abbrechen" zum Zurückgehen',
+    '💡 Gib Befehlsargumente ein oder verwende "abbrechen", "cancel", "取消" oder /cancel, um zurückzugehen.',
   "commands.invalid_number": "Bitte gültige Befehlsnummer eingeben ({min}-{max}).",
 
   "cmd.description.rename": "Aktuelle Sitzung mit /session rename umbenennen",
