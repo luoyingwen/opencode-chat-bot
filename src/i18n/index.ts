@@ -1,4 +1,4 @@
-import { en, type I18nKey } from "./en.js";
+import { en, type I18nDictionary, type I18nKey } from "./en.js";
 import { de } from "./de.js";
 import { es } from "./es.js";
 import { fr } from "./fr.js";
@@ -10,7 +10,7 @@ interface LocaleDefinition {
   code: string;
   label: string;
   dateLocale: string;
-  dictionary: Record<I18nKey, string>;
+  dictionary: I18nDictionary;
 }
 
 const LOCALE_DEFINITIONS = [
