@@ -8,8 +8,8 @@ import { fileURLToPath } from "node:url";
 
 const scriptDir = dirname(fileURLToPath(import.meta.url));
 const repositoryRoot = resolve(scriptDir, "..");
-const pluginId = "openclawcode";
-const packageName = "@bigheadfjuee/opencode-chat-bot";
+const pluginId = "opencode-chat-bot";
+const packageName = "@luoyingwen/opencode-chat-bot";
 
 const colors = {
   bold: "\u001b[1m",
@@ -148,16 +148,6 @@ function enablePlugin() {
   }
 }
 
-function printScopeFilterInstructions() {
-  log("bold", "Optional scope filters:");
-  log("info", `  openclaw config set plugins.entries.${pluginId}.config.channels '["telegram"]'`);
-  log("info", `  openclaw config set plugins.entries.${pluginId}.config.accountIds '["account1"]'`);
-  log(
-    "info",
-    `  openclaw config set plugins.entries.${pluginId}.config.conversationIds '["conv1"]'`,
-  );
-}
-
 function installLocal() {
   log("bold", "Installing OpenClawCode locally from a packed package...");
   checkBuild();
@@ -176,8 +166,6 @@ log("info", `Installing from tarball: ${tarballPath}`);
   process.stdout.write("\n");
   log("success", "Local installation complete.");
   enablePlugin();
-  process.stdout.write("\n");
-  printScopeFilterInstructions();
 }
 
 function installLink() {
@@ -194,8 +182,6 @@ function installLink() {
   log("success", "Linked installation complete.");
   log("warn", "Linked installs use this working tree; rebuild after source changes.");
   enablePlugin();
-  process.stdout.write("\n");
-  printScopeFilterInstructions();
 }
 
 function showInfo() {

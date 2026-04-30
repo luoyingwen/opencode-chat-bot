@@ -7,7 +7,7 @@ This guide covers setting up the OpenCode Bot with systemd on Linux.
 ## 1. Install and configure the bot
 
 ```bash
-npm install -g @bigheadfjuee/opencode-chat-bot@latest
+npm install -g @luoyingwen/opencode-chat-bot@latest
 opencode-bot config
 ```
 

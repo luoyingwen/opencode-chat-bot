@@ -11,8 +11,8 @@ import {
 } from "./openclaw/config.js";
 
 const openClawPlugin = definePluginEntry({
-  id: "openclawcode",
-  name: "OpenClawCode",
+  id: "opencode-chat-bot",
+  name: "OpenCode Chat Bot",
   description: "OpenCode command handling for OpenClaw conversations",
   configSchema: {
     jsonSchema: {

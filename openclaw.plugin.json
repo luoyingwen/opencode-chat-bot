@@ -1,6 +1,6 @@
 {
-  "id": "openclawcode",
-  "name": "OpenClawCode",
+  "id": "opencode-chat-bot",
+  "name": "OpenCode Chat Bot",
   "description": "OpenClaw plugin for OpenCode - intercept channel messages and route to OpenCode through shared opencode-chat-bot runtime",
   "enabledByDefault": false,
   "installDependencies": true,

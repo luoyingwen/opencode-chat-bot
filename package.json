@@ -1,5 +1,5 @@
 {
-  "name": "@bigheadfjuee/opencode-chat-bot",
+  "name": "@luoyingwen/opencode-chat-bot",
   "version": "0.15.0",
   "description": "Bot client for OpenCode to run and monitor coding tasks from chat.",
   "type": "module",
@@ -17,7 +17,7 @@
       "./dist/openclaw-plugin.js"
     ],
     "plugin": {
-      "id": "openclawcode",
+      "id": "opencode-chat-bot",
       "enabledByDefault": false
     }
   },
@@ -47,7 +47,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/bigheadfjuee/opencode-chat-bot.git"
+    "url": "git+https://github.com/luoyingwen/opencode-chat-bot.git"
   },
   "keywords": [
     "opencode",
@@ -56,12 +56,12 @@
     "developer-tools",
     "cli"
   ],
-  "author": "bigheadfjuee",
+  "author": "luoyingwen",
   "license": "MIT",
   "bugs": {
-    "url": "https://github.com/bigheadfjuee/opencode-chat-bot/issues"
+    "url": "https://github.com/luoyingwen/opencode-chat-bot/issues"
   },
-  "homepage": "https://github.com/bigheadfjuee/opencode-chat-bot#readme",
+  "homepage": "https://github.com/luoyingwen/opencode-chat-bot#readme",
   "overrides": {
     "axios": "^1.15.0"
   },

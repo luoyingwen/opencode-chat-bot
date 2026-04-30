@@ -93,7 +93,7 @@ npm run dev
 npm install
 npm run build:openclaw
 npm run openclaw:install -- local
-openclaw config set plugins.entries.openclawcode.enabled true
+openclaw config set plugins.entries.opencode-chat-bot.enabled true
 ```
 
 For local iteration, use link mode instead:
@@ -206,10 +206,9 @@ OpenClaw plugin config can restrict the adapter by channel, account, or conversa
 Example OpenClaw configuration:
 
 ```bash
-openclaw config set plugins.entries.openclawcode.enabled true
-openclaw config set plugins.entries.openclawcode.config.channels '["telegram", "discord"]'
-openclaw config set plugins.entries.openclawcode.config.accountIds '["account1"]'
-openclaw config set plugins.entries.openclawcode.config.conversationIds '["conv1"]'
+openclaw config set plugins.entries.opencode-chat-bot.enabled true
+openclaw config set plugins.entries.opencode-chat-bot.config.accountIds '["account1"]'
+openclaw config set plugins.entries.opencode-chat-bot.config.conversationIds '["conv1"]'
 ```
 
 ## DingTalk Bot Setup
@@ -487,7 +486,7 @@ Since the bot runs locally on your machine and connects to your local OpenCode s
 
 - Build first with `npm run build:openclaw`
 - Install or link locally with `npm run openclaw:install -- local` or `npm run openclaw:install -- link`
-- Enable the plugin with `openclaw config set plugins.entries.openclawcode.enabled true`
+- Enable the plugin with `openclaw config set plugins.entries.opencode-chat-bot.enabled true`
 - Send `/opencode` in the conversation before sending OpenCode commands or prompts
 - Check scope filters in `channels`, `accountIds`, and `conversationIds`
 
