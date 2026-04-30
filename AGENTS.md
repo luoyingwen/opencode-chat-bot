@@ -1,6 +1,6 @@
 # AGENTS.md
 
-Instructions for AI coding agents working on **opencode-telegram-bot** — a Telegram + Slack bot that acts as a mobile client for [OpenCode](https://opencode.ai). Single-user design; both platforms share the same session/project state.
+Instructions for AI coding agents working on **opencode-chat-bot** — a DingTalk + Feishu bot that acts as a mobile client for [OpenCode](https://opencode.ai).
 
 See [PRODUCT.md](./PRODUCT.md) for functional requirements and development status.
 
@@ -30,7 +30,7 @@ After any code change, always run: `npm run build && npm run lint && npm test`
 - **Language:** TypeScript 5.x (strict mode, ES2022 target, NodeNext modules)
 - **Runtime:** Node.js 20+, ESM (`"type": "module"` in package.json)
 - **Package manager:** npm (ignore `pnpm-lock.yaml` if present)
-- **Bot frameworks:** `grammy` (Telegram), `@slack/bolt` (Slack, Socket Mode)
+- **Bot frameworks:** `dingtalk-stream` (DingTalk), `@larksuiteoapi/node-sdk` (Feishu)
 - **OpenCode SDK:** `@opencode-ai/sdk` — SSE event subscription, session/project management
 - **Test framework:** Vitest with `vi.mock()` / `vi.stubEnv()` — tests in `tests/` mirroring `src/` structure
 - **Config:** environment variables via `dotenv` (`.env` file)
@@ -63,7 +63,7 @@ After any code change, always run: `npm run build && npm run lint && npm test`
 - Types/interfaces: `PascalCase` (e.g., `SessionInfo`, `BotCommandDefinition`)
 - Functions/variables: `camelCase`
 - Constants: `camelCase` for module-level (e.g., `const LOG_LEVELS` is an exception for lookup maps)
-- Logger tags: `[Component]` prefix (e.g., `logger.info("[Slack] Bot started")`)
+- Logger tags: `[Component]` prefix (e.g., `logger.info("[Feishu] Bot started")`)
 
 ### Error handling
 
@@ -93,7 +93,7 @@ const COMMAND_DEFINITIONS: BotCommandI18nDefinition[] = [
 Important:
 
 - When adding a command, update `definitions.ts` only.
-- The same source is used for Telegram `setMyCommands` and help/docs.
+- The same source is used for platform command registration and help/docs.
 - Do not duplicate command lists elsewhere.
 
 ### Logging
@@ -114,10 +114,10 @@ Default level is `info`. Never use `console.log`/`console.error` in feature code
 ```
 src/
 ├── app/          # Application startup (start-bot-app.ts)
-├── bot/          # Telegram bot — grammY setup, commands, handlers, middleware
-├── slack/        # Slack bot — Bolt handler, event routing, mrkdwn formatter
+├── dingtalk/     # DingTalk bot — stream client, commands, handlers
+├── feishu/       # Feishu bot — client, commands, handlers, markdown formatter
 ├── opencode/     # SDK client wrapper + SSE event subscription
-├── summary/      # Event aggregation + Telegram MarkdownV2 formatting
+├── summary/      # Event aggregation + MarkdownV2 formatting
 ├── session/      # Session state manager
 ├── settings/     # Persistent settings (settings.json)
 ├── project/      # Project manager
@@ -130,15 +130,13 @@ src/
 └── config.ts     # Centralized env var config
 ```
 
-**Data flow:** User message → Bot handler → Managers + OpenCode SDK → OpenCode Server → SSE events → Summary Aggregator → Bot → User
-
-**Platform routing:** Both Telegram and Slack share the aggregator singleton. `src/slack/events.ts` patches aggregator callbacks to route output based on which platform sent the current prompt (`isSlackActive()`).
+**Data flow:** User message → Platform handler → Managers + OpenCode SDK → OpenCode Server → SSE events → Summary Aggregator → Platform client → User
 
 ## Key conventions
 
 ### Bot commands
 
-Centralized in `src/bot/commands/definitions.ts`. When adding a command, update that file only — it feeds both Telegram `setMyCommands` and help output. Do not duplicate command lists.
+Centralized in `src/bot/commands/definitions.ts`. When adding a command, update that file only — it feeds both platform command registration and help output. Do not duplicate command lists.
 
 ### I18n
 
@@ -146,7 +144,7 @@ User-facing messages go through `t()` from `src/i18n/index.ts`. Code, comments, 
 
 ### Config
 
-All env vars are read in `src/config.ts` via `getEnvVar(key, required)`. Telegram and Slack configs are independently optional — at least one platform must be configured.
+All env vars are read in `src/config.ts` via `getEnvVar(key, required)`. DingTalk and Feishu configs are independently optional — at least one platform must be configured.
 
 ### Tests
 
@@ -156,11 +154,10 @@ All env vars are read in `src/config.ts` via `getEnvVar(key, required)`. Telegra
 - Follow Arrange–Act–Assert. Use descriptive test names.
 - Dynamic config imports: `vi.resetModules()` then `await import("../src/config.js")`.
 
-### Slack-specific
+### Platform-specific
 
-- `@slack/bolt` uses CJS default export in ESM: `import pkg from "@slack/bolt"; const { App } = pkg;`
-- Slack formatting uses `mrkdwn` (not Markdown): `*bold*`, `_italic_`, `` `code` ``, ` ```block``` `
-- Auth is channel-based (`SLACK_ALLOWED_CHANNEL_ID`), not user-based.
+- DingTalk uses Stream Mode credentials (`DINGTALK_APP_KEY`, `DINGTALK_APP_SECRET`).
+- Feishu formatting uses markdown/cards and user-based access control.
 
 ## Workflow
 
@@ -171,3 +168,4 @@ All env vars are read in `src/config.ts` via `getEnvVar(key, required)`. Telegra
 5. Run `npm run build && npm run lint && npm test` after changes.
 6. Update checkboxes in `PRODUCT.md` when relevant tasks are completed.
 7. Never create commits automatically — only when explicitly asked.
+

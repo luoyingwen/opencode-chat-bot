@@ -7,7 +7,7 @@ import { logger } from "../utils/logger.js";
 import { t } from "../i18n/index.js";
 import { getCurrentProject } from "../settings/manager.js";
 
-const TELEGRAM_MESSAGE_LIMIT = 4096;
+const DEFAULT_MESSAGE_LIMIT = 4096;
 const MARKDOWN_V2_RESERVED_CHARS = /([_\*\[\]\(\)~`>#+\-=|{}.!\\])/g;
 
 function truncateWithEllipsis(text: string, maxLength: number): string {
@@ -114,6 +114,24 @@ function normalizeHeadingLine(line: string): string {
   return `**${match[1]}**`;
 }
 
+function createReplacementStore() {
+  const replacements: string[] = [];
+
+  return {
+    add(value: string): string {
+      const token = `\u0000${replacements.length}\u0000`;
+      replacements.push(value);
+      return token;
+    },
+    restore(value: string): string {
+      return value.replace(/\u0000(\d+)\u0000/g, (_match, index) => {
+        const replacement = replacements[Number(index)];
+        return replacement ?? "";
+      });
+    },
+  };
+}
+
 function normalizeChecklistLine(line: string): string | null {
   const match = line.match(/^(\s*)(?:[-+*]|\d+\.)\s+\[( |x|X)\]\s+(.*)$/);
   if (!match) {
@@ -124,7 +142,7 @@ function normalizeChecklistLine(line: string): string | null {
   return `${match[1]}${marker} ${match[3]}`;
 }
 
-function preprocessMarkdownForTelegram(text: string): string {
+function preprocessMarkdownForChat(text: string): string {
   const lines = text.split("\n");
   const output: string[] = [];
   let inCodeFence = false;
@@ -233,13 +251,50 @@ export function getAssistantParseMode(): "MarkdownV2" | undefined {
   return undefined;
 }
 
-export function escapePlainTextForTelegramMarkdownV2(text: string): string {
+export function escapePlainTextForMarkdownV2(text: string): string {
   return text.replace(MARKDOWN_V2_RESERVED_CHARS, "\\$1");
 }
 
-function formatMarkdownForTelegram(text: string): string {
-  // Simple markdown formatter without telegram-markdown-v2
-  return text;
+function escapeMarkdownLinePreservingQuote(line: string): string {
+  if (line === ">") {
+    return line;
+  }
+
+  if (line.startsWith("> ")) {
+    return `> ${escapePlainTextForMarkdownV2(line.slice(2))}`;
+  }
+
+  return escapePlainTextForMarkdownV2(line);
+}
+
+function formatMarkdownForChat(text: string): string {
+  const store = createReplacementStore();
+  let formatted = text;
+
+  formatted = formatted.replace(/```[\s\S]*?```|`[^`\n]+`/g, (segment) => store.add(segment));
+
+  formatted = formatted.replace(/\*\*([^*\n]+?)\*\*/g, (_match, content: string) => {
+    return store.add(`*${escapePlainTextForMarkdownV2(content)}*`);
+  });
+
+  formatted = formatted.replace(/__([^_\n]+?)__/g, (_match, content: string) => {
+    return store.add(`*${escapePlainTextForMarkdownV2(content)}*`);
+  });
+
+  formatted = formatted.replace(/(^|[^*])\*([^*\n]+?)\*(?!\*)/g, (_match, prefix: string, content: string) => {
+    return `${prefix}${store.add(`_${escapePlainTextForMarkdownV2(content)}_`)}`;
+  });
+
+  formatted = formatted.replace(/(^|[^_])_([^_\n]+?)_(?!_)/g, (_match, prefix: string, content: string) => {
+    return `${prefix}${store.add(`_${escapePlainTextForMarkdownV2(content)}_`)}`;
+  });
+
+  formatted = formatted
+    .split("\n")
+    .map((line) => escapeMarkdownLinePreservingQuote(line))
+    .join("\n");
+
+  return store.restore(formatted);
 }
 
 function escapeMarkdownV2PipesOutsideCode(text: string): string {
@@ -281,7 +336,7 @@ function escapeMarkdownV2PipesOutsideCode(text: string): string {
 export function formatSummaryWithMode(
   text: string,
   mode: MessageFormatMode,
-  maxLength: number = TELEGRAM_MESSAGE_LIMIT,
+  maxLength: number = DEFAULT_MESSAGE_LIMIT,
 ): string[] {
   if (!text || text.trim().length === 0) {
     return [];
@@ -300,7 +355,7 @@ export function formatSummaryWithMode(
     }
 
     if (mode === "markdown") {
-      const converted = formatMarkdownForTelegram(trimmed);
+      const converted = escapeMarkdownV2PipesOutsideCode(formatMarkdownForChat(preprocessMarkdownForChat(trimmed)));
       const convertedParts = splitText(converted, normalizedMaxLength, {
         avoidTrailingMarkdownEscape: true,
       });

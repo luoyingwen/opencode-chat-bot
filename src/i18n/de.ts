@@ -55,7 +55,7 @@ export const de: I18nDictionary = {
   "common.unknown_error": "unbekannter Fehler",
 
   "start.welcome":
-    "👋 Willkommen beim OpenCode Telegram Bot!\n\nNutze Befehle:\n/projects — Projekt auswählen\n/sessions — Sitzungsliste\n/new — neue Sitzung\n/task — geplante Aufgabe\n/tasks — geplante Aufgaben\n/status — Status\n/help — Hilfe\n\nNutze die unteren Buttons, um Agent, Modell und Variante zu wählen.",
+    "👋 Willkommen beim OpenCode Bot!\n\nNutze Befehle:\n/projects — Projekt auswählen\n/sessions — Sitzungsliste\n/new — neue Sitzung\n/task — geplante Aufgabe\n/tasks — geplante Aufgaben\n/status — Status\n/help — Hilfe\n\nNutze die unteren Buttons, um Agent, Modell und Variante zu wählen.",
   "help.keyboard_hint":
     "💡 Nutze die unteren Buttons für Agent, Modell, Variante und Kontextaktionen.",
   "help.text":
@@ -335,7 +335,7 @@ export const de: I18nDictionary = {
   "tool.file_header.edit":
     "Datei/Pfad bearbeiten: {path}\n============================================================\n\n",
 
-  "runtime.wizard.ask_token": "Telegram-Bot-Token eingeben (von @BotFather).\n> ",
+  "runtime.wizard.ask_token": "Trage deine DingTalk- oder Feishu-Zugangsdaten in die .env-Datei ein.\n> ",
   "runtime.wizard.ask_language":
     "Oberflächensprache auswählen.\nGib die Sprach-Nummer aus der Liste oder den Locale-Code ein.\nDrücke Enter, um die Standardsprache beizubehalten: {defaultLocale}\n{options}\n> ",
   "runtime.wizard.language_invalid":
@@ -345,7 +345,7 @@ export const de: I18nDictionary = {
   "runtime.wizard.token_invalid":
     "Token sieht ungültig aus (erwartetes Format <id>:<secret>). Bitte versuche es erneut.\n",
   "runtime.wizard.ask_user_id":
-    "Gib deine Telegram User ID ein (du bekommst sie bei @userinfobot).\n> ",
+    "Trage eine erlaubte Benutzer-ID in die .env-Datei ein, wenn du den Zugriff einschränken willst.\n> ",
   "runtime.wizard.user_id_invalid": "Gib eine positive ganze Zahl ein (> 0).\n",
   "runtime.wizard.ask_api_url":
     "OpenCode API URL eingeben (optional).\nEnter drücken für Standard: {defaultUrl}\n> ",
@@ -355,12 +355,12 @@ export const de: I18nDictionary = {
     "OpenCode-Server-Passwort eingeben (optional).\nEnter drücken, um es leer zu lassen.\n> ",
   "runtime.wizard.api_url_invalid":
     "Gib eine gültige URL (http/https) ein oder drücke Enter für Standard.\n",
-  "runtime.wizard.start": "OpenCode Telegram Bot Einrichtung.\n",
+  "runtime.wizard.start": "OpenCode Bot Einrichtung.\n",
   "runtime.wizard.saved": "Konfiguration gespeichert:\n- {envPath}\n- {settingsPath}\n",
   "runtime.wizard.not_configured_starting":
     "Anwendung ist noch nicht konfiguriert. Starte Assistent...\n",
   "runtime.wizard.tty_required":
-    "Der interaktive Assistent erfordert ein TTY-Terminal. Führe `opencode-telegram config` in einer interaktiven Shell aus.",
+    "Der interaktive Assistent erfordert ein TTY-Terminal. Führe `opencode-bot config` in einer interaktiven Shell aus.",
 
   "rename.no_session": "⚠️ Keine aktive Sitzung. Erstelle oder wähle zuerst eine Sitzung.",
   "rename.prompt": "📝 Neuen Titel für die Sitzung eingeben:\n\nAktuell: {title}",
@@ -452,7 +452,7 @@ export const de: I18nDictionary = {
   "cmd.description.rename": "Aktuelle Sitzung umbenennen",
 
   "cli.usage":
-    "Verwendung:\n  opencode-telegram [start] [--mode sources|installed]\n  opencode-telegram status\n  opencode-telegram stop\n  opencode-telegram config\n\nHinweise:\n  - Ohne Befehl wird standardmäßig `start` verwendet\n  - `--mode` wird derzeit nur für `start` unterstützt",
+    "Verwendung:\n  opencode-bot [start] [--mode sources|installed]\n  opencode-bot status\n  opencode-bot stop\n  opencode-bot config\n\nHinweise:\n  - Ohne Befehl wird standardmäßig `start` verwendet\n  - `--mode` wird derzeit nur für `start` unterstützt",
   "cli.placeholder.status":
     "Befehl `status` ist derzeit ein Platzhalter. Echte Statusprüfungen werden in der Service-Schicht hinzugefügt (Phase 5).",
   "cli.placeholder.stop":
@@ -497,3 +497,4 @@ export const de: I18nDictionary = {
   "open.subfolder_count": "{count} Unterordner",
   "open.subfolders_count": "{count} Unterordner",
 };
+

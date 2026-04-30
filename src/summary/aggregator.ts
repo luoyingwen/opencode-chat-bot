@@ -1,5 +1,4 @@
 import { Event, ToolState } from "@opencode-ai/sdk/v2";
-import type { Bot } from "grammy";
 import type { CodeFileData } from "./formatter.js";
 import { normalizePathForDisplay, prepareCodeFile } from "./formatter.js";
 import type { Question } from "../question/types.js";
@@ -7,6 +6,12 @@ import type { PermissionRequest } from "../permission/types.js";
 import type { FileChange } from "../pinned/types.js";
 import { logger } from "../utils/logger.js";
 import { getCurrentProject } from "../settings/manager.js";
+
+interface MessagingBot {
+  api: {
+    sendChatAction: (chatId: number, action: string) => Promise<unknown>;
+  };
+}
 
 export interface SummaryInfo {
   sessionId: string;
@@ -209,7 +214,7 @@ class SummaryAggregator {
   private processedToolStates: Set<string> = new Set();
   private thinkingFiredForMessages: Set<string> = new Set();
   private knownTextPartIds: Map<string, Set<string>> = new Map();
-  private bot: Bot | null = null;
+  private bot: MessagingBot | null = null;
   private chatId: number | null = null;
   private typingTimer: ReturnType<typeof setInterval> | null = null;
   private typingIndicatorEnabled = true;
@@ -222,7 +227,7 @@ class SummaryAggregator {
   private pendingChildSessionIdsByParent: Map<string, string[]> = new Map();
   private fallbackSubagentCardIdsByParent: Map<string, string[]> = new Map();
 
-  setBotAndChatId(bot: Bot, chatId: number): void {
+  setBotAndChatId(bot: MessagingBot, chatId: number): void {
     this.bot = bot;
     this.chatId = chatId;
   }
@@ -318,7 +323,7 @@ class SummaryAggregator {
 
     const sendTyping = () => {
       if (this.bot && this.chatId) {
-        this.bot.api.sendChatAction(this.chatId, "typing").catch((err) => {
+        this.bot.api.sendChatAction(this.chatId, "typing").catch((err: unknown) => {
           logger.error("Failed to send typing action:", err);
         });
       }
@@ -1230,7 +1235,7 @@ class SummaryAggregator {
           };
 
           logger.debug(
-            `[Aggregator] Sending tool notification to Telegram: tool=${part.tool}, title=${title || "N/A"}`,
+            `[Aggregator] Sending tool notification to chat platform: tool=${part.tool}, title=${title || "N/A"}`,
           );
 
           if (this.onToolCallback) {

@@ -55,7 +55,7 @@ export const es: I18nDictionary = {
   "common.unknown_error": "error desconocido",
 
   "start.welcome":
-    "👋 ¡Bienvenido a OpenCode Telegram Bot!\n\nUsa los comandos:\n/projects — seleccionar proyecto\n/sessions — lista de sesiones\n/new — sesión nueva\n/task — tarea programada\n/tasks — tareas programadas\n/status — estado\n/help — ayuda\n\nUsa los botones inferiores para elegir agente, modelo y variante.",
+    "👋 ¡Bienvenido a OpenCode Bot!\n\nUsa los comandos:\n/projects — seleccionar proyecto\n/sessions — lista de sesiones\n/new — sesión nueva\n/task — tarea programada\n/tasks — tareas programadas\n/status — estado\n/help — ayuda\n\nUsa los botones inferiores para elegir agente, modelo y variante.",
   "help.keyboard_hint":
     "💡 Usa los botones inferiores para agente, modelo, variante y acciones de contexto.",
   "help.text":
@@ -333,7 +333,7 @@ export const es: I18nDictionary = {
   "tool.file_header.edit":
     "Editar archivo/ruta: {path}\n============================================================\n\n",
 
-  "runtime.wizard.ask_token": "Introduce el token del bot de Telegram (obtenlo de @BotFather).\n> ",
+  "runtime.wizard.ask_token": "Configura las credenciales de DingTalk o Feishu en el archivo .env.\n> ",
   "runtime.wizard.ask_language":
     "Selecciona el idioma de la interfaz.\nIntroduce el número del idioma de la lista o el código de locale.\nPulsa Enter para mantener el idioma por defecto: {defaultLocale}\n{options}\n> ",
   "runtime.wizard.language_invalid":
@@ -343,7 +343,7 @@ export const es: I18nDictionary = {
   "runtime.wizard.token_invalid":
     "El token parece inválido (se espera el formato <id>:<secret>). Inténtalo de nuevo.\n",
   "runtime.wizard.ask_user_id":
-    "Introduce tu Telegram User ID (puedes obtenerlo de @userinfobot).\n> ",
+    "Configura un ID de usuario permitido en el archivo .env si necesitas restringir el acceso.\n> ",
   "runtime.wizard.user_id_invalid": "Introduce un entero positivo (> 0).\n",
   "runtime.wizard.ask_api_url":
     "Introduce la URL de la API de OpenCode (opcional).\nPulsa Enter para usar el valor por defecto: {defaultUrl}\n> ",
@@ -353,12 +353,12 @@ export const es: I18nDictionary = {
     "Introduce la contrasena del servidor OpenCode (opcional).\nPulsa Enter para dejarla vacia.\n> ",
   "runtime.wizard.api_url_invalid":
     "Introduce una URL válida (http/https) o pulsa Enter para usar el valor por defecto.\n",
-  "runtime.wizard.start": "Configuración de OpenCode Telegram Bot.\n",
+  "runtime.wizard.start": "Configuración de OpenCode Bot.\n",
   "runtime.wizard.saved": "Configuración guardada:\n- {envPath}\n- {settingsPath}\n",
   "runtime.wizard.not_configured_starting":
     "La aplicación aún no está configurada. Iniciando el asistente...\n",
   "runtime.wizard.tty_required":
-    "El asistente interactivo requiere un terminal TTY. Ejecuta `opencode-telegram config` en una shell interactiva.",
+    "El asistente interactivo requiere un terminal TTY. Ejecuta `opencode-bot config` en una shell interactiva.",
 
   "rename.no_session": "⚠️ No hay una sesión activa. Crea o selecciona una sesión primero.",
   "rename.prompt": "📝 Introduce un nuevo título para la sesión:\n\nActual: {title}",
@@ -451,7 +451,7 @@ export const es: I18nDictionary = {
   "cmd.description.rename": "Renombrar la sesión actual",
 
   "cli.usage":
-    "Uso:\n  opencode-telegram [start] [--mode sources|installed]\n  opencode-telegram status\n  opencode-telegram stop\n  opencode-telegram config\n\nNotas:\n  - Sin comando, el valor por defecto es `start`\n  - `--mode` actualmente solo se admite para `start`",
+    "Uso:\n  opencode-bot [start] [--mode sources|installed]\n  opencode-bot status\n  opencode-bot stop\n  opencode-bot config\n\nNotas:\n  - Sin comando, el valor por defecto es `start`\n  - `--mode` actualmente solo se admite para `start`",
   "cli.placeholder.status":
     "El comando `status` es actualmente un marcador de posición. Las comprobaciones reales de estado se agregarán en la capa de servicio (Fase 5).",
   "cli.placeholder.stop":
@@ -496,3 +496,4 @@ export const es: I18nDictionary = {
   "open.subfolder_count": "{count} subcarpeta",
   "open.subfolders_count": "{count} subcarpetas",
 };
+

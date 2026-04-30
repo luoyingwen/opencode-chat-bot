@@ -8,8 +8,9 @@ async function loadConfig() {
 
 describe("config boolean env parsing", () => {
   beforeEach(() => {
-    vi.stubEnv("TELEGRAM_BOT_TOKEN", "test-telegram-token");
-    vi.stubEnv("TELEGRAM_ALLOWED_USER_ID", "123456789");
+    vi.stubEnv("DINGTALK_APP_KEY", "test-dingtalk-key");
+    vi.stubEnv("DINGTALK_APP_SECRET", "test-dingtalk-secret");
+    vi.stubEnv("DINGTALK_ALLOWED_USER_ID", "test-user-id");
     vi.stubEnv("OPENCODE_MODEL_PROVIDER", "test-provider");
     vi.stubEnv("OPENCODE_MODEL_ID", "test-model");
   });

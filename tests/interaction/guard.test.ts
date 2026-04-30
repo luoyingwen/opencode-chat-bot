@@ -1,8 +1,9 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import type { Context } from "grammy";
 import { resolveInteractionGuardDecision } from "../../src/interaction/guard.js";
 import { interactionManager } from "../../src/interaction/manager.js";
 import { foregroundSessionState } from "../../src/scheduled-task/foreground-state.js";
+
+type GuardContext = Parameters<typeof resolveInteractionGuardDecision>[0];
 
 function createContext({
   text,
@@ -16,7 +17,7 @@ function createContext({
   voice?: boolean;
   audio?: boolean;
   photo?: boolean;
-}): Context {
+}): GuardContext {
   const message: Record<string, unknown> = {};
 
   if (text !== undefined) {
@@ -38,11 +39,9 @@ function createContext({
   }
 
   return {
-    message:
-      Object.keys(message).length > 0 ? (message as unknown as Context["message"]) : undefined,
-    callbackQuery:
-      callbackData !== undefined ? ({ data: callbackData } as Context["callbackQuery"]) : undefined,
-  } as Context;
+    message: Object.keys(message).length > 0 ? message : undefined,
+    callbackQuery: callbackData !== undefined ? { data: callbackData } : undefined,
+  };
 }
 
 describe("interaction guard", () => {

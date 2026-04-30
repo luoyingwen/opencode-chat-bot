@@ -1,18 +1,18 @@
-# OpenCode Telegram Bot
+# OpenCode Bot
 
-Telegram bot client for OpenCode that lets you run and monitor coding tasks on your local machine from Telegram.
+Multi-platform bot client for OpenCode that lets you run and monitor coding tasks on your local machine from DingTalk or Feishu.
 
 > Project concept and boundaries are documented in [`CONCEPT.md`](./CONCEPT.md).
 > Proposed changes that alter the core interaction model should be discussed before implementation.
 
 ## Concept
 
-The app works as a bridge between Telegram and a locally running OpenCode server:
+The app works as a bridge between supported chat platforms and a locally running OpenCode server:
 
-- You send prompts from Telegram
+- You send prompts from DingTalk or Feishu
 - The bot forwards them to OpenCode
 - The app listens to OpenCode SSE events
-- Results are aggregated and sent back in Telegram-friendly format
+- Results are aggregated and sent back in a chat-friendly format
 
 No public inbound ports are required for normal usage.
 
@@ -20,7 +20,7 @@ No public inbound ports are required for normal usage.
 
 1. The user works on a project locally with OpenCode (Desktop/TUI).
 2. They finish the local session and leave the computer.
-3. Later, while away, they run this bridge service and connect via Telegram.
+3. Later, while away, they run this bridge service and connect via DingTalk or Feishu.
 4. They choose an existing session or create a new one.
 5. They send coding tasks and receive periodic progress updates.
 6. They receive completed assistant responses in chat and continue the workflow asynchronously.
@@ -59,7 +59,7 @@ No public inbound ports are required for normal usage.
 
 - Send each completed assistant response after completion signal from SSE
 - Do not expose raw chain-of-thought; send a lightweight thinking indicator instead
-- Split long responses into multiple Telegram messages
+- Split long responses into multiple chat messages
 - Send code updates as files (size-limited)
 
 ### Session status in chat
@@ -71,13 +71,13 @@ No public inbound ports are required for normal usage.
 
 ### Security
 
-- Whitelist by Telegram user ID (single-user mode)
+- Whitelist by platform user ID (single-user mode)
 - Ignore messages from non-authorized users
 
 ### Configuration
 
-- Telegram bot token
-- Allowed Telegram user ID
+- DingTalk or Feishu bot credentials
+- Allowed platform user ID
 - Default model provider and model ID
 - Selected project persisted in `settings.json`
 - Configurable sessions list size (default: 10)
@@ -130,25 +130,25 @@ Model picker behavior:
 
 ### Main features already implemented
 
-- [x] Single-user access control by allowed Telegram user ID
-- [x] OpenCode server control from Telegram (`/status`, `/opencode_start`, `/opencode_stop`)
-- [x] Project and session management from Telegram (`/projects`, `/sessions`, `/new`)
+- [x] Single-user access control by allowed platform user ID
+- [x] OpenCode server control from chat (`/status`, `/opencode_start`, `/opencode_stop`)
+- [x] Project and session management from chat (`/projects`, `/sessions`, `/new`)
 - [x] Remote task execution and interruption support (`/abort`)
-- [x] Telegram-friendly result delivery, including sending generated code/files when needed
+- [x] Chat-friendly result delivery, including sending generated code/files when needed
 - [x] Interactive question and permission handling directly in chat (buttons + custom answers)
 - [x] Live pinned session status in chat (project, model, context usage, changed files)
 - [x] In-chat controls for model, agent, variant, and context
 - [x] Built-in and custom command catalog access (`/commands`)
 - [x] Scheduled task creation flow (`/task`)
-- [x] Scheduled task runtime execution with deferred Telegram delivery
+- [x] Scheduled task runtime execution with deferred chat delivery
 - [x] Scheduled task list and deletion flow (`/tasklist`)
 - [x] Persistent settings between restarts (`settings.json`)
 - [x] UI localization support via i18n files
 - [x] Service message visibility controls (thinking/tool updates)
 - [x] Sending code blocks as text files when needed
-- [x] Image attachments support (send photos/screenshots from Telegram to OpenCode)
-- [x] PDF attachments support (send documents from Telegram to OpenCode)
-- [x] Text file attachments support (send code/config/log files from Telegram to OpenCode)
+- [x] Image attachments support (send photos/screenshots from supported chat platforms to OpenCode)
+- [x] PDF attachments support (send documents from supported chat platforms to OpenCode)
+- [x] Text file attachments support (send code/config/log files from supported chat platforms to OpenCode)
 - [x] Voice/audio transcription via Whisper-compatible APIs (OpenAI/Groq/Together and compatible providers)
 - [x] Optional global audio replies with `/tts` via OpenAI-compatible APIs
 
@@ -168,6 +168,7 @@ Open tasks for upcoming iterations:
 
 Optional or longer-term enhancements:
 
-- [x] Create new OpenCode projects directly from Telegram
+- [x] Create new OpenCode projects directly from chat
 - [ ] Add project file browsing helpers (for example, `ls` and `open` flows)
 - [ ] Add a bot settings command with in-chat UI
+

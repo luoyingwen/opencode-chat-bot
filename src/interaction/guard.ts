@@ -1,4 +1,3 @@
-import type { Context } from "grammy";
 import { interactionManager } from "./manager.js";
 import { allowsBusyInteraction, isBusyAllowedCommand } from "./busy.js";
 import type {
@@ -9,6 +8,16 @@ import type {
   InteractionState,
 } from "./types.js";
 import { foregroundSessionState } from "../scheduled-task/foreground-state.js";
+
+interface InteractionGuardContext {
+  callbackQuery?: {
+    data?: string;
+  };
+  message?: {
+    text?: string;
+    photo?: unknown;
+  };
+}
 
 function normalizeIncomingCommand(text: string): string | null {
   const trimmed = text.trim();
@@ -26,7 +35,7 @@ function normalizeIncomingCommand(text: string): string | null {
   return withoutMention;
 }
 
-function classifyIncomingInput(ctx: Context): {
+function classifyIncomingInput(ctx: InteractionGuardContext): {
   inputType: IncomingInputType;
   command?: string;
 } {
@@ -112,7 +121,10 @@ function createBusyBlockDecision(
   };
 }
 
-function isAllowedRenameCancelCallback(ctx: Context, state: InteractionState): boolean {
+function isAllowedRenameCancelCallback(
+  ctx: InteractionGuardContext,
+  state: InteractionState,
+): boolean {
   return (
     state.kind === "rename" &&
     state.expectedInput === "text" &&
@@ -120,14 +132,14 @@ function isAllowedRenameCancelCallback(ctx: Context, state: InteractionState): b
   );
 }
 
-function isAllowedTaskCallback(ctx: Context, state: InteractionState): boolean {
+function isAllowedTaskCallback(ctx: InteractionGuardContext, state: InteractionState): boolean {
   return (
     state.kind === "task" &&
     (ctx.callbackQuery?.data === "task:cancel" || ctx.callbackQuery?.data === "task:retry-schedule")
   );
 }
 
-export function resolveInteractionGuardDecision(ctx: Context): GuardDecision {
+export function resolveInteractionGuardDecision(ctx: InteractionGuardContext): GuardDecision {
   const state = interactionManager.getSnapshot();
   const { inputType, command } = classifyIncomingInput(ctx);
   const isBusy = foregroundSessionState.isBusy();

@@ -1,6 +1,6 @@
 # Contributing
 
-Thanks for contributing to OpenCode Telegram Bot.
+Thanks for contributing to OpenCode Bot.
 
 ## Before You Start Work
 
@@ -167,3 +167,4 @@ For OS-sensitive changes, verify behavior on Linux, macOS, and Windows. If you c
 - Add or update tests for behavior changes.
 - Describe user-visible impact in 1-2 lines in the PR description.
 - If you could not test on one or more supported platforms locally, mention it in the PR description.
+

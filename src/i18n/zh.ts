@@ -48,7 +48,7 @@ export const zh: I18nDictionary = {
   "common.unknown_error": "未知错误",
 
   "start.welcome":
-    "👋 欢迎使用 OpenCode Telegram Bot！\n\n可用命令：\n/projects — 选择项目\n/sessions — 会话列表\n/new — 新建会话\n/task — 定时任务\n/tasks — 定时任务列表\n/status — 状态\n/help — 帮助\n\n请使用底部按钮选择 Agent、模型和变体。",
+    "👋 欢迎使用 OpenCode Bot！\n\n可用命令：\n/projects — 选择项目\n/sessions — 会话列表\n/new — 新建会话\n/task — 定时任务\n/tasks — 定时任务列表\n/status — 状态\n/help — 帮助\n\n请使用底部按钮选择 Agent、模型和变体。",
   "help.keyboard_hint": "💡 Agent、模型、变体和上下文操作请使用底部键盘按钮。",
   "help.text":
     "📖 **帮助**\n\n/status - 查看服务器状态\n/sessions - 会话列表\n/new - 创建新会话\n/help - 帮助",
@@ -296,14 +296,14 @@ export const zh: I18nDictionary = {
   "tool.file_header.edit":
     "编辑文件/路径: {path}\n============================================================\n\n",
 
-  "runtime.wizard.ask_token": "请输入 Telegram 机器人 token（从 @BotFather 获取）。\n> ",
+  "runtime.wizard.ask_token": "请在 .env 文件中配置 DingTalk 或 Feishu 凭证。\n> ",
   "runtime.wizard.ask_language":
     "请选择界面语言。\n输入列表中的语言编号或 locale code。\n按 Enter 保持默认语言：{defaultLocale}\n{options}\n> ",
   "runtime.wizard.language_invalid": "请输入列表中的语言编号或受支持的 locale code。\n",
   "runtime.wizard.language_selected": "已选择语言：{language}\n",
   "runtime.wizard.token_required": "必须提供 token。请重试。\n",
   "runtime.wizard.token_invalid": "token 看起来无效（期望格式 <id>:<secret>）。请重试。\n",
-  "runtime.wizard.ask_user_id": "请输入你的 Telegram User ID（可从 @userinfobot 获取）。\n> ",
+  "runtime.wizard.ask_user_id": "如果需要限制访问，请在 .env 文件中配置允许的用户 ID。\n> ",
   "runtime.wizard.user_id_invalid": "请输入一个正整数（> 0）。\n",
   "runtime.wizard.ask_api_url":
     "请输入 OpenCode API URL（可选）。\n按 Enter 使用默认值：{defaultUrl}\n> ",
@@ -312,11 +312,11 @@ export const zh: I18nDictionary = {
   "runtime.wizard.ask_server_password":
     "请输入 OpenCode 服务器密码（可选）。\n按 Enter 保持为空。\n> ",
   "runtime.wizard.api_url_invalid": "请输入有效 URL（http/https），或按 Enter 使用默认值。\n",
-  "runtime.wizard.start": "OpenCode Telegram Bot 设置。\n",
+  "runtime.wizard.start": "OpenCode Bot 设置。\n",
   "runtime.wizard.saved": "配置已保存：\n- {envPath}\n- {settingsPath}\n",
   "runtime.wizard.not_configured_starting": "应用尚未配置。正在启动向导...\n",
   "runtime.wizard.tty_required":
-    "交互式向导需要 TTY 终端。请在交互式 shell 中运行 `opencode-telegram config`。",
+    "交互式向导需要 TTY 终端。请在交互式 shell 中运行 `opencode-bot config`。",
 
   "rename.no_session": "⚠️ 没有活动会话。请先创建或选择一个会话。",
   "rename.prompt": "📝 请输入会话的新标题：\n\n当前：{title}",
@@ -399,7 +399,7 @@ export const zh: I18nDictionary = {
   "cmd.description.rename": "重命名当前会话",
 
   "cli.usage":
-    "用法:\n  opencode-telegram [start] [--mode sources|installed]\n  opencode-telegram status\n  opencode-telegram stop\n  opencode-telegram config\n\n注意:\n  - 无命令时默认为 `start`\n  - `--mode` 当前仅支持 `start`",
+    "用法:\n  opencode-bot [start] [--mode sources|installed]\n  opencode-bot status\n  opencode-bot stop\n  opencode-bot config\n\n注意:\n  - 无命令时默认为 `start`\n  - `--mode` 当前仅支持 `start`",
   "cli.placeholder.status": "`status` 命令当前为占位符。实际状态检查将在服务层中添加（第5阶段）。",
   "cli.placeholder.stop":
     "`stop` 命令当前为占位符。实际后台进程停止功能将在服务层中添加（第5阶段）。",
@@ -441,3 +441,4 @@ export const zh: I18nDictionary = {
   "open.subfolder_count": "{count} 个子文件夹",
   "open.subfolders_count": "{count} 个子文件夹",
 };
+

@@ -26,7 +26,7 @@ class PermissionManager {
   }
 
   /**
-   * Get permission request by Telegram message ID
+   * Get permission request by platform message ID
    */
   getRequest(messageId: number | null): PermissionRequest | null {
     if (messageId === null) {
@@ -37,7 +37,7 @@ class PermissionManager {
   }
 
   /**
-   * Get request ID for API reply by Telegram message ID
+   * Get request ID for API reply by platform message ID
    */
   getRequestID(messageId: number | null): string | null {
     return this.getRequest(messageId)?.id ?? null;
@@ -65,7 +65,7 @@ class PermissionManager {
   }
 
   /**
-   * Get latest Telegram message ID
+   * Get latest platform message ID
    */
   getMessageId(): number | null {
     const messageIds = this.getMessageIds();
@@ -77,14 +77,14 @@ class PermissionManager {
   }
 
   /**
-   * Get Telegram message IDs for all active requests
+   * Get platform message IDs for all active requests
    */
   getMessageIds(): number[] {
     return Array.from(this.state.requestsByMessageId.keys());
   }
 
   /**
-   * Remove permission request by Telegram message ID
+   * Remove permission request by platform message ID
    */
   removeByMessageId(messageId: number | null): PermissionRequest | null {
     const request = this.getRequest(messageId);

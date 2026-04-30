@@ -52,7 +52,7 @@ export const en = {
   "common.unknown_error": "unknown error",
 
   "start.welcome":
-    "👋 Welcome to OpenCode Telegram Bot!\n\nUse commands:\n/projects — select project\n/sessions — session list\n/new — new session\n/task — scheduled task\n/tasks — scheduled tasks\n/status — status\n/help — help\n\nUse the bottom buttons to select the agent, model, and variant.",
+    "👋 Welcome to OpenCode Bot!\n\nUse commands:\n/projects — select project\n/sessions — session list\n/new — new session\n/task — scheduled task\n/tasks — scheduled tasks\n/status — status\n/help — help\n\nUse the bottom buttons to select the agent, model, and variant.",
   "help.keyboard_hint":
     "💡 Use the bottom keyboard buttons for the agent, model, variant, and context actions.",
   "help.text":
@@ -323,7 +323,7 @@ export const en = {
   "tool.file_header.edit":
     "Edit File/Path: {path}\n============================================================\n\n",
 
-  "runtime.wizard.ask_token": "Enter Telegram bot token (get it from @BotFather).\n> ",
+  "runtime.wizard.ask_token": "Configure your DingTalk or Feishu credentials in the .env file.\n> ",
   "runtime.wizard.ask_language":
     "Select interface language.\nEnter the language number from the list or locale code.\nPress Enter to keep default language: {defaultLocale}\n{options}\n> ",
   "runtime.wizard.language_invalid":
@@ -333,7 +333,7 @@ export const en = {
   "runtime.wizard.token_invalid":
     "Token looks invalid (expected format <id>:<secret>). Please try again.\n",
   "runtime.wizard.ask_user_id":
-    "Enter your Telegram User ID (you can get it from @userinfobot).\n> ",
+    "Configure an allowed user ID in the .env file if you need to restrict access.\n> ",
   "runtime.wizard.user_id_invalid": "Enter a positive integer (> 0).\n",
   "runtime.wizard.ask_api_url":
     "Enter OpenCode API URL (optional).\nPress Enter to use default: {defaultUrl}\n> ",
@@ -342,12 +342,12 @@ export const en = {
   "runtime.wizard.ask_server_password":
     "Enter OpenCode server password (optional).\nPress Enter to keep it empty.\n> ",
   "runtime.wizard.api_url_invalid": "Enter a valid URL (http/https) or press Enter for default.\n",
-  "runtime.wizard.start": "OpenCode Telegram Bot setup.\n",
+  "runtime.wizard.start": "OpenCode Bot setup.\n",
   "runtime.wizard.saved": "Configuration saved:\n- {envPath}\n- {settingsPath}\n",
   "runtime.wizard.not_configured_starting":
     "Application is not configured yet. Starting wizard...\n",
   "runtime.wizard.tty_required":
-    "Interactive wizard requires a TTY terminal. Run `opencode-telegram config` in an interactive shell.",
+    "Interactive wizard requires a TTY terminal. Run `opencode-bot config` in an interactive shell.",
 
   "rename.no_session": "⚠️ No active session. Create or select a session first.",
   "rename.prompt": "📝 Enter new title for session:\n\nCurrent: {title}",
@@ -436,7 +436,7 @@ export const en = {
   "cmd.description.rename": "Rename current session",
 
   "cli.usage":
-    "Usage:\n  opencode-telegram [start] [--mode sources|installed]\n  opencode-telegram status\n  opencode-telegram stop\n  opencode-telegram config\n\nNotes:\n  - No command defaults to `start`\n  - `--mode` is currently supported for `start` only",
+    "Usage:\n  opencode-bot [start] [--mode sources|installed]\n  opencode-bot status\n  opencode-bot stop\n  opencode-bot config\n\nNotes:\n  - No command defaults to `start`\n  - `--mode` is currently supported for `start` only",
   "cli.placeholder.status":
     "Command `status` is currently a placeholder. Real status checks will be added in service layer (Phase 5).",
   "cli.placeholder.stop":
@@ -482,3 +482,4 @@ export const en = {
 
 export type I18nKey = keyof typeof en;
 export type I18nDictionary = Record<I18nKey, string>;
+

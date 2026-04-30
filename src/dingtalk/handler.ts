@@ -557,7 +557,7 @@ async function handleRenameCommand(userId: string): Promise<void> {
       },
     });
 
-    // Send prompt message (DingTalk doesn't support inline keyboards like Telegram,
+    // Send prompt message (DingTalk doesn't support the same inline keyboard flow,
     // but user can use /abort to cancel)
     const message =
       t("rename.prompt", { title: currentSession.title }) + "\n\n" + "💡 " + t("rename.hint_abort");
@@ -639,25 +639,6 @@ async function handleAgentSwitchCommand(userId: string, arg: string): Promise<vo
 async function handleExitCommand(userId: string): Promise<void> {
   await sendDingTalkMessage(userId, t("exit.stopping"));
   await exitApplication("dingtalk:/exit");
-}
-
-async function waitForServerReadyDingTalk(maxWaitMs: number = 10000): Promise<boolean> {
-  const startTime = Date.now();
-  const pollInterval = 500;
-
-  while (Date.now() - startTime < maxWaitMs) {
-    try {
-      const { data, error } = await opencodeClient.global.health();
-      if (!error && data?.healthy) {
-        return true;
-      }
-    } catch {
-      // Server not ready yet
-    }
-    await new Promise((resolve) => setTimeout(resolve, pollInterval));
-  }
-
-  return false;
 }
 
 function getLocalizedBotCommandsDingTalk(): { command: string; description: string }[] {

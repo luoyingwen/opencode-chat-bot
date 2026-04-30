@@ -23,7 +23,6 @@ vi.mock("../../src/config.js", () => ({
     // Provide minimal stubs for properties that other modules read at import time
     // (e.g., opencode/client.ts reads config.opencode during module initialization
     // and may get loaded via the test setup's resetSingletonState).
-    telegram: { token: "test", allowedUserId: 0, proxyUrl: "" },
     opencode: {
       apiUrl: "http://localhost:4096",
       username: "opencode",
@@ -34,9 +33,15 @@ vi.mock("../../src/config.js", () => ({
     bot: {
       sessionsListLimit: 10,
       projectsListLimit: 10,
+      commandsListLimit: 10,
+      taskLimit: 10,
       locale: "en",
       hideThinkingMessages: false,
       hideToolCallMessages: false,
+      hideToolFileMessages: false,
+      responseStreamThrottleMs: 500,
+      bashToolDisplayMaxLength: 128,
+      messageFormatMode: "markdown",
     },
     files: { maxFileSizeKb: 100 },
   },

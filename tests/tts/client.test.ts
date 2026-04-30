@@ -19,7 +19,6 @@ const mockTts = vi.hoisted(() => ({
 vi.mock("../../src/config.js", () => ({
   config: {
     tts: mockTts,
-    telegram: { token: "test", allowedUserId: 0, proxyUrl: "" },
     opencode: {
       apiUrl: "http://localhost:4096",
       username: "opencode",

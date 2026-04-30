@@ -1,9 +1,5 @@
 import { beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 
-vi.mock("../../src/slack/events.js", () => ({
-  isSlackActive: () => false,
-}));
-
 import { t } from "../../src/i18n/index.js";
 import { setCurrentSession } from "../../src/session/manager.js";
 import { summaryAggregator } from "../../src/summary/aggregator.js";

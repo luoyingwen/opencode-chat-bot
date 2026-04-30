@@ -23,5 +23,5 @@ export type PermissionReply = "once" | "always" | "reject";
  * State for active permission requests
  */
 export interface PermissionState {
-  requestsByMessageId: Map<number, PermissionRequest>; // Telegram message ID -> request
+  requestsByMessageId: Map<number, PermissionRequest>; // Platform message ID -> request
 }

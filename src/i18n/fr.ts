@@ -55,7 +55,7 @@ export const fr: I18nDictionary = {
   "common.unknown_error": "erreur inconnue",
 
   "start.welcome":
-    "👋 Bienvenue dans OpenCode Telegram Bot !\n\nUtilisez les commandes :\n/projects — sélectionner un projet\n/sessions — liste des sessions\n/new — nouvelle session\n/task — tâche planifiée\n/tasks — tâches planifiées\n/status — statut\n/help — aide\n\nUtilisez les boutons du bas pour choisir l'agent, le modèle et la variante.",
+    "👋 Bienvenue dans OpenCode Bot !\n\nUtilisez les commandes :\n/projects — sélectionner un projet\n/sessions — liste des sessions\n/new — nouvelle session\n/task — tâche planifiée\n/tasks — tâches planifiées\n/status — statut\n/help — aide\n\nUtilisez les boutons du bas pour choisir l'agent, le modèle et la variante.",
   "help.keyboard_hint":
     "💡 Utilisez les boutons du bas pour l'agent, le modèle, la variante et les actions de contexte.",
   "help.text":
@@ -336,7 +336,7 @@ export const fr: I18nDictionary = {
     "Modifier Fichier/Chemin : {path}\n============================================================\n\n",
 
   "runtime.wizard.ask_token":
-    "Entrez le token du bot Telegram (obtenez-le auprès de @BotFather).\n> ",
+    "Configurez les identifiants DingTalk ou Feishu dans le fichier .env.\n> ",
   "runtime.wizard.ask_language":
     "Sélectionnez la langue de l'interface.\nEntrez le numéro de la langue dans la liste ou le code locale.\nAppuyez sur Entrée pour conserver la langue par défaut : {defaultLocale}\n{options}\n> ",
   "runtime.wizard.language_invalid":
@@ -346,7 +346,7 @@ export const fr: I18nDictionary = {
   "runtime.wizard.token_invalid":
     "Le token semble invalide (format attendu <id>:<secret>). Veuillez réessayer.\n",
   "runtime.wizard.ask_user_id":
-    "Entrez votre identifiant utilisateur Telegram (vous pouvez l'obtenir auprès de @userinfobot).\n> ",
+    "Configurez un identifiant utilisateur autorisé dans le fichier .env si vous devez restreindre l'accès.\n> ",
   "runtime.wizard.user_id_invalid": "Entrez un entier positif (> 0).\n",
   "runtime.wizard.ask_api_url":
     "Entrez l'URL de l'API OpenCode (optionnel).\nAppuyez sur Entrée pour utiliser la valeur par défaut : {defaultUrl}\n> ",
@@ -356,12 +356,12 @@ export const fr: I18nDictionary = {
     "Entrez le mot de passe du serveur OpenCode (optionnel).\nAppuyez sur Entrée pour le laisser vide.\n> ",
   "runtime.wizard.api_url_invalid":
     "Entrez une URL valide (http/https) ou appuyez sur Entrée pour la valeur par défaut.\n",
-  "runtime.wizard.start": "Configuration d'OpenCode Telegram Bot.\n",
+  "runtime.wizard.start": "Configuration d'OpenCode Bot.\n",
   "runtime.wizard.saved": "Configuration enregistrée :\n- {envPath}\n- {settingsPath}\n",
   "runtime.wizard.not_configured_starting":
     "L'application n'est pas encore configurée. Lancement de l'assistant...\n",
   "runtime.wizard.tty_required":
-    "L'assistant interactif nécessite un terminal TTY. Exécutez `opencode-telegram config` dans un shell interactif.",
+    "L'assistant interactif nécessite un terminal TTY. Exécutez `opencode-bot config` dans un shell interactif.",
 
   "rename.no_session": "⚠️ Aucune session active. Créez ou sélectionnez d'abord une session.",
   "rename.prompt": "📝 Entrez le nouveau titre de la session :\n\nActuel : {title}",
@@ -452,7 +452,7 @@ export const fr: I18nDictionary = {
   "cmd.description.rename": "Renommer la session actuelle",
 
   "cli.usage":
-    "Utilisation :\n  opencode-telegram [start] [--mode sources|installed]\n  opencode-telegram status\n  opencode-telegram stop\n  opencode-telegram config\n\nNotes :\n  - Sans commande, `start` est utilisé par défaut\n  - `--mode` n'est actuellement pris en charge que pour `start`",
+    "Utilisation :\n  opencode-bot [start] [--mode sources|installed]\n  opencode-bot status\n  opencode-bot stop\n  opencode-bot config\n\nNotes :\n  - Sans commande, `start` est utilisé par défaut\n  - `--mode` n'est actuellement pris en charge que pour `start`",
   "cli.placeholder.status":
     "La commande `status` est actuellement un placeholder. Les vraies vérifications d'état seront ajoutées dans la couche service (Phase 5).",
   "cli.placeholder.stop":
@@ -497,3 +497,4 @@ export const fr: I18nDictionary = {
   "open.subfolder_count": "{count} sous-dossier",
   "open.subfolders_count": "{count} sous-dossiers",
 };
+

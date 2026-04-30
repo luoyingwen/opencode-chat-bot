@@ -2,20 +2,20 @@
 
 This guide covers setting up the OpenCode Bot with systemd on Linux.
 
-**Supported Platforms:** This setup works for all supported platforms (Telegram, Slack, DingTalk, Feishu). Make sure you have configured at least one platform in your `.env` file before starting the service.
+**Supported Platforms:** This setup works for all supported platforms (DingTalk, Feishu). Make sure you have configured at least one platform in your `.env` file before starting the service.
 
 ## 1. Install and configure the bot
 
 ```bash
-npm install -g @grinev/opencode-telegram-bot@latest
-opencode-telegram config
+npm install -g @bigheadfjuee/opencode-chat-bot@latest
+opencode-bot config
 ```
 
 ## 2. Get the required paths
 
 ```bash
 which node
-which opencode-telegram
+which opencode-bot
 dirname "$(which node)"
 ```
 
@@ -23,23 +23,23 @@ Use these values in the service file:
 
 - `<USER>`: your Linux user
 - `<NODE_PATH>`: output of `which node`
-- `<OPENCODE_TELEGRAM_PATH>`: output of `which opencode-telegram`
+- `<OPENCODE_BOT_PATH>`: output of `which opencode-bot`
 - `<NODE_BIN_DIR>`: output of `dirname "$(which node)"`
 
 ## 3. Create the service file
 
-Create `/etc/systemd/system/opencode-telegram-bot.service`:
+Create `/etc/systemd/system/opencode-chat-bot.service`:
 
 ```ini
 [Unit]
-Description=OpenCode Telegram Bot
+Description=OpenCode Bot
 After=network.target
 
 [Service]
 Type=simple
 User=<USER>
 Environment=PATH=<NODE_BIN_DIR>:/usr/local/bin:/usr/bin:/bin
-ExecStart=<NODE_PATH> <OPENCODE_TELEGRAM_PATH> start
+ExecStart=<NODE_PATH> <OPENCODE_BOT_PATH> start
 Restart=on-failure
 RestartSec=5
 
@@ -53,15 +53,15 @@ Run the bot in foreground mode. Do not use `--daemon` under `systemd`.
 
 ```bash
 sudo systemctl daemon-reload
-sudo systemctl enable opencode-telegram-bot
-sudo systemctl start opencode-telegram-bot
-sudo systemctl status opencode-telegram-bot
+sudo systemctl enable opencode-chat-bot
+sudo systemctl start opencode-chat-bot
+sudo systemctl status opencode-chat-bot
 ```
 
 ## 5. View logs
 
 ```bash
-sudo journalctl -u opencode-telegram-bot -f
+sudo journalctl -u opencode-chat-bot -f
 ```
 
 ## Example
@@ -72,17 +72,18 @@ This is a working example for an `nvm`-based setup:
 
 ```ini
 [Unit]
-Description=OpenCode Telegram Bot
+Description=OpenCode Bot
 After=network.target
 
 [Service]
 Type=simple
 User=admin
 Environment=PATH=/home/admin/.nvm/versions/node/v20.20.2/bin:/usr/local/bin:/usr/bin:/bin
-ExecStart=/home/admin/.nvm/versions/node/v20.20.2/bin/node /home/admin/.nvm/versions/node/v20.20.2/bin/opencode-telegram
+ExecStart=/home/admin/.nvm/versions/node/v20.20.2/bin/node /home/admin/.nvm/versions/node/v20.20.2/bin/opencode-bot
 Restart=on-failure
 RestartSec=5
 
 [Install]
 WantedBy=default.target
 ```
+

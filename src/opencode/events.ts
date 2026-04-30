@@ -95,12 +95,12 @@ export async function subscribeToEvents(directory: string, callback: EventCallba
           );
 
           // CRITICAL: Explicitly yield to the event loop BEFORE processing the event
-          // This allows grammY to handle getUpdates between SSE events
+          // This yields to the event loop between SSE events
           await new Promise<void>((resolve) => setImmediate(resolve));
 
           if (eventCallback) {
             // Use setImmediate to avoid blocking the event loop
-            // and let grammY process incoming Telegram updates
+            // and let platform handlers process incoming updates
             const callbackSnapshot = eventCallback;
             setImmediate(() => callbackSnapshot(event));
           }

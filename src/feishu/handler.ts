@@ -630,25 +630,6 @@ async function handleExitCommand(chatId: string, userId: string): Promise<void> 
   await exitApplication("feishu:/exit");
 }
 
-async function waitForServerReadyFeishu(maxWaitMs: number = 10000): Promise<boolean> {
-  const startTime = Date.now();
-  const pollInterval = 500;
-
-  while (Date.now() - startTime < maxWaitMs) {
-    try {
-      const { data, error } = await opencodeClient.global.health();
-      if (!error && data?.healthy) {
-        return true;
-      }
-    } catch {
-      // Server not ready yet
-    }
-    await new Promise((resolve) => setTimeout(resolve, pollInterval));
-  }
-
-  return false;
-}
-
 function getLocalizedBotCommandsFeishu(): { command: string; description: string }[] {
   return [
     { command: "status", description: t("cmd.description.status") },

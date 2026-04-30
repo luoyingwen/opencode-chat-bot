@@ -1,13 +1,13 @@
-# OpenCode Telegram, Slack, DingTalk, Feishu Bot
+# OpenCode DingTalk, Feishu Bot
 
-fork from <https://github.com/grinev/opencode-telegram-bot>
+fork from <https://github.com/grinev/opencode-chat-bot>
 
-新增：支援 Slack, DingTalk, Feishu, proxy, zh-TW, 文件日志
+新增：支援 DingTalk, Feishu, proxy, zh-TW, 文件日志
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 [![Node.js](https://img.shields.io/badge/node-%3E%3D20-brightgreen)](https://nodejs.org)
 
-OpenCode Bot is a secure multi-platform client for [OpenCode](https://opencode.ai) CLI that runs on your local machine. Supports **Telegram**, **Slack**, **DingTalk**, and **Feishu**.
+OpenCode Bot is a secure multi-platform client for [OpenCode](https://opencode.ai) CLI that runs on your local machine. Supports **DingTalk** and **Feishu**.
 
 Run AI coding tasks, monitor progress, switch models, and manage sessions from your phone.
 
@@ -23,7 +23,7 @@ Languages: English (`en`), Deutsch (`de`), Español (`es`), Русский (`ru`
 
 ## Features
 
-- **Multi-platform support** — works with Telegram, Slack, DingTalk, and Feishu simultaneously or individually
+- **Multi-platform support** — works with DingTalk and Feishu individually
 - **Remote coding** — send prompts to OpenCode from anywhere, receive complete results with code sent as files
 - **Session management** — create new sessions or continue existing ones, just like in the TUI
 - **Live status** — pinned message with current project, model, context usage, and changed files list, updated in real time
@@ -32,12 +32,12 @@ Languages: English (`en`), Deutsch (`de`), Español (`es`), Русский (`ru`
 - **Subagent activity** — watch live subagent progress in chat, including the current task, agent, model, and active tool step
 - **Custom Commands** — run OpenCode custom commands (and built-ins like `init`/`review`) from an inline menu with confirmation
 - **Interactive Q&A** — answer agent questions and approve permissions via inline buttons
-- **Voice prompts** — send voice/audio messages, transcribe them via a Whisper-compatible API, and optionally enable spoken replies with `/tts` (Telegram only)
+- **Voice prompts** — voice/audio messages can be transcribed via a Whisper-compatible API when the platform supports them
 - **File attachments** — send images, PDF documents, and any text-based files to OpenCode (code, logs, configs etc.)
 - **Scheduled tasks** — schedule prompts to run later or on a recurring interval; see [Scheduled Tasks](#scheduled-tasks)
 - **Context control** — compact context when it gets too large, right from the chat
 - **Input flow control** — when an interactive flow is active, the bot accepts only relevant input to keep context consistent and avoid accidental actions
-- **Security** — strict user/channel whitelist; no one else can access your bot
+- **Security** — strict user whitelist; no one else can access your bot
 - **Localization** — UI localization is supported for multiple languages (`BOT_LOCALE`)
 - **File logging** — logs are written to files with automatic rotation and retention
 
@@ -48,30 +48,12 @@ Planned features currently in development are listed in [Current Task List](PROD
 - **Node.js 20+** — [download](https://nodejs.org)
 - **OpenCode** — install from [opencode.ai](https://opencode.ai) or [GitHub](https://github.com/sst/opencode)
 - **Bot Platform** — at least one of:
-  - Telegram Bot (create one during setup)
-  - Slack App (see [Slack Bot](#slack-bot))
   - DingTalk Robot (see [DingTalk Bot](#dingtalk-bot))
   - Feishu Bot (see [Feishu Bot](#feishu-bot))
 
 ## Quick Start
 
 ### 1. Create a Bot
-
-#### Telegram Bot
-
-1. Open [@BotFather](https://t.me/BotFather) in Telegram and send `/newbot`
-2. Follow the prompts to choose a name and username
-3. Copy the **bot token** you receive (e.g. `123456:ABC-DEF1234...`)
-
-You'll also need your **Telegram User ID** — send any message to [@userinfobot](https://t.me/userinfobot) and it will reply with your numeric ID.
-
-#### Slack Bot
-
-See [Slack Bot Setup Guide](./slack_bot.md) for detailed instructions on creating a Slack App and obtaining:
-
-- `SLACK_BOT_TOKEN` (xoxb-...)
-- `SLACK_APP_TOKEN` (xapp-...)
-- `SLACK_SIGNING_SECRET`
 
 #### Feishu Bot
 
@@ -97,18 +79,18 @@ opencode serve
 
 ### 3. Development
 
-> Quick start is for npm usage. You do not need to clone this repository. If you run this command from the source directory (repository root), it may fail with `opencode-telegram: not found`. To run from sources, use the [Development](#development) section.
+> Quick start is for npm usage. You do not need to clone this repository. If you run this command from the source directory (repository root), it may fail with `opencode-bot: not found`. To run from sources, use the [Development](#development) section.
 
 On first launch, an interactive wizard will guide you through the configuration — it asks for interface language first, then your bot token(s), user ID(s), OpenCode API URL, and optional OpenCode server credentials (username/password). After that, you're ready to go. Open your bot and start sending tasks.
 
 #### Alternative: Global Install
 
 ```bash
-git clone https://github.com/bigheadfjuee/opencode-telegram-slack-bot.git
-cd opencode-telegram-slack-bot
+git clone https://github.com/bigheadfjuee/opencode-chat-bot.git
+cd opencode-chat-bot
 npm install
 cp .env.example .env
-# Edit .env with your bot tokens, user IDs, and model settings
+# Edit .env with your bot credentials, user IDs, and model settings
 ```
 
 Build and run:
@@ -117,14 +99,14 @@ Build and run:
 npm run dev
 ```
 
-> Built-in daemon mode is intended for standalone npm installs without an external supervisor. For `systemd`, `pm2`, or Docker, keep using `opencode-telegram start` without `--daemon`.
+> Built-in daemon mode is intended for standalone npm installs without an external supervisor. For `systemd`, `pm2`, or Docker, keep using `opencode-bot start` without `--daemon`.
 
 For Linux `systemd` setup, see [`docs/LINUX_SYSTEMD_SETUP.md`](./docs/LINUX_SYSTEMD_SETUP.md).
 
 To reconfigure at any time:
 
 ```bash
-opencode-telegram config
+opencode-bot config
 ```
 
 ## Supported Platforms (Node.js)
@@ -137,33 +119,13 @@ opencode-telegram config
 
 ## Bot Commands
 
-### Telegram Commands
-
-| Command           | Description                                             |
-| ----------------- | ------------------------------------------------------- |
-| `/status`         | Server health, current project, session, and model info |
-| `/new`            | Create a new session                                    |
-| `/abort`          | Abort the current task                                  |
-| `/sessions`       | Browse and switch between recent sessions               |
-| `/projects`       | Switch between OpenCode projects                        |
-| `/open`           | Add a project by browsing directories                   |
-| `/agents`         | Switch between available agents                         |
-| `/tts`            | Toggle audio replies                                    |
-| `/rename`         | Rename the current session                              |
-| `/commands`       | Browse and run custom commands                          |
-| `/task`           | Create a scheduled task                                 |
-| `/tasklist`       | Browse and delete scheduled tasks                       |
-| `/opencode_start` | Start the OpenCode server remotely                      |
-| `/opencode_stop`  | Stop the OpenCode server remotely                       |
-| `/help`           | Show available commands                                 |
-
-### Slack / DingTalk / Feishu Commands
+### DingTalk / Feishu Commands
 
 | Command           | Description                                                          |
 | ----------------- | -------------------------------------------------------------------- |
 | `/status`         | Server health, current project, session, and model info              |
 | `/new`            | Create a new session                                                 |
-| `/stop`           | Stop the current task (Slack/DingTalk/Feishu equivalent of `/abort`) |
+| `/stop`           | Stop the current task                                            |
 | `/sessions`       | Browse recent sessions                                               |
 | `/session <n>`    | Select a session by number                                           |
 | `/projects`       | Browse available projects                                            |
@@ -179,7 +141,7 @@ opencode-telegram config
 | `/opencode_stop`  | Stop the OpenCode server remotely                                    |
 | `/help`           | Show available commands                                              |
 
-Any regular text message is sent as a prompt to the coding agent only when no blocking interaction is active. Voice/audio messages are transcribed and then sent as prompts when STT is configured (Telegram only).
+Any regular text message is sent as a prompt to the coding agent only when no blocking interaction is active.
 
 > **Note:** DingTalk and Feishu currently support text and markdown messages. Image, voice, and file messages will show a "not supported" notice.
 
@@ -305,20 +267,12 @@ Scheduled tasks let you prepare prompts in advance and run them automatically la
 
 When installed via npm, the configuration wizard handles the initial setup. The `.env` file is stored in your platform's app data directory:
 
-- **macOS:** `~/Library/Application Support/opencode-telegram-bot/.env`
-- **Windows:** `%APPDATA%\opencode-telegram-bot\.env`
-- **Linux:** `~/.config/opencode-telegram-bot/.env`
+- **macOS:** `~/Library/Application Support/opencode-chat-bot/.env`
+- **Windows:** `%APPDATA%\opencode-chat-bot\.env`
+- **Linux:** `~/.config/opencode-chat-bot/.env`
 
 | Variable                        | Description                                                                                    | Required | Default                  |
 | ------------------------------- | ---------------------------------------------------------------------------------------------- | :------: | ------------------------ |
-| `TELEGRAM_BOT_TOKEN`            | Bot token from @BotFather                                                                      |   No\*   | —                        |
-| `TELEGRAM_ALLOWED_USER_ID`      | Your numeric Telegram user ID                                                                  |    No    | —                        |
-| `TELEGRAM_PROXY_URL`            | Proxy URL for Telegram API (SOCKS5/HTTP)                                                       |    No    | —                        |
-| `SLACK_BOT_TOKEN`               | Slack Bot Token (xoxb-...)                                                                     |   No\*   | —                        |
-| `SLACK_APP_TOKEN`               | Slack App Token for Socket Mode (xapp-...)                                                     |   No\*   | —                        |
-| `SLACK_SIGNING_SECRET`          | Slack App Signing Secret                                                                       |    No    | —                        |
-| `SLACK_ALLOWED_CHANNEL_ID`      | Allowed Slack channel ID                                                                       |    No    | —                        |
-| `SLACK_PROXY_URL`               | Proxy URL for Slack API                                                                        |    No    | —                        |
 | `DINGTALK_APP_KEY`              | DingTalk App Key                                                                               |   No\*   | —                        |
 | `DINGTALK_APP_SECRET`           | DingTalk App Secret                                                                            |   No\*   | —                        |
 | `DINGTALK_AGENT_ID`             | DingTalk Agent ID                                                                              |    No    | —                        |
@@ -346,7 +300,7 @@ When installed via npm, the configuration wizard handles the initial setup. The 
 | `HIDE_TOOL_FILE_MESSAGES`       | Hide file edit documents sent as `.txt` attachments (`edit_*.txt`, `write_*.txt`)              |    No    | `false`                  |
 | `RESPONSE_STREAMING`            | Stream assistant replies while generated                                                       |    No    | `true`                   |
 | `RESPONSE_STREAM_THROTTLE_MS`   | Stream edit throttle (ms) for updates                                                          |    No    | `500`                    |
-| `MESSAGE_FORMAT_MODE`           | Assistant reply formatting: `markdown` (Telegram MarkdownV2) or `raw`                          |    No    | `markdown`               |
+| `MESSAGE_FORMAT_MODE`           | Assistant reply formatting: `markdown` (MarkdownV2) or `raw`                          |    No    | `markdown`               |
 | `CODE_FILE_MAX_SIZE_KB`         | Max file size (KB) to send as document                                                         |    No    | `100`                    |
 | `STT_API_URL`                   | Whisper-compatible API base URL (enables voice transcription)                                  |    No    | —                        |
 | `STT_API_KEY`                   | API key for STT provider                                                                       |    No    | —                        |
@@ -359,17 +313,17 @@ When installed via npm, the configuration wizard handles the initial setup. The 
 | `LOG_LEVEL`                     | Log level (`debug`, `info`, `warn`, `error`)                                                   |    No    | `info`                   |
 | `LOG_RETENTION`                 | Number of log files to keep: launch files in `sources`, daily files in `installed`             |    No    | `10`                     |
 
-> **\*At least one platform must be configured:** Telegram (`TELEGRAM_BOT_TOKEN`), Slack (`SLACK_BOT_TOKEN` + `SLACK_APP_TOKEN`), or DingTalk (`DINGTALK_APP_KEY` + `DINGTALK_APP_SECRET`).
+> **\*At least one platform must be configured:** DingTalk (`DINGTALK_APP_KEY` + `DINGTALK_APP_SECRET`) or Feishu (`FEISHU_APP_ID` + `FEISHU_APP_SECRET`).
 
 > **Keep your `.env` file private.** It contains your bot tokens. Never commit it to version control.
 
 Logs are written to `./logs` when running from sources and to the runtime config directory `logs/` folder in `installed` mode. Log rotation depends on runtime mode: `sources` creates one file per bot launch, while `installed` appends to one file per day. Old log files are removed according to `LOG_RETENTION`.
 
-### Voice and Audio Transcription (Optional - Telegram Only)
+### Voice and Audio Transcription (Optional)
 
 If `STT_API_URL` and `STT_API_KEY` are set, the bot will:
 
-1. Accept `voice` and `audio` Telegram messages
+1. Accept supported voice and audio messages
 2. Transcribe them via `POST {STT_API_URL}/audio/transcriptions`
 3. Show recognized text in chat
 4. Send the recognized text to OpenCode as a normal prompt
@@ -412,10 +366,8 @@ To add a model to favorites, open OpenCode TUI (`opencode`), go to model selecti
 
 ## Security
 
-The bot enforces strict **user/channel whitelists**:
+The bot enforces strict **user whitelists**:
 
-- **Telegram:** Only the user whose ID matches `TELEGRAM_ALLOWED_USER_ID` can interact
-- **Slack:** Only messages from `SLACK_ALLOWED_CHANNEL_ID` are processed
 - **DingTalk:** Only the user whose staff ID matches `DINGTALK_ALLOWED_USER_ID` can interact (if set)
 - **Feishu:** Only the user whose open ID matches `FEISHU_ALLOWED_USER_ID` can interact (if set)
 
@@ -469,8 +421,8 @@ Since the bot runs locally on your machine and connects to your local OpenCode s
 
 **Linux: permission denied errors**
 
-- Make sure the CLI binary has execute permission: `chmod +x $(which opencode-telegram)`
-- Check that the config directory is writable: `~/.config/opencode-telegram-bot/`
+- Make sure the CLI binary has execute permission: `chmod +x $(which opencode-bot)`
+- Check that the config directory is writable: `~/.config/opencode-chat-bot/`
 
 ## Contributing
 
@@ -478,8 +430,9 @@ Please follow commit and release note conventions in [CONTRIBUTING.md](CONTRIBUT
 
 ## Community
 
-Have questions, want to share your experience using the bot, or have an idea for a feature? Join the conversation in [GitHub Discussions](https://github.com/bigheadfjuee/opencode-telegram-slack-bot/discussions).
+Have questions, want to share your experience using the bot, or have an idea for a feature? Join the conversation in [GitHub Discussions](https://github.com/bigheadfjuee/opencode-chat-bot/discussions).
 
 ## License
 
 [MIT](LICENSE) © Tony Lee
+

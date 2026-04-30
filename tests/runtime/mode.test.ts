@@ -3,11 +3,11 @@ import { getRuntimeMode, resolveRuntimeMode, setRuntimeMode } from "../../src/ru
 
 describe("runtime/mode", () => {
   beforeEach(() => {
-    delete process.env.OPENCODE_TELEGRAM_RUNTIME_MODE;
+    delete process.env.OPENCODE_BOT_RUNTIME_MODE;
   });
 
   afterEach(() => {
-    delete process.env.OPENCODE_TELEGRAM_RUNTIME_MODE;
+    delete process.env.OPENCODE_BOT_RUNTIME_MODE;
   });
 
   it("uses default mode when no override is provided", () => {

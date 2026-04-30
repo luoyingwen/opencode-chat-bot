@@ -52,7 +52,7 @@ export const ru: I18nDictionary = {
   "common.unknown_error": "неизвестная ошибка",
 
   "start.welcome":
-    "👋 Добро пожаловать в OpenCode Telegram Bot!\n\nИспользуйте команды:\n/projects — выбрать проект\n/sessions — список сессий\n/new — новая сессия\n/task — задача по расписанию\n/tasks — список задач по расписанию\n/status — статус\n/help — справка\n\nАгент, модель и вариант выбираются кнопками внизу.",
+    "👋 Добро пожаловать в OpenCode Bot!\n\nИспользуйте команды:\n/projects — выбрать проект\n/sessions — список сессий\n/new — новая сессия\n/task — задача по расписанию\n/tasks — список задач по расписанию\n/status — статус\n/help — справка\n\nАгент, модель и вариант выбираются кнопками внизу.",
   "help.keyboard_hint":
     "💡 Агент, модель, вариант и действия с контекстом доступны через нижние кнопки клавиатуры.",
   "help.text":
@@ -323,7 +323,7 @@ export const ru: I18nDictionary = {
   "tool.file_header.edit":
     "Edit File/Path: {path}\n============================================================\n\n",
 
-  "runtime.wizard.ask_token": "Введите токен Telegram-бота (получить у @BotFather).\n> ",
+  "runtime.wizard.ask_token": "Укажите учетные данные DingTalk или Feishu в файле .env.\n> ",
   "runtime.wizard.ask_language":
     "Выберите язык интерфейса.\nВведите номер языка из списка или код локали.\nНажмите Enter, чтобы оставить язык по умолчанию: {defaultLocale}\n{options}\n> ",
   "runtime.wizard.language_invalid":
@@ -332,7 +332,7 @@ export const ru: I18nDictionary = {
   "runtime.wizard.token_required": "Токен обязателен. Попробуйте еще раз.\n",
   "runtime.wizard.token_invalid":
     "Похоже на невалидный токен (ожидается формат <id>:<secret>). Попробуйте еще раз.\n",
-  "runtime.wizard.ask_user_id": "Введите ваш Telegram User ID (можно узнать у @userinfobot).\n> ",
+  "runtime.wizard.ask_user_id": "Укажите разрешенный идентификатор пользователя в файле .env, если нужно ограничить доступ.\n> ",
   "runtime.wizard.user_id_invalid": "Введите положительное целое число (> 0).\n",
   "runtime.wizard.ask_api_url":
     "Введите URL OpenCode API (опционально).\nНажмите Enter для значения по умолчанию: {defaultUrl}\n> ",
@@ -342,12 +342,12 @@ export const ru: I18nDictionary = {
     "Введите пароль OpenCode сервера (опционально).\nНажмите Enter, чтобы оставить пустым.\n> ",
   "runtime.wizard.api_url_invalid":
     "Введите корректный URL (http/https) или нажмите Enter для значения по умолчанию.\n",
-  "runtime.wizard.start": "Настройка OpenCode Telegram Bot.\n",
+  "runtime.wizard.start": "Настройка OpenCode Bot.\n",
   "runtime.wizard.saved": "Конфигурация сохранена:\n- {envPath}\n- {settingsPath}\n",
   "runtime.wizard.not_configured_starting":
     "Приложение еще не сконфигурировано. Запускаю wizard...\n",
   "runtime.wizard.tty_required":
-    "Интерактивный wizard требует TTY-терминал. Запустите `opencode-telegram config` в интерактивной оболочке.",
+    "Интерактивный wizard требует TTY-терминал. Запустите `opencode-bot config` в интерактивной оболочке.",
 
   "rename.no_session": "⚠️ Нет активной сессии. Сначала создайте или выберите сессию.",
   "rename.prompt": "📝 Введите новое название сессии:\n\nТекущее: {title}",
@@ -439,7 +439,7 @@ export const ru: I18nDictionary = {
   "cmd.description.rename": "Переименовать текущую сессию",
 
   "cli.usage":
-    "Использование:\n  opencode-telegram [start] [--mode sources|installed]\n  opencode-telegram status\n  opencode-telegram stop\n  opencode-telegram config\n\nЗаметки:\n  - Без команды по умолчанию используется `start`\n  - `--mode` сейчас поддерживается только для `start`",
+    "Использование:\n  opencode-bot [start] [--mode sources|installed]\n  opencode-bot status\n  opencode-bot stop\n  opencode-bot config\n\nЗаметки:\n  - Без команды по умолчанию используется `start`\n  - `--mode` сейчас поддерживается только для `start`",
   "cli.placeholder.status":
     "Команда `status` пока работает как заглушка. Реальная проверка статуса появится на этапе service-слоя (Этап 5).",
   "cli.placeholder.stop":
@@ -484,3 +484,4 @@ export const ru: I18nDictionary = {
   "open.subfolder_count": "{count} подпапка",
   "open.subfolders_count": "{count} подпапок",
 };
+
