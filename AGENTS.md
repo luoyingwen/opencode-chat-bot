@@ -30,7 +30,7 @@ After any code change, always run: `npm run build && npm run lint && npm test`
 - **Language:** TypeScript 5.x (strict mode, ES2022 target, NodeNext modules)
 - **Runtime:** Node.js 20+, ESM (`"type": "module"` in package.json)
 - **Package manager:** npm (ignore `pnpm-lock.yaml` if present)
-- **Bot frameworks:** `dingtalk-stream` (DingTalk), `@larksuiteoapi/node-sdk` (Feishu)
+- **Bot frameworks:** `dingtalk-stream` (DingTalk), `@larksuiteoapi/node-sdk` (Feishu), OpenClaw plugin runtime (`openclaw` peer, optional)
 - **OpenCode SDK:** `@opencode-ai/sdk` — SSE event subscription, session/project management
 - **Test framework:** Vitest with `vi.mock()` / `vi.stubEnv()` — tests in `tests/` mirroring `src/` structure
 - **Config:** environment variables via `dotenv` (`.env` file)
@@ -116,6 +116,7 @@ src/
 ├── app/          # Application startup (start-bot-app.ts)
 ├── dingtalk/     # DingTalk bot — stream client, commands, handlers
 ├── feishu/       # Feishu bot — client, commands, handlers, markdown formatter
+├── openclaw/     # OpenClaw plugin adapter — transport/routing/formatting glue only
 ├── opencode/     # SDK client wrapper + SSE event subscription
 ├── summary/      # Event aggregation + MarkdownV2 formatting
 ├── session/      # Session state manager
@@ -158,6 +159,8 @@ All env vars are read in `src/config.ts` via `getEnvVar(key, required)`. DingTal
 
 - DingTalk uses Stream Mode credentials (`DINGTALK_APP_KEY`, `DINGTALK_APP_SECRET`).
 - Feishu formatting uses markdown/cards and user-based access control.
+- OpenClaw support is implemented as a plugin entrypoint (`src/openclaw-plugin.ts`) plus a thin `src/openclaw/` adapter.
+- New OpenClaw features must reuse shared core/domain modules first. Do not reimplement command semantics, prompt execution, session/project/model/agent state, scheduled-task flows, permission replies, or question/rename state machines inside `src/openclaw/`.
 
 ## Workflow
 

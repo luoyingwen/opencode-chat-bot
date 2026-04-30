@@ -19,31 +19,42 @@ const MAX_TIMER_DELAY_MS = 2_147_483_647;
 const TASK_DESCRIPTION_PREVIEW_LENGTH = 64;
 const RESTART_INTERRUPTED_ERROR = "Interrupted by bot restart during scheduled task execution.";
 
-// DingTalk notification callback
-type DingTalkNotificationCallback = (text: string) => Promise<void>;
-let dingTalkNotificationCallback: DingTalkNotificationCallback | null = null;
+type NotificationCallback = (text: string) => Promise<void>;
 
-type FeishuNotificationCallback = (text: string) => Promise<void>;
-let feishuNotificationCallback: FeishuNotificationCallback | null = null;
+const notificationCallbacks = new Map<string, NotificationCallback>();
+
+// DingTalk notification callback
+type DingTalkNotificationCallback = NotificationCallback;
+
+type FeishuNotificationCallback = NotificationCallback;
+
+export function setScheduledTaskNotificationCallback(
+  platformName: string,
+  callback: NotificationCallback,
+): void {
+  notificationCallbacks.set(platformName, callback);
+  logger.info(`[ScheduledTaskRuntime] ${platformName} notification callback registered`);
+}
+
+export function clearScheduledTaskNotificationCallback(platformName: string): void {
+  notificationCallbacks.delete(platformName);
+  logger.info(`[ScheduledTaskRuntime] ${platformName} notification callback cleared`);
+}
 
 export function setDingTalkNotificationCallback(callback: DingTalkNotificationCallback): void {
-  dingTalkNotificationCallback = callback;
-  logger.info("[ScheduledTaskRuntime] DingTalk notification callback registered");
+  setScheduledTaskNotificationCallback("DingTalk", callback);
 }
 
 export function clearDingTalkNotificationCallback(): void {
-  dingTalkNotificationCallback = null;
-  logger.info("[ScheduledTaskRuntime] DingTalk notification callback cleared");
+  clearScheduledTaskNotificationCallback("DingTalk");
 }
 
 export function setFeishuNotificationCallback(callback: FeishuNotificationCallback): void {
-  feishuNotificationCallback = callback;
-  logger.info("[ScheduledTaskRuntime] Feishu notification callback registered");
+  setScheduledTaskNotificationCallback("Feishu", callback);
 }
 
 export function clearFeishuNotificationCallback(): void {
-  feishuNotificationCallback = null;
-  logger.info("[ScheduledTaskRuntime] Feishu notification callback cleared");
+  clearScheduledTaskNotificationCallback("Feishu");
 }
 
 function buildScheduledTaskSuccessMessageParts(delivery: QueuedScheduledTaskDelivery): string[] {
@@ -175,6 +186,7 @@ export class ScheduledTaskRuntime {
     this.runningTaskIds.clear();
     this.deliveryQueue = [];
     this.flushInProgress = false;
+    notificationCallbacks.clear();
   }
 
   private async recoverTasksOnStartup(): Promise<void> {
@@ -445,11 +457,9 @@ export class ScheduledTaskRuntime {
   }
 
   private async sendDelivery(delivery: QueuedScheduledTaskDelivery): Promise<boolean> {
-    let dingTalkSuccess = false;
-    let feishuSuccess = false;
+    let anySuccess = false;
 
-    // Send to DingTalk if callback is registered
-    if (dingTalkNotificationCallback) {
+    for (const [platformName, callback] of notificationCallbacks.entries()) {
       try {
         const messageParts =
           delivery.status === "success"
@@ -457,38 +467,18 @@ export class ScheduledTaskRuntime {
             : [delivery.notificationText];
 
         for (const part of messageParts) {
-          await dingTalkNotificationCallback(part);
+          await callback(part);
         }
-        dingTalkSuccess = true;
+        anySuccess = true;
       } catch (error) {
         logger.error(
-          `[ScheduledTaskRuntime] Failed to send delivery to DingTalk: id=${delivery.taskId}, status=${delivery.status}`,
+          `[ScheduledTaskRuntime] Failed to send delivery to ${platformName}: id=${delivery.taskId}, status=${delivery.status}`,
           error,
         );
       }
     }
 
-    // Send to Feishu if callback is registered
-    if (feishuNotificationCallback) {
-      try {
-        const messageParts =
-          delivery.status === "success"
-            ? buildScheduledTaskSuccessMessageParts(delivery)
-            : [delivery.notificationText];
-
-        for (const part of messageParts) {
-          await feishuNotificationCallback(part);
-        }
-        feishuSuccess = true;
-      } catch (error) {
-        logger.error(
-          `[ScheduledTaskRuntime] Failed to send delivery to Feishu: id=${delivery.taskId}, status=${delivery.status}`,
-          error,
-        );
-      }
-    }
-
-    return dingTalkSuccess || feishuSuccess;
+    return anySuccess;
   }
 }
 

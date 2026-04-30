@@ -7,7 +7,7 @@ fork from <https://github.com/grinev/opencode-chat-bot>
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 [![Node.js](https://img.shields.io/badge/node-%3E%3D20-brightgreen)](https://nodejs.org)
 
-OpenCode Bot is a secure multi-platform client for [OpenCode](https://opencode.ai) CLI that runs on your local machine. Supports **DingTalk** and **Feishu**.
+OpenCode Bot is a secure multi-platform client for [OpenCode](https://opencode.ai) CLI that runs on your local machine. Supports **DingTalk**, **Feishu**, and **OpenClaw**.
 
 Run AI coding tasks, monitor progress, switch models, and manage sessions from your phone.
 
@@ -23,7 +23,7 @@ Languages: English (`en`), Deutsch (`de`), Español (`es`), Русский (`ru`
 
 ## Features
 
-- **Multi-platform support** — works with DingTalk and Feishu individually
+- **Multi-platform support** — works with DingTalk and Feishu as standalone bots, plus OpenClaw through a plugin entrypoint
 - **Remote coding** — send prompts to OpenCode from anywhere, receive complete results with code sent as files
 - **Session management** — create new sessions or continue existing ones, just like in the TUI
 - **Live status** — pinned message with current project, model, context usage, and changed files list, updated in real time
@@ -50,6 +50,7 @@ Planned features currently in development are listed in [Current Task List](PROD
 - **Bot Platform** — at least one of:
   - DingTalk Robot (see [DingTalk Bot](#dingtalk-bot))
   - Feishu Bot (see [Feishu Bot](#feishu-bot))
+  - OpenClaw plugin runtime (see [OpenClaw Plugin Commands](#openclaw-plugin-commands))
 
 ## Quick Start
 
@@ -121,31 +122,73 @@ opencode-bot config
 
 ### DingTalk / Feishu Commands
 
-| Command           | Description                                                          |
-| ----------------- | -------------------------------------------------------------------- |
-| `/status`         | Server health, current project, session, and model info              |
-| `/session new`    | Create a new session                                                 |
-| `/stop`           | Stop the current task                                            |
-| `/sessions`       | Browse recent sessions                                               |
-| `/session <n>`    | Select a session by number                                           |
-| `/projects`       | Browse available projects                                            |
-| `/project <n>`    | Select a project by number                                           |
-| `/project <path>` | Create/select a project by path (DingTalk/Feishu only)               |
-| `/agents`         | Browse available agents                                              |
-| `/agent <n>`      | Select an agent by number                                            |
-| `/session rename [title]` | Rename the current session                                 |
-| `/commands`       | Browse and run custom commands                                       |
-| `/task`           | Create a scheduled task                                              |
-| `/tasklist`       | Browse and delete scheduled tasks                                    |
-| `/opencode_start` | Start the OpenCode server remotely                                   |
-| `/opencode_stop`  | Stop the OpenCode server remotely                                    |
-| `/help`           | Show available commands                                              |
+| Command                   | Description                                             |
+| ------------------------- | ------------------------------------------------------- |
+| `/status`                 | Server health, current project, session, and model info |
+| `/session new`            | Create a new session                                    |
+| `/stop`                   | Stop the current task                                   |
+| `/sessions`               | Browse recent sessions                                  |
+| `/session <n>`            | Select a session by number                              |
+| `/projects`               | Browse available projects                               |
+| `/project <n>`            | Select a project by number                              |
+| `/project <path>`         | Create/select a project by path (DingTalk/Feishu only)  |
+| `/agents`                 | Browse available agents                                 |
+| `/agent <n>`              | Select an agent by number                               |
+| `/session rename [title]` | Rename the current session                              |
+| `/commands`               | Browse and run custom commands                          |
+| `/task`                   | Create a scheduled task                                 |
+| `/tasklist`               | Browse and delete scheduled tasks                       |
+| `/opencode_start`         | Start the OpenCode server remotely                      |
+| `/opencode_stop`          | Stop the OpenCode server remotely                       |
+| `/help`                   | Show available commands                                 |
 
 Any regular text message is sent as a prompt to the coding agent only when no blocking interaction is active.
 
 > **Note:** DingTalk and Feishu currently support text and markdown messages. Image, voice, and file messages will show a "not supported" notice.
 
 > `/opencode_start` and `/opencode_stop` are intended as emergency commands — for example, if you need to restart a stuck server while away from your computer. Under normal usage, start `opencode serve` yourself before launching the bot.
+
+### OpenClaw Plugin Commands
+
+OpenClaw loads `./dist/openclaw-plugin.js` and reuses the same shared command, prompt, task, permission, and route-scoped state modules as DingTalk and Feishu. Use `/opencode` in a conversation to enter OpenCode mode, then send commands or regular prompts. Use `/exit` to leave OpenCode mode.
+
+Build the OpenClaw plugin entrypoint with either command below. The original OpenClawCode build script was `tsc`; in this merged repository the normal build compiles the standalone bot and the OpenClaw plugin together.
+
+```bash
+npm run build
+# or, for an explicit plugin-oriented alias:
+npm run build:openclaw
+```
+
+For local OpenClaw testing, install the built plugin with the migrated install script:
+
+```bash
+npm run openclaw:install -- local
+
+# or link this working tree while iterating:
+npm run openclaw:install -- link
+```
+
+After building, configure OpenClaw to load `./dist/openclaw-plugin.js` from this package. The same path is declared in `package.json` under `openclaw.extensions`, exported as `./openclaw-plugin`, and described by `openclaw.plugin.json` for runtimes that read plugin metadata files.
+
+| Command                     | Description                                    |
+| --------------------------- | ---------------------------------------------- | -------------------------- |
+| `/opencode`                 | Enter OpenCode mode for the conversation       |
+| `/exit`                     | Leave OpenCode mode                            |
+| `/status`                   | Server health, current project, session, model |
+| `/projects`                 | Browse available projects                      |
+| `/project <n                | path>`                                         | Select or create a project |
+| `/sessions`                 | Browse recent sessions                         |
+| `/session <n>`              | Select a session                               |
+| `/session new` or `/new`    | Create a new session                           |
+| `/rename [title]`           | Rename the current session                     |
+| `/agents`, `/agent <n>`     | List or select agents                          |
+| `/models`, `/model <n>`     | List or select models                          |
+| `/commands`, `/command <n>` | Browse or run OpenCode commands                |
+| `/task`, `/tasklist`        | Create or manage scheduled tasks               |
+| `/stop` or `/abort`         | Abort current task or cancel active flow       |
+
+OpenClaw plugin config can restrict the adapter by channel, account, or conversation. Environment fallback values are available as `OPENCLAW_ENABLED`, `OPENCLAW_CHANNELS`, `OPENCLAW_ACCOUNT_IDS`, and `OPENCLAW_CONVERSATION_IDS`; OpenClaw runtime plugin config takes precedence.
 
 ## DingTalk Bot Setup
 
@@ -300,7 +343,7 @@ When installed via npm, the configuration wizard handles the initial setup. The 
 | `HIDE_TOOL_FILE_MESSAGES`       | Hide file edit documents sent as `.txt` attachments (`edit_*.txt`, `write_*.txt`)              |    No    | `false`                  |
 | `RESPONSE_STREAMING`            | Stream assistant replies while generated                                                       |    No    | `true`                   |
 | `RESPONSE_STREAM_THROTTLE_MS`   | Stream edit throttle (ms) for updates                                                          |    No    | `500`                    |
-| `MESSAGE_FORMAT_MODE`           | Assistant reply formatting: `markdown` (MarkdownV2) or `raw`                          |    No    | `markdown`               |
+| `MESSAGE_FORMAT_MODE`           | Assistant reply formatting: `markdown` (MarkdownV2) or `raw`                                   |    No    | `markdown`               |
 | `CODE_FILE_MAX_SIZE_KB`         | Max file size (KB) to send as document                                                         |    No    | `100`                    |
 | `STT_API_URL`                   | Whisper-compatible API base URL (enables voice transcription)                                  |    No    | —                        |
 | `STT_API_KEY`                   | API key for STT provider                                                                       |    No    | —                        |
@@ -435,4 +478,3 @@ Have questions, want to share your experience using the bot, or have an idea for
 ## License
 
 [MIT](LICENSE) © Tony Lee
-

@@ -9,10 +9,21 @@
   },
   "exports": {
     ".": "./dist/index.js",
-    "./cli": "./dist/cli.js"
+    "./cli": "./dist/cli.js",
+    "./openclaw-plugin": "./dist/openclaw-plugin.js"
+  },
+  "openclaw": {
+    "extensions": [
+      "./dist/openclaw-plugin.js"
+    ],
+    "plugin": {
+      "id": "openclawcode",
+      "enabledByDefault": false
+    }
   },
   "files": [
     "dist",
+    "openclaw.plugin.json",
     "README.md",
     "LICENSE",
     ".env.example"
@@ -22,6 +33,8 @@
   },
   "scripts": {
     "build": "tsc",
+    "build:openclaw": "tsc",
+    "openclaw:install": "node scripts/install-openclaw-plugin.mjs",
     "start": "node dist/index.js",
     "dev": "npm run build && npm start",
     "release:prepare": "node scripts/release-prepare.mjs",
@@ -38,6 +51,8 @@
   },
   "keywords": [
     "opencode",
+    "openclaw",
+    "openclaw-plugin",
     "developer-tools",
     "cli"
   ],
@@ -59,6 +74,14 @@
     "https-proxy-agent": "^7.0.6",
     "socks-proxy-agent": "^8.0.5",
     "ws": "^8.19.0"
+  },
+  "peerDependencies": {
+    "openclaw": ">=2025.0.0"
+  },
+  "peerDependenciesMeta": {
+    "openclaw": {
+      "optional": true
+    }
   },
   "devDependencies": {
     "@types/better-sqlite3": "^7.6.13",

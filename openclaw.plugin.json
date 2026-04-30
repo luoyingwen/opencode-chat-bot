@@ -1,0 +1,38 @@
+{
+  "id": "openclawcode",
+  "name": "OpenClawCode",
+  "description": "OpenClaw plugin for OpenCode - intercept channel messages and route to OpenCode through shared opencode-chat-bot runtime",
+  "enabledByDefault": false,
+  "installDependencies": true,
+  "configSchema": {
+    "type": "object",
+    "additionalProperties": false,
+    "properties": {
+      "enabled": {
+        "type": "boolean",
+        "description": "Enable the OpenCode channel command plugin"
+      },
+      "channels": {
+        "type": "array",
+        "description": "Channel IDs to intercept (empty = all)",
+        "items": {
+          "type": "string"
+        }
+      },
+      "accountIds": {
+        "type": "array",
+        "description": "Account IDs to intercept (empty = all)",
+        "items": {
+          "type": "string"
+        }
+      },
+      "conversationIds": {
+        "type": "array",
+        "description": "Conversation IDs to intercept (empty = all)",
+        "items": {
+          "type": "string"
+        }
+      }
+    }
+  }
+}

@@ -63,7 +63,7 @@ export const en = {
   "rename.success": "✅ Session renamed to: {title}",
   "rename.error": "🔴 Failed to rename session.",
   "rename.cancelled": "❌ Rename cancelled.",
-  "rename.hint_abort": "Type \"cancel\", \"取消\", or /cancel to cancel renaming.",
+  "rename.hint_abort": 'Type "cancel", "取消", or /cancel to cancel renaming.',
 
   "task.prompt.schedule":
     "⏰ Send the task schedule in natural language.\n\nExamples:\n- every 5 minutes\n- every day at 17:00\n- tomorrow at 12:00",
@@ -74,7 +74,7 @@ export const en = {
     "✅ Schedule parsed\n\nHow I understood it: {summary}\n{cronLine}Timezone: {timezone}\nType: {kind}\nNext run: {nextRunAt}",
   "task.schedule_preview.cron": "Cron: {cron}",
   "task.prompt.body": "📝 Now send what the bot should do on schedule.",
-  "task.hint_cancel": "Type \"cancel\", \"取消\", or /cancel to cancel.",
+  "task.hint_cancel": 'Type "cancel", "取消", or /cancel to cancel.',
   "task.prompt_empty": "⚠️ Task text cannot be empty.",
   "task.created":
     "✅ Scheduled task created\n\nTask: {description}\nProject: {project}\nModel: {model}\nSchedule: {schedule}\n{cronLine}Next run: {nextRunAt}",
@@ -91,7 +91,8 @@ export const en = {
 
   "tasklist.empty": "📭 No scheduled tasks yet.",
   "tasklist.select": "Select a scheduled task:",
-  "tasklist.select_hint": "Type a task number to view details, or \"cancel\", \"取消\", or /cancel to exit.",
+  "tasklist.select_hint":
+    'Type a task number to view details, or "cancel", "取消", or /cancel to exit.',
   "tasklist.details":
     "⏰ Scheduled task\n\nTask: {prompt}\nProject: {project}\nSchedule: {schedule}\n{cronLine}Timezone: {timezone}\nNext run: {nextRunAt}\nLast run: {lastRunAt}\nRun count: {runCount}",
   "tasklist.details.cron": "Cron: {cron}",
@@ -99,9 +100,11 @@ export const en = {
   "tasklist.cancelled_callback": "Cancelled",
   "tasklist.inactive_callback": "This scheduled task menu is inactive",
   "tasklist.load_error": "🔴 Failed to load scheduled tasks.",
-  "tasklist.invalid_number": "⚠️ Enter a valid task number, or \"cancel\", \"取消\", or /cancel to exit.",
+  "tasklist.invalid_number":
+    '⚠️ Enter a valid task number, or "cancel", "取消", or /cancel to exit.',
   "tasklist.not_found": "⚠️ Task #{number} does not exist. There are {count} tasks.",
-  "tasklist.hint_detail": "Type \"delete\" or \"删除\" to delete this task, or \"cancel\", \"取消\", or /cancel to go back.",
+  "tasklist.hint_detail":
+    'Type "delete" or "删除" to delete this task, or "cancel", "取消", or /cancel to go back.',
   "tasklist.delete_error": "❌ Failed to delete task.",
 
   "commands.empty": "📭 No OpenCode commands are available for this project.",
@@ -110,8 +113,38 @@ export const en = {
   "commands.cancelled_callback": "Cancelled",
   "commands.executing_prefix": "⚡ Executing command:",
   "commands.execute_error": "🔴 Failed to execute OpenCode command.",
-  "commands.hint_select": "💡 Use `/command <number>` to execute a command, or `/command <number> [args]` to run it with arguments.",
+  "commands.hint_select":
+    "💡 Use `/command <number>` to execute a command, or `/command <number> [args]` to run it with arguments.",
   "commands.invalid_number": "Please enter a valid command number ({min}-{max}).",
+
+  "openclaw.mode.entered": "✅ OpenCode mode enabled for this OpenClaw conversation.",
+  "openclaw.mode.exited": "✅ OpenCode mode disabled for this OpenClaw conversation.",
+  "openclaw.mode.inactive": "OpenCode mode was not active for this OpenClaw conversation.",
+  "openclaw.no_pending_permission": "⚠️ No pending permission request.",
+  "openclaw.permission_pending": "A permission request is pending. Reply with /1, /2, or /3.",
+  "openclaw.permission_hint":
+    "No pending permission request. When one appears, reply with /1, /2, or /3.",
+  "openclaw.processing": "⚙️ Processing...",
+  "openclaw.command_failed": "❌ Command failed.",
+  "openclaw.task_cancelled": "✅ Scheduled task creation cancelled.",
+  "openclaw.tasklist_cancelled": "✅ Scheduled task list flow cancelled.",
+  "openclaw.models.header": "🤖 **Models**",
+  "openclaw.models.favorites": "Favorites",
+  "openclaw.models.recent": "Recent",
+  "openclaw.models.current": "Current: {model}",
+  "openclaw.models.select_hint": "Use `/model <number>` to select a model.",
+  "openclaw.model.invalid_index": "❌ Please choose a model number between 1 and {max}.",
+  "openclaw.model.selected": "✅ Model selected: {model}",
+  "openclaw.server.already_started": "✅ OpenCode server is already managed (PID {pid}).",
+  "openclaw.server.started": "✅ OpenCode server started (PID {pid}).",
+  "openclaw.server.start_failed": "❌ Failed to start OpenCode server: {error}",
+  "openclaw.server.not_managed": "OpenCode server is not managed by this bot.",
+  "openclaw.server.stopped": "✅ OpenCode server stopped.",
+  "openclaw.server.stop_failed": "❌ Failed to stop OpenCode server: {error}",
+  "openclaw.prompt_error": "❌ An error occurred. Please try again.",
+  "openclaw.help":
+    "📖 **OpenClawCode Commands**\n\n/opencode - Enter OpenCode mode for this conversation\n/exit - Leave OpenCode mode\n/status - Show OpenCode status\n/projects - List projects\n/project <number or path> - Select or create a project\n/sessions - List sessions\n/session <number> - Select a session\n/session new or /new - Create a session\n/rename [title] - Rename the current session\n/agents and /agent <number> - List or select agents\n/models and /model <number> - List or select models\n/commands and /command <number> - Run OpenCode project commands\n/task and /tasklist - Create or manage scheduled tasks\n/stop or /abort - Abort the active task or cancel an active flow\n/opencode_start and /opencode_stop - Manage the local OpenCode server\n\nPermission replies: /1 allow once, /2 always allow, /3 reject.",
+  "openclaw.unknown_command": "⚠️ Unknown command: /{command}\n\n{help}",
 
   "cmd.description.rename": "Rename current session via /session rename",
 

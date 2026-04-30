@@ -1,15 +1,10 @@
 import { readFile } from "node:fs/promises";
 
-import { getCurrentProject, loadSettings, setCurrentProject } from "../settings/manager.js";
-import { processManager } from "../process/manager.js";
-import { warmupSessionDirectoryCache } from "../session/cache-manager.js";
 import { getRuntimeMode } from "../runtime/mode.js";
 import { getRuntimePaths } from "../runtime/paths.js";
 import { getLogFilePath, initializeLogger, logger } from "../utils/logger.js";
 import { config } from "../config.js";
-import { opencodeClient } from "../opencode/client.js";
-import { getProjects } from "../project/manager.js";
-import { scheduledTaskRuntime } from "../scheduled-task/runtime.js";
+import { initializeSharedRuntime } from "./initialize-shared-runtime.js";
 
 async function getBotVersion(): Promise<string> {
   try {
@@ -59,55 +54,7 @@ export async function startBotApp(): Promise<void> {
     `[App] Platforms: DingTalk=${hasDingTalk ? "enabled" : "disabled"}, Feishu=${hasFeishu ? "enabled" : "disabled"}`,
   );
 
-  await loadSettings();
-  await processManager.initialize();
-
-  try {
-    const { data, error } = await opencodeClient.global.health();
-    if (error) {
-      logger.warn(`[App] OpenCode API health check failed: ${String(error)}`);
-    } else {
-      logger.info(`[App] OpenCode API connection OK (${config.opencode.apiUrl})`, data);
-    }
-  } catch (error) {
-    logger.warn(`[App] OpenCode API unreachable at ${config.opencode.apiUrl}`, error);
-  }
-
-  await warmupSessionDirectoryCache();
-
-  // ─── Auto-select project if none is set ──────────────────────────
-  if (!getCurrentProject()) {
-    try {
-      const projects = await getProjects();
-      if (projects.length === 0) {
-        logger.warn(
-          "[App] No projects found. Use /projects to select one after creating a project.",
-        );
-      } else {
-        const selected = projects[0];
-        setCurrentProject(selected);
-        logger.info(
-          `[App] Auto-selected project: ${selected.name ?? selected.worktree} (${selected.id})` +
-            (projects.length > 1
-              ? ` — ${projects.length} projects available, picked most recent`
-              : ""),
-        );
-      }
-    } catch (error) {
-      logger.warn("[App] Failed to auto-select project", error);
-    }
-  } else {
-    const current = getCurrentProject();
-    logger.debug(`[App] Project already set: ${current?.name ?? current?.worktree}`);
-  }
-
-  // ─── Initialize scheduled task runtime ────────────────────────────
-  try {
-    await scheduledTaskRuntime.initialize();
-    logger.info("[App] Scheduled task runtime initialized");
-  } catch (err) {
-    logger.error("[App] Failed to initialize scheduled task runtime:", err);
-  }
+  await initializeSharedRuntime();
 
   // ─── Start DingTalk bot (if configured) ─────────────────────────────
   if (hasDingTalk) {

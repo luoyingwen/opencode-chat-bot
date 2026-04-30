@@ -1,6 +1,6 @@
 # OpenCode Bot
 
-Multi-platform bot client for OpenCode that lets you run and monitor coding tasks on your local machine from DingTalk or Feishu.
+Multi-platform bot client for OpenCode that lets you run and monitor coding tasks on your local machine from DingTalk, Feishu, or OpenClaw.
 
 > Project concept and boundaries are documented in [`CONCEPT.md`](./CONCEPT.md).
 > Proposed changes that alter the core interaction model should be discussed before implementation.
@@ -9,7 +9,7 @@ Multi-platform bot client for OpenCode that lets you run and monitor coding task
 
 The app works as a bridge between supported chat platforms and a locally running OpenCode server:
 
-- You send prompts from DingTalk or Feishu
+- You send prompts from DingTalk, Feishu, or an OpenClaw conversation
 - The bot forwards them to OpenCode
 - The app listens to OpenCode SSE events
 - Results are aggregated and sent back in a chat-friendly format
@@ -77,6 +77,7 @@ No public inbound ports are required for normal usage.
 ### Configuration
 
 - DingTalk or Feishu bot credentials
+- Optional OpenClaw plugin enablement and scope filters
 - Allowed platform user ID
 - Default model provider and model ID
 - Selected project persisted in `settings.json`
@@ -112,6 +113,8 @@ Current command set:
 Model, agent, variant, and context actions are available from the persistent bottom keyboard.
 
 Text messages (non-commands) are treated as prompts for OpenCode only when no blocking interaction is active. Voice/audio messages are transcribed and then sent as prompts when STT is configured. When `/tts` is enabled globally, completed assistant replies also include a generated audio file if TTS is configured.
+
+OpenClaw support is exposed through the OpenClaw plugin entrypoint. OpenClaw conversations use `/opencode` to enter OpenCode intercept mode and `/exit` to leave it; once active, commands and normal text reuse the same shared execution, interaction, and state modules as DingTalk and Feishu.
 
 Interaction routing rules:
 
@@ -152,6 +155,7 @@ Model picker behavior:
 - [x] Text file attachments support (send code/config/log files from supported chat platforms to OpenCode)
 - [x] Voice/audio transcription via Whisper-compatible APIs (OpenAI/Groq/Together and compatible providers)
 - [x] Optional global audio replies with `/tts` via OpenAI-compatible APIs
+- [x] OpenClaw plugin entrypoint built on shared command, prompt, interaction, and route-scoped state modules
 
 ## Current Task List
 
