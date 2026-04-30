@@ -125,10 +125,30 @@ function runOpenClawInstall(args) {
   }
 }
 
-function printEnableInstructions() {
-  log("bold", "Enable the plugin:");
-  log("info", `  openclaw config set plugins.entries.${pluginId}.enabled true`);
-  process.stdout.write("\n");
+function enablePlugin() {
+  log("bold", "Enabling plugin...");
+  const result = run("openclaw", ["config", "set", `plugins.entries.${pluginId}.config.enabled`, "true"], {
+    stdio: "pipe",
+  });
+
+  const output = `${result.stdout || ""}${result.stderr || ""}`
+    .split(/\r?\n/u)
+    .filter((line) => line && !line.includes("Config warnings"))
+    .join("\n");
+
+  if (output) {
+    process.stdout.write(`${output}\n`);
+  }
+
+  if (result.status !== 0) {
+    log("warn", "Failed to enable plugin automatically. Enable manually:");
+    log("info", `  openclaw config set plugins.entries.${pluginId}.enabled true`);
+  } else {
+    log("success", "Plugin enabled.");
+  }
+}
+
+function printScopeFilterInstructions() {
   log("bold", "Optional scope filters:");
   log("info", `  openclaw config set plugins.entries.${pluginId}.config.channels '["telegram"]'`);
   log("info", `  openclaw config set plugins.entries.${pluginId}.config.accountIds '["account1"]'`);
@@ -146,8 +166,8 @@ function installLocal() {
 
   const tarballPath = createTarball();
   try {
-    log("info", `Installing from tarball: ${tarballPath}`);
-    runOpenClawInstall(["--force", tarballPath]);
+log("info", `Installing from tarball: ${tarballPath}`);
+  runOpenClawInstall(["--force", tarballPath]);
   } finally {
     rmSync(tarballPath, { force: true });
     cleanupInstallStages();
@@ -155,7 +175,9 @@ function installLocal() {
 
   process.stdout.write("\n");
   log("success", "Local installation complete.");
-  printEnableInstructions();
+  enablePlugin();
+  process.stdout.write("\n");
+  printScopeFilterInstructions();
 }
 
 function installLink() {
@@ -171,7 +193,9 @@ function installLink() {
   process.stdout.write("\n");
   log("success", "Linked installation complete.");
   log("warn", "Linked installs use this working tree; rebuild after source changes.");
-  printEnableInstructions();
+  enablePlugin();
+  process.stdout.write("\n");
+  printScopeFilterInstructions();
 }
 
 function showInfo() {

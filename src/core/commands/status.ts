@@ -3,7 +3,6 @@ import { getAgentDisplayName } from "../../agent/types.js";
 import { fetchCurrentModel } from "../../model/manager.js";
 import { formatModelForDisplay } from "../../model/types.js";
 import { isAutoConfirmEnabled } from "../../permission/auto-confirm.js";
-import { processManager } from "../../process/manager.js";
 import { logger } from "../../utils/logger.js";
 import type { CommandContext, CommandHandler, CommandResult } from "./types.js";
 
@@ -30,12 +29,6 @@ export class StatusCommandHandler implements CommandHandler {
 
       if (health.version) {
         lines.push(`**Version:** \`${health.version}\``);
-      }
-
-      if (processManager.isRunning()) {
-        const uptime = processManager.getUptime();
-        const uptimeStr = uptime ? Math.floor(uptime / 1000) : 0;
-        lines.push(`**Process:** managed (PID ${processManager.getPID() ?? "-"}, uptime ${uptimeStr}s)`);
       }
 
       if (currentAgent) {

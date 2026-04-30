@@ -5,6 +5,10 @@ import {
   handleOpenClawMessageReceived,
   initializeOpenClawHandler,
 } from "./openclaw/handler.js";
+import {
+  readOpenClawPluginConfig,
+  resolveOpenClawRuntimeConfig,
+} from "./openclaw/config.js";
 
 const openClawPlugin = definePluginEntry({
   id: "openclawcode",
@@ -26,6 +30,18 @@ const openClawPlugin = definePluginEntry({
     void initializeLogger().catch((error) => {
       api.logger.warn(`[OpenClaw] Logger initialization failed: ${String(error)}`);
     });
+
+    const pluginConfig = readOpenClawPluginConfig(api.pluginConfig);
+    const runtimeConfig = resolveOpenClawRuntimeConfig(pluginConfig);
+
+    api.logger.info(
+      `[OpenClaw] Handler initialized enabled=${runtimeConfig.enabled} channels=${runtimeConfig.channels.join(",") || "all"}`,
+    );
+
+    if (runtimeConfig.enabled === false) {
+      api.logger.info("[OpenClaw] plugin disabled by config.enabled=false");
+      return;
+    }
 
     initializeOpenClawHandler({ api, pluginConfig: api.pluginConfig });
 

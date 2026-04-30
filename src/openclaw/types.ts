@@ -1,4 +1,4 @@
-import type { OpenClawEventContext, OpenClawPluginApi } from "openclaw/plugin-sdk/core";
+import type { OpenClawPluginApi } from "openclaw/plugin-sdk/core";
 import type { ConversationRoute } from "../core/runtime/types.js";
 
 export interface OpenClawRoute extends ConversationRoute {
@@ -38,8 +38,14 @@ export interface OpenClawInboundMessage {
 }
 
 export interface OpenClawDispatchResult {
-  handled: true;
-  text: string;
+  handled: boolean;
+  text?: string;
 }
 
-export type OpenClawPluginEventContext = OpenClawEventContext;
+export interface OpenClawPluginEventContext {
+  channelId?: string;
+  accountId?: string;
+  conversationId?: string;
+  sessionKey?: string;
+  senderId?: string;
+}

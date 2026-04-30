@@ -6,9 +6,6 @@ const mocked = vi.hoisted(() => {
     fetchCurrentModelMock: vi.fn(),
     ingestSessionInfoForCacheMock: vi.fn(async () => undefined),
     isAutoConfirmEnabledMock: vi.fn(),
-    processIsRunningMock: vi.fn(),
-    processGetUptimeMock: vi.fn(),
-    processGetPidMock: vi.fn(),
     loggerErrorMock: vi.fn(),
   };
 });
@@ -31,14 +28,6 @@ vi.mock("../../src/session/cache-manager.js", async (importOriginal) => {
 
 vi.mock("../../src/permission/auto-confirm.js", () => ({
   isAutoConfirmEnabled: mocked.isAutoConfirmEnabledMock,
-}));
-
-vi.mock("../../src/process/manager.js", () => ({
-  processManager: {
-    isRunning: mocked.processIsRunningMock,
-    getUptime: mocked.processGetUptimeMock,
-    getPID: mocked.processGetPidMock,
-  },
 }));
 
 vi.mock("../../src/utils/logger.js", () => ({
@@ -95,9 +84,6 @@ describe("core commands", () => {
     mocked.fetchCurrentModelMock.mockReset();
     mocked.ingestSessionInfoForCacheMock.mockReset();
     mocked.isAutoConfirmEnabledMock.mockReset();
-    mocked.processIsRunningMock.mockReset();
-    mocked.processGetUptimeMock.mockReset();
-    mocked.processGetPidMock.mockReset();
     mocked.loggerErrorMock.mockReset();
   });
 
@@ -105,9 +91,6 @@ describe("core commands", () => {
     mocked.fetchCurrentAgentMock.mockResolvedValue("build");
     mocked.fetchCurrentModelMock.mockReturnValue({ providerID: "openai", modelID: "gpt-5" });
     mocked.isAutoConfirmEnabledMock.mockReturnValue(true);
-    mocked.processIsRunningMock.mockReturnValue(true);
-    mocked.processGetUptimeMock.mockReturnValue(5600);
-    mocked.processGetPidMock.mockReturnValue(1234);
 
     const handler = new StatusCommandHandler();
     const result = await handler.handle(createContext());

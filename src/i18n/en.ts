@@ -135,15 +135,9 @@ export const en = {
   "openclaw.models.select_hint": "Use `/model <number>` to select a model.",
   "openclaw.model.invalid_index": "❌ Please choose a model number between 1 and {max}.",
   "openclaw.model.selected": "✅ Model selected: {model}",
-  "openclaw.server.already_started": "✅ OpenCode server is already managed (PID {pid}).",
-  "openclaw.server.started": "✅ OpenCode server started (PID {pid}).",
-  "openclaw.server.start_failed": "❌ Failed to start OpenCode server: {error}",
-  "openclaw.server.not_managed": "OpenCode server is not managed by this bot.",
-  "openclaw.server.stopped": "✅ OpenCode server stopped.",
-  "openclaw.server.stop_failed": "❌ Failed to stop OpenCode server: {error}",
   "openclaw.prompt_error": "❌ An error occurred. Please try again.",
   "openclaw.help":
-    "📖 **OpenClawCode Commands**\n\n/opencode - Enter OpenCode mode for this conversation\n/exit - Leave OpenCode mode\n/status - Show OpenCode status\n/projects - List projects\n/project <number or path> - Select or create a project\n/sessions - List sessions\n/session <number> - Select a session\n/session new or /new - Create a session\n/rename [title] - Rename the current session\n/agents and /agent <number> - List or select agents\n/models and /model <number> - List or select models\n/commands and /command <number> - Run OpenCode project commands\n/task and /tasklist - Create or manage scheduled tasks\n/stop or /abort - Abort the active task or cancel an active flow\n/opencode_start and /opencode_stop - Manage the local OpenCode server\n\nPermission replies: /1 allow once, /2 always allow, /3 reject.",
+    "📖 **OpenClawCode Commands**\n\n/opencode - Enter OpenCode mode for this conversation\n/exit - Leave OpenCode mode\n/status - Show OpenCode status\n/projects - List projects\n/project <number or path> - Select or create a project\n/sessions - List sessions\n/session <number> - Select a session\n/session new or /new - Create a session\n/rename [title] - Rename the current session\n/agents and /agent <number> - List or select agents\n/models and /model <number> - List or select models\n/commands and /command <number> - Run OpenCode project commands\n/task and /tasklist - Create or manage scheduled tasks\n/stop or /abort - Abort the active task or cancel an active flow\n\nPermission replies: /1 allow once, /2 always allow, /3 reject.",
   "openclaw.unknown_command": "⚠️ Unknown command: /{command}\n\n{help}",
 
   "cmd.description.rename": "Rename current session via /session rename",

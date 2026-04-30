@@ -16,15 +16,6 @@ interface SummaryAggregatorPrivateState {
   onFileChangeCallback: null;
 }
 
-interface ProcessManagerPrivateState {
-  state: {
-    process: null;
-    pid: null;
-    startTime: null;
-    isRunning: boolean;
-  };
-}
-
 export async function resetSingletonState(): Promise<void> {
   const [
     { questionManager },
@@ -32,7 +23,6 @@ export async function resetSingletonState(): Promise<void> {
     { renameManager },
     { interactionManager },
     { summaryAggregator },
-    { processManager },
     { stopEventListening },
     { __resetSessionDirectoryCacheForTests },
     loggerModule,
@@ -42,7 +32,6 @@ export async function resetSingletonState(): Promise<void> {
     import("../../src/rename/manager.js"),
     import("../../src/interaction/manager.js"),
     import("../../src/summary/aggregator.js"),
-    import("../../src/process/manager.js"),
     import("../../src/opencode/events.js"),
     import("../../src/session/cache-manager.js"),
     import("../../src/utils/logger.js"),
@@ -71,14 +60,6 @@ export async function resetSingletonState(): Promise<void> {
   aggregator.onPermissionCallback = null;
   aggregator.onSessionDiffCallback = null;
   aggregator.onFileChangeCallback = null;
-
-  const process = processManager as unknown as ProcessManagerPrivateState;
-  process.state = {
-    process: null,
-    pid: null,
-    startTime: null,
-    isRunning: false,
-  };
 
   __resetSessionDirectoryCacheForTests();
 

@@ -1,5 +1,4 @@
 import { getCurrentProject, loadSettings, setCurrentProject } from "../settings/manager.js";
-import { processManager } from "../process/manager.js";
 import { warmupSessionDirectoryCache } from "../session/cache-manager.js";
 import { config } from "../config.js";
 import { opencodeClient } from "../opencode/client.js";
@@ -64,7 +63,6 @@ export async function initializeSharedRuntime(): Promise<void> {
 
   initializationPromise = (async () => {
     await loadSettings();
-    await processManager.initialize();
     await checkOpenCodeApiHealth();
     await warmupSessionDirectoryCache();
     await autoSelectProjectIfNeeded();

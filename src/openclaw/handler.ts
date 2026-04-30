@@ -11,7 +11,6 @@ import { getAgentDisplayName } from "../agent/types.js";
 import { getModelSelectionLists, getStoredModel, selectModel } from "../model/manager.js";
 import type { FavoriteModel } from "../model/types.js";
 import { stopEventListening } from "../opencode/events.js";
-import { processManager } from "../process/manager.js";
 import { renameManager } from "../rename/manager.js";
 import { setScheduledTaskNotificationCallback } from "../scheduled-task/runtime.js";
 import { summaryAggregator } from "../summary/aggregator.js";
@@ -104,9 +103,6 @@ export async function handleOpenClawBeforeDispatch(
   context: OpenClawPluginEventContext,
 ): Promise<OpenClawDispatchResult | undefined> {
   const config = getRuntimeConfig();
-  if (!config.enabled) {
-    return undefined;
-  }
 
   const route = createOpenClawRoute(event, context);
   if (!matchesOpenClawScope(config, route)) {
@@ -293,10 +289,6 @@ async function handleSlashCommand(
       return handleOpenClawTaskListCommand(route);
     case "permission":
       return handlePermissionStatusCommand(route);
-    case "opencode_start":
-      return handleOpenCodeStartCommand();
-    case "opencode_stop":
-      return handleOpenCodeStopCommand();
     default:
       return t("openclaw.unknown_command", { command: command.name, help: formatOpenClawHelp() });
   }
@@ -477,30 +469,6 @@ function handlePermissionStatusCommand(route: OpenClawRoute): string {
   }
 
   return t("openclaw.permission_hint");
-}
-
-async function handleOpenCodeStartCommand(): Promise<string> {
-  if (processManager.isRunning()) {
-    return t("openclaw.server.already_started", {
-      pid: processManager.getPID() ?? "unknown",
-    });
-  }
-
-  const result = await processManager.start();
-  return result.success
-    ? t("openclaw.server.started", { pid: processManager.getPID() ?? "unknown" })
-    : t("openclaw.server.start_failed", { error: result.error ?? t("common.unknown_error") });
-}
-
-async function handleOpenCodeStopCommand(): Promise<string> {
-  if (!processManager.isRunning()) {
-    return t("openclaw.server.not_managed");
-  }
-
-  const result = await processManager.stop(5000);
-  return result.success
-    ? t("openclaw.server.stopped")
-    : t("openclaw.server.stop_failed", { error: result.error ?? t("common.unknown_error") });
 }
 
 async function executeOpenClawPrompt(route: OpenClawRoute, text: string): Promise<void> {
