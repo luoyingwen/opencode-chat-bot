@@ -1,19 +1,19 @@
-# OpenCode DingTalk, Feishu Bot
+# OpenCode Chat Bot
 
 fork from <https://github.com/grinev/opencode-chat-bot>
 
-新增：支援 DingTalk, Feishu, proxy, zh-TW, 文件日志
+新增：支援 DingTalk、Feishu、OpenClaw、proxy、zh-TW、文件日志、定时任务
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 [![Node.js](https://img.shields.io/badge/node-%3E%3D20-brightgreen)](https://nodejs.org)
 
-OpenCode Bot is a secure multi-platform client for [OpenCode](https://opencode.ai) CLI that runs on your local machine. Supports **DingTalk**, **Feishu**, and **OpenClaw**.
+OpenCode Bot is a secure multi-platform client for [OpenCode](https://opencode.ai) CLI that runs on your local machine. It supports **DingTalk** and **Feishu** as standalone chat bots, and **OpenClaw** through a plugin entrypoint.
 
 Run AI coding tasks, monitor progress, switch models, and manage sessions from your phone.
 
-No open ports, no exposed APIs. The bot communicates with your local OpenCode server and the platform APIs only.
+For DingTalk and Feishu, no public inbound port is required. The bot communicates with your local OpenCode server and the platform APIs. OpenClaw support is loaded by the OpenClaw plugin runtime.
 
-Scheduled tasks support. Turns the bot into a lightweight OpenClaw alternative for OpenCode users.
+Scheduled tasks are supported across the shared runtime. OpenClaw integration is intentionally implemented as a thin adapter that reuses the same command, prompt, session, permission, and scheduled-task modules as the standalone bots.
 
 Platforms: macOS, Windows, Linux
 
@@ -23,23 +23,25 @@ Languages: English (`en`), Deutsch (`de`), Español (`es`), Русский (`ru`
 
 ## Features
 
-- **Multi-platform support** — works with DingTalk and Feishu as standalone bots, plus OpenClaw through a plugin entrypoint
-- **Remote coding** — send prompts to OpenCode from anywhere, receive complete results with code sent as files
+- **Multi-platform support** — DingTalk and Feishu standalone bots, plus OpenClaw plugin runtime support
+- **Shared OpenClaw adapter** — OpenClawCode functionality is rebuilt on top of the existing shared core instead of duplicating command or session logic
+- **Remote coding** — send text prompts to OpenCode from chat and receive aggregated results
 - **Session management** — create new sessions or continue existing ones, just like in the TUI
 - **Live status** — pinned message with current project, model, context usage, and changed files list, updated in real time
 - **Model switching** — pick models from OpenCode favorites and recent history directly in the chat (favorites are shown first)
 - **Agent modes** — switch between Plan and Build modes on the fly
 - **Subagent activity** — watch live subagent progress in chat, including the current task, agent, model, and active tool step
 - **Custom Commands** — run OpenCode custom commands (and built-ins like `init`/`review`) from an inline menu with confirmation
-- **Interactive Q&A** — answer agent questions and approve permissions via inline buttons
-- **Voice prompts** — voice/audio messages can be transcribed via a Whisper-compatible API when the platform supports them
-- **File attachments** — send images, PDF documents, and any text-based files to OpenCode (code, logs, configs etc.)
+- **Interactive Q&A** — answer agent questions and approve permissions through chat interactions
+- **Permission controls** — allow once, always allow, reject, or enable auto-confirmation for a session
 - **Scheduled tasks** — schedule prompts to run later or on a recurring interval; see [Scheduled Tasks](#scheduled-tasks)
 - **Context control** — compact context when it gets too large, right from the chat
 - **Input flow control** — when an interactive flow is active, the bot accepts only relevant input to keep context consistent and avoid accidental actions
-- **Security** — strict user whitelist; no one else can access your bot
+- **Security** — optional DingTalk/Feishu user allowlists restrict access
 - **Localization** — UI localization is supported for multiple languages (`BOT_LOCALE`)
 - **File logging** — logs are written to files with automatic rotation and retention
+
+Current message input support is text-first. DingTalk and Feishu non-text messages such as images, files, voice, audio, and media are currently reported as unsupported by the platform handlers.
 
 Planned features currently in development are listed in [Current Task List](PRODUCT.md#current-task-list).
 
@@ -54,19 +56,15 @@ Planned features currently in development are listed in [Current Task List](PROD
 
 ## Quick Start
 
-### 1. Create a Bot
+### 1. Choose an Integration
 
-#### Feishu Bot
+Use one or more of these integration modes:
 
-See [Feishu Bot Setup Guide](#feishu-bot) below for instructions on creating a Feishu bot application and obtaining:
+- **DingTalk standalone bot** — configure `DINGTALK_APP_KEY` and `DINGTALK_APP_SECRET`
+- **Feishu standalone bot** — configure `FEISHU_APP_ID` and `FEISHU_APP_SECRET`
+- **OpenClaw plugin** — build this package and let OpenClaw load `dist/openclaw-plugin.js`
 
-- `FEISHU_APP_ID`
-- `FEISHU_APP_SECRET`
-- `FEISHU_ENCRYPT_KEY` (optional)
-
-- `DINGTALK_APP_KEY`
-- `DINGTALK_APP_SECRET`
-- `DINGTALK_AGENT_ID` (optional)
+For standalone mode, at least one of DingTalk or Feishu must be configured.
 
 ### 2. Start OpenCode Server
 
@@ -76,39 +74,46 @@ Start the OpenCode server:
 opencode serve
 ```
 
-> The bot connects to the OpenCode API at `http://localhost:4096` by default.
+The bot connects to the OpenCode API at `http://localhost:4096` by default. Override it with `OPENCODE_API_URL`.
 
-### 3. Development
-
-> Quick start is for npm usage. You do not need to clone this repository. If you run this command from the source directory (repository root), it may fail with `opencode-bot: not found`. To run from sources, use the [Development](#development) section.
-
-On first launch, an interactive wizard will guide you through the configuration — it asks for interface language first, then your bot token(s), user ID(s), OpenCode API URL, and optional OpenCode server credentials (username/password). After that, you're ready to go. Open your bot and start sending tasks.
-
-#### Alternative: Global Install
+### 3. Run From Source
 
 ```bash
-git clone https://github.com/bigheadfjuee/opencode-chat-bot.git
+git clone https://github.com/luoyingwen/opencode-chat-bot.git
 cd opencode-chat-bot
 npm install
 cp .env.example .env
-# Edit .env with your bot credentials, user IDs, and model settings
-```
-
-Build and run:
-
-```bash
+# Edit .env with your OpenCode model and platform credentials
 npm run dev
 ```
 
-> Built-in daemon mode is intended for standalone npm installs without an external supervisor. For `systemd`, `pm2`, or Docker, keep using `opencode-bot start` without `--daemon`.
+### 4. OpenClaw Local Plugin Install
 
-For Linux `systemd` setup, see [`docs/LINUX_SYSTEMD_SETUP.md`](./docs/LINUX_SYSTEMD_SETUP.md).
+```bash
+npm install
+npm run build:openclaw
+npm run openclaw:install -- local
+openclaw config set plugins.entries.openclawcode.enabled true
+```
 
-To reconfigure at any time:
+For local iteration, use link mode instead:
+
+```bash
+npm run openclaw:install -- link
+```
+
+### 5. Installed CLI Mode
+
+When installed as a package, use the CLI command:
 
 ```bash
 opencode-bot config
+opencode-bot start
 ```
+
+On first launch, the interactive wizard asks for interface language, standalone bot credentials, allowed users, OpenCode API URL, and optional OpenCode server credentials.
+
+For Linux `systemd` setup, see [docs/LINUX_SYSTEMD_SETUP.md](docs/LINUX_SYSTEMD_SETUP.md).
 
 ## Supported Platforms (Node.js)
 
@@ -136,21 +141,22 @@ opencode-bot config
 | `/agent <n>`              | Select an agent by number                               |
 | `/session rename [title]` | Rename the current session                              |
 | `/commands`               | Browse and run custom commands                          |
+| `/command <n> [args]`     | Run a listed OpenCode command                           |
+| `/auto_confirm [on\|off]` | Toggle permission auto-confirm for the current session  |
 | `/task`                   | Create a scheduled task                                 |
-| `/tasklist`               | Browse and delete scheduled tasks                       |
-| `/opencode_start`         | Start the OpenCode server remotely                      |
-| `/opencode_stop`          | Stop the OpenCode server remotely                       |
+| `/tasks`                  | Browse and delete scheduled tasks                       |
+| `/exit`                   | Stop this bot process                                   |
 | `/help`                   | Show available commands                                 |
 
 Any regular text message is sent as a prompt to the coding agent only when no blocking interaction is active.
 
 > **Note:** DingTalk and Feishu currently support text and markdown messages. Image, voice, and file messages will show a "not supported" notice.
 
-> `/opencode_start` and `/opencode_stop` are intended as emergency commands — for example, if you need to restart a stuck server while away from your computer. Under normal usage, start `opencode serve` yourself before launching the bot.
+`/exit` stops the bot process. Under normal usage, start `opencode serve` yourself before launching the bot.
 
 ### OpenClaw Plugin Commands
 
-OpenClaw loads `./dist/openclaw-plugin.js` and reuses the same shared command, prompt, task, permission, and route-scoped state modules as DingTalk and Feishu. Use `/opencode` in a conversation to enter OpenCode mode, then send commands or regular prompts. Use `/exit` to leave OpenCode mode.
+OpenClaw loads `./dist/openclaw-plugin.js` and reuses the same shared command, prompt, task, permission, and route-scoped state modules as DingTalk and Feishu. Use `/opencode` in a conversation to enter OpenCode mode. While active, OpenClaw commands and normal text are handled by OpenCode. Use `/exit` to leave OpenCode mode for that conversation.
 
 Build the OpenClaw plugin entrypoint with either command below. The original OpenClawCode build script was `tsc`; in this merged repository the normal build compiles the standalone bot and the OpenClaw plugin together.
 
@@ -169,26 +175,42 @@ npm run openclaw:install -- local
 npm run openclaw:install -- link
 ```
 
-After building, configure OpenClaw to load `./dist/openclaw-plugin.js` from this package. The same path is declared in `package.json` under `openclaw.extensions`, exported as `./openclaw-plugin`, and described by `openclaw.plugin.json` for runtimes that read plugin metadata files.
+After building, OpenClaw can discover the plugin from `package.json` under `openclaw.extensions`, from the `./openclaw-plugin` export, or from `openclaw.plugin.json` for runtimes that read plugin metadata files.
 
-| Command                     | Description                                    |
-| --------------------------- | ---------------------------------------------- | -------------------------- |
-| `/opencode`                 | Enter OpenCode mode for the conversation       |
-| `/exit`                     | Leave OpenCode mode                            |
-| `/status`                   | Server health, current project, session, model |
-| `/projects`                 | Browse available projects                      |
-| `/project <n                | path>`                                         | Select or create a project |
-| `/sessions`                 | Browse recent sessions                         |
-| `/session <n>`              | Select a session                               |
-| `/session new` or `/new`    | Create a new session                           |
-| `/rename [title]`           | Rename the current session                     |
-| `/agents`, `/agent <n>`     | List or select agents                          |
-| `/models`, `/model <n>`     | List or select models                          |
-| `/commands`, `/command <n>` | Browse or run OpenCode commands                |
-| `/task`, `/tasklist`        | Create or manage scheduled tasks               |
-| `/stop` or `/abort`         | Abort current task or cancel active flow       |
+| Command                       | Description                                             |
+| ----------------------------- | ------------------------------------------------------- |
+| `/opencode`                   | Enter OpenCode mode for this OpenClaw conversation      |
+| `/exit`                       | Leave OpenCode mode for this OpenClaw conversation      |
+| `/help`                       | Show OpenClawCode commands                              |
+| `/status`                     | Server health, current project, session, and model info |
+| `/projects`                   | Browse available projects                               |
+| `/project <number or path>`   | Select a project by number or path                      |
+| `/sessions`                   | Browse recent sessions                                  |
+| `/session <number>`           | Select a session by number                              |
+| `/session new` or `/new`      | Create a new session                                    |
+| `/rename [title]`             | Rename the current session                              |
+| `/agents` / `/agent <number>` | List or select agents                                   |
+| `/models` / `/model <number>` | List or select models                                   |
+| `/commands`                   | List OpenCode project commands                          |
+| `/command <number> [args]`    | Run a listed OpenCode command                           |
+| `/task`                       | Create a scheduled task                                 |
+| `/tasklist` or `/tasks`       | Browse and manage scheduled tasks                       |
+| `/permission`                 | Show pending permission state                           |
+| `/1`, `/2`, `/3`              | Permission replies: allow once, always allow, reject    |
+| `/stop` or `/abort`           | Abort current task or cancel active flow                |
+| `/opencode_start`             | Start a managed OpenCode server process                 |
+| `/opencode_stop`              | Stop the managed OpenCode server process                |
 
-OpenClaw plugin config can restrict the adapter by channel, account, or conversation. Environment fallback values are available as `OPENCLAW_ENABLED`, `OPENCLAW_CHANNELS`, `OPENCLAW_ACCOUNT_IDS`, and `OPENCLAW_CONVERSATION_IDS`; OpenClaw runtime plugin config takes precedence.
+OpenClaw plugin config can restrict the adapter by channel, account, or conversation. OpenClaw runtime plugin config takes precedence over environment fallback values. Environment fallback values are available as `OPENCLAW_ENABLED`, `OPENCLAW_CHANNELS`, `OPENCLAW_ACCOUNT_IDS`, and `OPENCLAW_CONVERSATION_IDS`.
+
+Example OpenClaw configuration:
+
+```bash
+openclaw config set plugins.entries.openclawcode.enabled true
+openclaw config set plugins.entries.openclawcode.config.channels '["telegram", "discord"]'
+openclaw config set plugins.entries.openclawcode.config.accountIds '["account1"]'
+openclaw config set plugins.entries.openclawcode.config.conversationIds '["conv1"]'
+```
 
 ## DingTalk Bot Setup
 
@@ -249,7 +271,7 @@ If permissions are missing, the bot will fall back gracefully and log a warning.
 
 ## Feishu Bot
 
-Feishu uses **Webhook Mode** for real-time message reception.
+Feishu uses **Stream Mode** for real-time message reception.
 
 ### Step 1: Create a Feishu Bot
 
@@ -263,11 +285,10 @@ From the application details page:
 
 - **App ID** → `FEISHU_APP_ID`
 - **App Secret** → `FEISHU_APP_SECRET`
-- **Encrypt Key** (optional) → `FEISHU_ENCRYPT_KEY`
 
 ### Step 3: Configure User Access
 
-Set `FEISHU_ALLOWED_USER_ID` to restrict access to a specific Feishu user ID (open ID). If not set, all users who can message the bot will be allowed.
+Set `FEISHU_ALLOWED_USERS` to restrict access to one or more Feishu user IDs (comma-separated open IDs). If not set, all users who can message the bot will be allowed.
 
 ### Step 4: Configure Environment
 
@@ -276,8 +297,7 @@ Add to your `.env`:
 ```env
 FEISHU_APP_ID=your-app-id
 FEISHU_APP_SECRET=your-app-secret
-FEISHU_ENCRYPT_KEY=your-encrypt-key
-FEISHU_ALLOWED_USER_ID=your-user-id
+FEISHU_ALLOWED_USERS=user_id_1,user_id_2
 ```
 
 ### Step 5: Test
@@ -286,7 +306,7 @@ FEISHU_ALLOWED_USER_ID=your-user-id
 2. Find the bot in Feishu and send a message
 3. Use `/status` to verify connection
 
-> **Note:** Feishu currently supports text and markdown messages. Image, voice, and file messages will show a "not supported" notice.
+> **Note:** Feishu currently supports text and markdown-style post content. Image, file, audio, and media messages show a "not supported" notice.
 
 ## Scheduled Tasks
 
@@ -314,64 +334,62 @@ When installed via npm, the configuration wizard handles the initial setup. The 
 - **Windows:** `%APPDATA%\opencode-chat-bot\.env`
 - **Linux:** `~/.config/opencode-chat-bot/.env`
 
-| Variable                        | Description                                                                                    | Required | Default                  |
-| ------------------------------- | ---------------------------------------------------------------------------------------------- | :------: | ------------------------ |
-| `DINGTALK_APP_KEY`              | DingTalk App Key                                                                               |   No\*   | —                        |
-| `DINGTALK_APP_SECRET`           | DingTalk App Secret                                                                            |   No\*   | —                        |
-| `DINGTALK_AGENT_ID`             | DingTalk Agent ID                                                                              |    No    | —                        |
-| `DINGTALK_ALLOWED_USER_ID`      | Allowed DingTalk staff ID                                                                      |    No    | —                        |
-| `DINGTALK_DEBUG`                | Enable DingTalk SDK debug logs                                                                 |    No    | `false`                  |
-| `FEISHU_APP_ID`                 | Feishu App ID                                                                                  |   No\*   | —                        |
-| `FEISHU_APP_SECRET`             | Feishu App Secret                                                                              |   No\*   | —                        |
-| `FEISHU_ENCRYPT_KEY`            | Feishu Encrypt Key                                                                             |    No    | —                        |
-| `FEISHU_ALLOWED_USER_ID`        | Allowed Feishu user ID                                                                         |    No    | —                        |
-| `OPENCODE_API_URL`              | OpenCode server URL                                                                            |    No    | `http://localhost:4096`  |
-| `OPENCODE_SERVER_USERNAME`      | Server auth username                                                                           |    No    | `opencode`               |
-| `OPENCODE_SERVER_PASSWORD`      | Server auth password                                                                           |    No    | —                        |
-| `OPENCODE_MODEL_PROVIDER`       | Default model provider                                                                         |   Yes    | `opencode`               |
-| `OPENCODE_MODEL_ID`             | Default model ID                                                                               |   Yes    | `big-pickle`             |
-| `BOT_LOCALE`                    | Bot UI language (e.g. `en`, `de`, `es`, `ru`, `zh`, `zh-TW`)                                   |    No    | `en`                     |
-| `SESSIONS_LIST_LIMIT`           | Sessions per page in `/sessions`                                                               |    No    | `10`                     |
-| `PROJECTS_LIST_LIMIT`           | Projects per page in `/projects`                                                               |    No    | `10`                     |
-| `OPEN_BROWSER_ROOTS`            | Comma-separated paths `/open` is allowed to browse (supports `~`)                              |    No    | `~` (home directory)     |
-| `COMMANDS_LIST_LIMIT`           | Commands per page in `/commands`                                                               |    No    | `10`                     |
-| `TASK_LIMIT`                    | Maximum scheduled tasks at once                                                                |    No    | `10`                     |
-| `BASH_TOOL_DISPLAY_MAX_LENGTH`  | Max displayed length for bash tool commands (truncated if longer)                              |    No    | `128`                    |
-| `SERVICE_MESSAGES_INTERVAL_SEC` | Service messages interval (thinking + tool calls); `>=2` to avoid rate limits, `0` = immediate |    No    | `5`                      |
-| `HIDE_THINKING_MESSAGES`        | Hide `💭 Thinking...` service messages                                                         |    No    | `false`                  |
-| `HIDE_TOOL_CALL_MESSAGES`       | Hide tool-call service messages (`💻 bash ...`, `📖 read ...`, etc.)                           |    No    | `false`                  |
-| `HIDE_TOOL_FILE_MESSAGES`       | Hide file edit documents sent as `.txt` attachments (`edit_*.txt`, `write_*.txt`)              |    No    | `false`                  |
-| `RESPONSE_STREAMING`            | Stream assistant replies while generated                                                       |    No    | `true`                   |
-| `RESPONSE_STREAM_THROTTLE_MS`   | Stream edit throttle (ms) for updates                                                          |    No    | `500`                    |
-| `MESSAGE_FORMAT_MODE`           | Assistant reply formatting: `markdown` (MarkdownV2) or `raw`                                   |    No    | `markdown`               |
-| `CODE_FILE_MAX_SIZE_KB`         | Max file size (KB) to send as document                                                         |    No    | `100`                    |
-| `STT_API_URL`                   | Whisper-compatible API base URL (enables voice transcription)                                  |    No    | —                        |
-| `STT_API_KEY`                   | API key for STT provider                                                                       |    No    | —                        |
-| `STT_MODEL`                     | STT model name                                                                                 |    No    | `whisper-large-v3-turbo` |
-| `STT_LANGUAGE`                  | Optional language hint for STT                                                                 |    No    | —                        |
-| `TTS_API_URL`                   | TTS API base URL                                                                               |    No    | —                        |
-| `TTS_API_KEY`                   | TTS API key                                                                                    |    No    | —                        |
-| `TTS_MODEL`                     | TTS model name passed to `/audio/speech`                                                       |    No    | `gpt-4o-mini-tts`        |
-| `TTS_VOICE`                     | OpenAI-compatible TTS voice name                                                               |    No    | `alloy`                  |
-| `LOG_LEVEL`                     | Log level (`debug`, `info`, `warn`, `error`)                                                   |    No    | `info`                   |
-| `LOG_RETENTION`                 | Number of log files to keep: launch files in `sources`, daily files in `installed`             |    No    | `10`                     |
+| Variable                       | Description                                                                        | Required | Default                  |
+| ------------------------------ | ---------------------------------------------------------------------------------- | :------: | ------------------------ |
+| `DINGTALK_APP_KEY`             | DingTalk App Key                                                                   |   No\*   | —                        |
+| `DINGTALK_APP_SECRET`          | DingTalk App Secret                                                                |   No\*   | —                        |
+| `DINGTALK_AGENT_ID`            | DingTalk Agent ID                                                                  |    No    | —                        |
+| `DINGTALK_ALLOWED_USER_ID`     | Allowed DingTalk staff ID                                                          |    No    | —                        |
+| `DINGTALK_DEBUG`               | Enable DingTalk SDK debug logs                                                     |    No    | `false`                  |
+| `FEISHU_APP_ID`                | Feishu App ID                                                                      |   No\*   | —                        |
+| `FEISHU_APP_SECRET`            | Feishu App Secret                                                                  |   No\*   | —                        |
+| `FEISHU_DOMAIN`                | Feishu API domain (`feishu` or compatible SDK domain)                              |    No    | `feishu`                 |
+| `FEISHU_ALLOWED_USERS`         | Comma-separated allowed Feishu user IDs                                            |    No    | —                        |
+| `FEISHU_STREAM_ENABLED`        | Enable Feishu stream mode                                                          |    No    | `true`                   |
+| `OPENCODE_API_URL`             | OpenCode server URL                                                                |    No    | `http://localhost:4096`  |
+| `OPENCODE_SERVER_USERNAME`     | Server auth username                                                               |    No    | `opencode`               |
+| `OPENCODE_SERVER_PASSWORD`     | Server auth password                                                               |    No    | —                        |
+| `OPENCODE_MODEL_PROVIDER`      | Default model provider                                                             |   Yes    | `opencode`               |
+| `OPENCODE_MODEL_ID`            | Default model ID                                                                   |   Yes    | `big-pickle`             |
+| `BOT_LOCALE`                   | Bot UI language (e.g. `en`, `de`, `es`, `ru`, `zh`, `zh-TW`)                       |    No    | `en`                     |
+| `SESSIONS_LIST_LIMIT`          | Sessions per page in `/sessions`                                                   |    No    | `10`                     |
+| `PROJECTS_LIST_LIMIT`          | Projects per page in `/projects`                                                   |    No    | `10`                     |
+| `OPEN_BROWSER_ROOTS`           | Comma-separated paths `/open` is allowed to browse (supports `~`)                  |    No    | `~` (home directory)     |
+| `COMMANDS_LIST_LIMIT`          | Commands per page in `/commands`                                                   |    No    | `10`                     |
+| `TASK_LIMIT`                   | Maximum scheduled tasks at once                                                    |    No    | `10`                     |
+| `BASH_TOOL_DISPLAY_MAX_LENGTH` | Max displayed length for bash tool commands (truncated if longer)                  |    No    | `128`                    |
+| `HIDE_THINKING_MESSAGES`       | Hide `💭 Thinking...` service messages                                             |    No    | `false`                  |
+| `HIDE_TOOL_CALL_MESSAGES`      | Hide tool-call service messages (`💻 bash ...`, `📖 read ...`, etc.)               |    No    | `false`                  |
+| `HIDE_TOOL_FILE_MESSAGES`      | Hide file edit documents sent as `.txt` attachments (`edit_*.txt`, `write_*.txt`)  |    No    | `false`                  |
+| `RESPONSE_STREAM_THROTTLE_MS`  | Stream edit throttle (ms) for updates                                              |    No    | `500`                    |
+| `MESSAGE_FORMAT_MODE`          | Assistant reply formatting: `markdown` (MarkdownV2) or `raw`                       |    No    | `markdown`               |
+| `CODE_FILE_MAX_SIZE_KB`        | Max file size (KB) to send as document                                             |    No    | `100`                    |
+| `STT_API_URL`                  | Whisper-compatible API base URL (enables voice transcription)                      |    No    | —                        |
+| `STT_API_KEY`                  | API key for STT provider                                                           |    No    | —                        |
+| `STT_MODEL`                    | STT model name                                                                     |    No    | `whisper-large-v3-turbo` |
+| `STT_LANGUAGE`                 | Optional language hint for STT                                                     |    No    | —                        |
+| `TTS_API_URL`                  | TTS API base URL                                                                   |    No    | —                        |
+| `TTS_API_KEY`                  | TTS API key                                                                        |    No    | —                        |
+| `TTS_MODEL`                    | TTS model name passed to `/audio/speech`                                           |    No    | `gpt-4o-mini-tts`        |
+| `TTS_VOICE`                    | OpenAI-compatible TTS voice name                                                   |    No    | `alloy`                  |
+| `OPENCLAW_ENABLED`             | Enable OpenClaw adapter from environment fallback                                  |    No    | `false`                  |
+| `OPENCLAW_CHANNELS`            | Comma-separated OpenClaw channel filter                                            |    No    | —                        |
+| `OPENCLAW_ACCOUNT_IDS`         | Comma-separated OpenClaw account filter                                            |    No    | —                        |
+| `OPENCLAW_CONVERSATION_IDS`    | Comma-separated OpenClaw conversation filter                                       |    No    | —                        |
+| `LOG_LEVEL`                    | Log level (`debug`, `info`, `warn`, `error`)                                       |    No    | `info`                   |
+| `LOG_RETENTION`                | Number of log files to keep: launch files in `sources`, daily files in `installed` |    No    | `10`                     |
 
-> **\*At least one platform must be configured:** DingTalk (`DINGTALK_APP_KEY` + `DINGTALK_APP_SECRET`) or Feishu (`FEISHU_APP_ID` + `FEISHU_APP_SECRET`).
+> **\*At least one standalone bot platform must be configured when running `opencode-bot start`:** DingTalk (`DINGTALK_APP_KEY` + `DINGTALK_APP_SECRET`) or Feishu (`FEISHU_APP_ID` + `FEISHU_APP_SECRET`). OpenClaw is loaded separately by the OpenClaw plugin runtime.
 
 > **Keep your `.env` file private.** It contains your bot tokens. Never commit it to version control.
 
 Logs are written to `./logs` when running from sources and to the runtime config directory `logs/` folder in `installed` mode. Log rotation depends on runtime mode: `sources` creates one file per bot launch, while `installed` appends to one file per day. Old log files are removed according to `LOG_RETENTION`.
 
-### Voice and Audio Transcription (Optional)
+### STT and TTS Client Settings (Optional)
 
-If `STT_API_URL` and `STT_API_KEY` are set, the bot will:
+The repository includes Whisper-compatible STT and OpenAI-compatible TTS client modules. Configure them with `STT_*` and `TTS_*` variables when using features that call those clients.
 
-1. Accept supported voice and audio messages
-2. Transcribe them via `POST {STT_API_URL}/audio/transcriptions`
-3. Show recognized text in chat
-4. Send the recognized text to OpenCode as a normal prompt
-
-If TTS credentials are configured, you can toggle spoken replies globally with `/tts`. The preference is stored in `settings.json` and persists across restarts.
+Current DingTalk and Feishu message handlers do not process voice/audio attachments, so STT is not exposed as an end-user chat command in those platforms yet.
 
 TTS configuration example:
 
@@ -394,7 +412,7 @@ Supported provider examples (Whisper-compatible):
   - `STT_API_URL=https://api.together.xyz/v1`
   - `STT_MODEL=openai/whisper-large-v3`
 
-If STT variables are not set, voice/audio transcription is disabled and the bot will ask you to configure STT.
+If STT variables are not set, transcription client calls are disabled.
 
 ### Model Configuration
 
@@ -412,7 +430,7 @@ To add a model to favorites, open OpenCode TUI (`opencode`), go to model selecti
 The bot enforces strict **user whitelists**:
 
 - **DingTalk:** Only the user whose staff ID matches `DINGTALK_ALLOWED_USER_ID` can interact (if set)
-- **Feishu:** Only the user whose open ID matches `FEISHU_ALLOWED_USER_ID` can interact (if set)
+- **Feishu:** Only users whose open IDs are listed in `FEISHU_ALLOWED_USERS` can interact (if set)
 
 Messages from unauthorized sources are silently ignored and logged.
 
@@ -420,16 +438,18 @@ Since the bot runs locally on your machine and connects to your local OpenCode s
 
 ### Available Scripts
 
-| Script                          | Description                          |
-| ------------------------------- | ------------------------------------ |
-| `npm run dev`                   | Build and start (development)        |
-| `npm run build`                 | Compile TypeScript                   |
-| `npm start`                     | Run compiled code                    |
-| `npm run release:notes:preview` | Preview auto-generated release notes |
-| `npm run lint`                  | ESLint check (zero warnings policy)  |
-| `npm run format`                | Format code with Prettier            |
-| `npm test`                      | Run tests (Vitest)                   |
-| `npm run test:coverage`         | Tests with coverage report           |
+| Script                             | Description                          |
+| ---------------------------------- | ------------------------------------ |
+| `npm run dev`                      | Build and start (development)        |
+| `npm run build`                    | Compile TypeScript                   |
+| `npm run build:openclaw`           | Compile TypeScript for OpenClaw use  |
+| `npm run openclaw:install -- help` | Show OpenClaw install script help    |
+| `npm start`                        | Run compiled code                    |
+| `npm run release:notes:preview`    | Preview auto-generated release notes |
+| `npm run lint`                     | ESLint check (zero warnings policy)  |
+| `npm run format`                   | Format code with Prettier            |
+| `npm test`                         | Run tests (Vitest)                   |
+| `npm run test:coverage`            | Tests with coverage report           |
 
 > **Note:** No file watcher or auto-restart is used. The bot maintains persistent SSE and long-polling connections — automatic restarts would break them mid-task. After making changes, restart manually with `npm run dev`.
 
@@ -460,7 +480,16 @@ Since the bot runs locally on your machine and connects to your local OpenCode s
 
 - Verify bot is enabled and webhook URL is configured correctly
 - Check `FEISHU_APP_ID` and `FEISHU_APP_SECRET` are correct
+- Check `FEISHU_ALLOWED_USERS` if access is restricted
 - Ensure the bot is published and available to users
+
+**OpenClaw plugin does not respond**
+
+- Build first with `npm run build:openclaw`
+- Install or link locally with `npm run openclaw:install -- local` or `npm run openclaw:install -- link`
+- Enable the plugin with `openclaw config set plugins.entries.openclawcode.enabled true`
+- Send `/opencode` in the conversation before sending OpenCode commands or prompts
+- Check scope filters in `channels`, `accountIds`, and `conversationIds`
 
 **Linux: permission denied errors**
 
@@ -473,7 +502,7 @@ Please follow commit and release note conventions in [CONTRIBUTING.md](CONTRIBUT
 
 ## Community
 
-Have questions, want to share your experience using the bot, or have an idea for a feature? Join the conversation in [GitHub Discussions](https://github.com/bigheadfjuee/opencode-chat-bot/discussions).
+Have questions, want to share your experience using the bot, or have an idea for a feature? Join the conversation in [GitHub Discussions](https://github.com/luoyingwen/opencode-chat-bot/discussions).
 
 ## License
 
