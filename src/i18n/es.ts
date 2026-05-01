@@ -136,4 +136,6 @@ export const es: I18nDictionary = {
   "cli.args.unknown_option": "Opción desconocida: {value}",
   "cli.args.mode_only_start": "La opción --mode solo se admite para el comando start",
 
+  "openclaw.processing":
+    "⚙️ Procesando...\n\n💡 Estás en el modo intercept de OpenCode. Ingresa /exit para salir.",
 };

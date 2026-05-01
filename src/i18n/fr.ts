@@ -137,4 +137,6 @@ export const fr: I18nDictionary = {
   "cli.args.mode_only_start":
     "L'option --mode est prise en charge uniquement pour la commande start",
 
+  "openclaw.processing":
+    "⚙️ Traitement...\n\n💡 Vous êtes en mode intercept OpenCode. Entrez /exit pour quitter.",
 };

@@ -129,4 +129,6 @@ export const zhTW: I18nDictionary = {
   "cli.args.unknown_option": "未知選項：{value}",
   "cli.args.mode_only_start": "選項 --mode 僅支援 start 命令",
 
+  "openclaw.processing":
+    "⚙️ 處理中...\n\n💡 您目前處於 OpenCode 拦截模式，輸入 /exit 退出。",
 };

@@ -128,4 +128,7 @@ export const zh: I18nDictionary = {
   "cli.args.invalid_mode": "无效的 --mode 值：{value}。期望 sources|installed",
   "cli.args.unknown_option": "未知选项：{value}",
   "cli.args.mode_only_start": "选项 --mode 仅支持 start 命令",
+
+  "openclaw.processing":
+    "⚙️ 处理中...\n\n💡 您正处于 OpenCode 拦截模式，输入 /exit 退出。",
 };

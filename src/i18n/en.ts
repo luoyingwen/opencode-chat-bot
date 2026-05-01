@@ -131,7 +131,8 @@ export const en = {
   "openclaw.permission_pending": "A permission request is pending. Reply with /1, /2, or /3.",
   "openclaw.permission_hint":
     "No pending permission request. When one appears, reply with /1, /2, or /3.",
-  "openclaw.processing": "⚙️ Processing...",
+  "openclaw.processing":
+    "⚙️ Processing...\n\n💡 You are in OpenCode intercept mode. Enter /exit to quit.",
   "openclaw.command_failed": "❌ Command failed.",
   "openclaw.task_cancelled": "✅ Scheduled task creation cancelled.",
   "openclaw.tasklist_cancelled": "✅ Scheduled task list flow cancelled.",

@@ -135,4 +135,6 @@ export const ru: I18nDictionary = {
   "cli.args.unknown_option": "Неизвестная опция: {value}",
   "cli.args.mode_only_start": "Опция --mode поддерживается только для команды start",
 
+  "openclaw.processing":
+    "⚙️ Обработка...\n\n💡 Вы в режиме intercept OpenCode. Введите /exit для выхода.",
 };
