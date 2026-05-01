@@ -53,6 +53,19 @@ export class StatusCommandHandler implements CommandHandler {
         lines.push(`**Session:** ${state.currentSession.title}`);
         const autoConfirmStatus = isAutoConfirmEnabled(state.currentSession.id);
         lines.push(`**Auto_confirm:** ${autoConfirmStatus ? "✅ ON" : "❌ OFF"}`);
+
+        const statusData = await context.gateway.getSessionStatus(state.currentProject?.worktree || "");
+        if (statusData && state.currentSession.id) {
+          const sessionStatus = statusData[state.currentSession.id];
+          if (sessionStatus?.type === "busy") {
+            lines.push("**Status:** 🔄 Busy (processing)");
+          } else if (sessionStatus?.type === "retry") {
+            const retryStatus = sessionStatus as { type: "retry"; attempt: number };
+            lines.push(`**Status:** 🔄 Retrying (attempt ${retryStatus.attempt})`);
+          } else if (sessionStatus?.type === "idle") {
+            lines.push("**Status:** ✅ Idle");
+          }
+        }
       } else {
         lines.push("No active session. Send a message to create one.");
       }

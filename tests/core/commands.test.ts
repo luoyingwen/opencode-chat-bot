@@ -72,6 +72,7 @@ function createContext(overrides?: Partial<CommandContext>): CommandContext {
       listSessions: vi.fn(async () => []),
       getSession: vi.fn(),
       abortSession: vi.fn(),
+      getSessionStatus: vi.fn(async () => ({ "session-1": { type: "idle" } })),
     },
     projectsListLimit: 10,
     ...overrides,
