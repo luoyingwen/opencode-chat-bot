@@ -5,14 +5,21 @@ export const zh: I18nDictionary = {
   "cmd.description.new": "创建新会话",
   "cmd.description.stop": "停止当前操作",
   "cmd.description.sessions": "列出会话",
+  "cmd.description.session_number": "按序号选择会话",
   "cmd.description.projects": "列出项目",
+  "cmd.description.project_number": "按序号选择项目",
   "cmd.description.task": "创建定时任务",
   "cmd.description.tasks": "查看定时任务",
   "cmd.description.commands": "自定义命令",
+  "cmd.description.command_number": "按序号执行命令",
+  "cmd.description.auto_confirm": "切换当前会话的自动确认",
+  "cmd.description.permission": "显示待处理权限请求状态",
   "cmd.description.exit": "退出机器人应用",
   "cmd.description.help": "帮助",
   "cmd.description.agents": "列出可用 Agent",
   "cmd.description.agent_number": "按序号切换 Agent",
+  "cmd.description.rename": "通过 /session rename 重命名当前会话",
+  "cmd.description.opencode": "进入 OpenCode 模式",
 
   "error.load_agents": "❌ 加载代理列表失败",
   "error.generic": "🔴 出现了一些问题。",
@@ -108,8 +115,6 @@ export const zh: I18nDictionary = {
   "commands.execute_error": "🔴 执行 OpenCode 命令失败。",
   "commands.hint_select": "💡 使用 `/command <编号>` 执行命令，或使用 `/command <编号> [参数]` 携带参数执行。",
   "commands.invalid_number": "请输入有效的命令编号（{min}-{max}）。",
-
-  "cmd.description.rename": "通过 /session rename 重命名当前会话",
 
   "cli.usage":
     "用法:\n  opencode-bot [start] [--mode sources|installed]\n  opencode-bot status\n  opencode-bot stop\n  opencode-bot config\n\n注意:\n  - 无命令时默认为 `start`\n  - `--mode` 当前仅支持 `start`",

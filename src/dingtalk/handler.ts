@@ -43,6 +43,7 @@ import {
 } from "./commands.js";
 import { isAutoConfirmEnabled, setAutoConfirm } from "../permission/auto-confirm.js";
 import { createDingTalkTextPromptPlatform } from "./prompt-platform.js";
+import { getSharedCommands, getValidCommands } from "../bot/commands/definitions.js";
 
 function isUserAllowed(userId: string): boolean {
   const allowed = config.dingtalk.allowedUserId;
@@ -280,7 +281,7 @@ async function handleRenameCommand(userId: string, arg?: string): Promise<void> 
 }
 
 async function handleHelpCommand(userId: string): Promise<void> {
-  const commands = getLocalizedBotCommandsDingTalk();
+  const commands = getSharedCommands();
   const lines = commands.map((item) => `/${item.command} - ${item.description}`);
   // DingTalk markdown needs double newlines for line breaks
   const message = `📖 **Commands**\n\n${lines.join("\n\n")}\n\n_Tip: Use \`/projects\` and \`/project <number>\` to select a project, then \`/sessions\` and \`/session <number>\` to select a session._`;
@@ -352,49 +353,12 @@ async function handleExitCommand(userId: string): Promise<void> {
   await exitApplication("dingtalk:/exit");
 }
 
-function getLocalizedBotCommandsDingTalk(): { command: string; description: string }[] {
-  return [
-    { command: "status", description: t("cmd.description.status") },
-    { command: "stop", description: t("cmd.description.stop") },
-    { command: "sessions", description: t("cmd.description.sessions") },
-    { command: "session <number>", description: "Select a session by number" },
-    { command: "session new", description: t("cmd.description.new") },
-    { command: "session rename [title]", description: t("cmd.description.rename") },
-    { command: "projects", description: t("cmd.description.projects") },
-    { command: "project <number>", description: "Select a project by number" },
-    { command: "agents", description: t("cmd.description.agents") },
-    { command: "agent <number>", description: t("cmd.description.agent_number") },
-    { command: "commands", description: t("cmd.description.commands") },
-    { command: "command <number>", description: "Execute a command by number" },
-    {
-      command: "auto_confirm [on|off]",
-      description: "Toggle auto-confirmation for current session",
-    },
-    { command: "task", description: t("cmd.description.task") },
-    { command: "tasks", description: t("cmd.description.tasks") },
-    { command: "exit", description: t("cmd.description.exit") },
-    { command: "help", description: t("cmd.description.help") },
-  ];
-}
-
-function getValidCommands(): string[] {
-  return [
-    "status",
-    "stop",
-    "sessions",
-    "session",
-    "projects",
-    "project",
-    "agents",
-    "agent",
-    "commands",
-    "command",
-    "auto_confirm",
-    "task",
-    "tasks",
-    "exit",
-    "help",
-  ];
+function handlePermissionStatusCommand(userId: string): void {
+  if (hasDingTalkPendingPermission(userId)) {
+    void sendDingTalkMessage(userId, t("openclaw.permission_pending"));
+  } else {
+    void sendDingTalkMessage(userId, t("openclaw.permission_hint"));
+  }
 }
 
 function hasActiveTextInteraction(userId: string): boolean {
@@ -501,7 +465,7 @@ function processMessage(userId: string, text: string, sessionWebhook: string): v
 
     if (!validCommands.includes(commandName)) {
       // Unknown command - show error with available commands
-      const commands = getLocalizedBotCommandsDingTalk();
+      const commands = getSharedCommands();
       const lines = commands.map((item) => `/${item.command} - ${item.description}`);
       const message = `⚠️ **Unknown command**: /${commandName}\n\n**Available commands:**\n\n${lines.join("\n\n")}\n\n_Use /help for more details._`;
       void sendDingTalkMessage(userId, message);
@@ -566,6 +530,8 @@ function processMessage(userId: string, text: string, sessionWebhook: string): v
     })();
   } else if (text.startsWith("/exit")) {
     void handleExitCommand(userId);
+  } else if (text.startsWith("/permission")) {
+    void handlePermissionStatusCommand(userId);
   } else if (text.startsWith("/tasks")) {
     void (async () => {
       const message = await handleTaskListCommand(userId);

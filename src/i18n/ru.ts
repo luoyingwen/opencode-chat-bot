@@ -5,15 +5,21 @@ export const ru: I18nDictionary = {
   "cmd.description.new": "Создать новую сессию",
   "cmd.description.stop": "Прервать текущее действие",
   "cmd.description.sessions": "Список сессий",
+  "cmd.description.session_number": "Выбрать сессию по номеру",
   "cmd.description.projects": "Список проектов",
+  "cmd.description.project_number": "Выбрать проект по номеру",
   "cmd.description.task": "Создать задачу по расписанию",
   "cmd.description.tasks": "Список задач по расписанию",
   "cmd.description.commands": "Пользовательские команды",
+  "cmd.description.command_number": "Выполнить команду по номеру",
+  "cmd.description.auto_confirm": "Включить/выключить авто-подтверждение",
+  "cmd.description.permission": "Показать статус запросов разрешений",
   "cmd.description.exit": "Завершить приложение бота",
   "cmd.description.help": "Справка",
   "cmd.description.agents": "Список доступных агентов",
   "cmd.description.agent_number": "Сменить агента по номеру",
-
+  "cmd.description.rename": "Переименовать текущую сессию через /session rename",
+  "cmd.description.opencode": "Войти в режим OpenCode",
   "error.load_agents": "❌ Ошибка при загрузке списка агентов",
   "error.generic": "🔴 Произошла ошибка.",
 
@@ -114,8 +120,6 @@ export const ru: I18nDictionary = {
   "commands.execute_error": "🔴 Не удалось выполнить команду OpenCode.",
   "commands.hint_select": '💡 Используйте `/command <номер>` для запуска команды или `/command <номер> [аргументы]` для запуска с аргументами.',
   "commands.invalid_number": "Введите правильный номер ({min}-{max}).",
-
-  "cmd.description.rename": "Переименовать текущую сессию через /session rename",
 
   "cli.usage":
     "Использование:\n  opencode-bot [start] [--mode sources|installed]\n  opencode-bot status\n  opencode-bot stop\n  opencode-bot config\n\nЗаметки:\n  - Без команды по умолчанию используется `start`\n  - `--mode` сейчас поддерживается только для `start`",

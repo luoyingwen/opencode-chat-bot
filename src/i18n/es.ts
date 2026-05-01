@@ -5,15 +5,21 @@ export const es: I18nDictionary = {
   "cmd.description.new": "Crear una sesión nueva",
   "cmd.description.stop": "Detener la acción actual",
   "cmd.description.sessions": "Listar sesiones",
+  "cmd.description.session_number": "Seleccionar sesión por número",
   "cmd.description.projects": "Listar proyectos",
+  "cmd.description.project_number": "Seleccionar proyecto por número",
   "cmd.description.task": "Crear tarea programada",
   "cmd.description.tasks": "Ver tareas programadas",
   "cmd.description.commands": "Comandos personalizados",
+  "cmd.description.command_number": "Ejecutar comando por número",
+  "cmd.description.auto_confirm": "Activar/desactivar confirmación automática",
+  "cmd.description.permission": "Mostrar estado de solicitudes de permiso",
   "cmd.description.exit": "Salir de la aplicación del bot",
   "cmd.description.help": "Ayuda",
   "cmd.description.agents": "Listar agentes disponibles",
   "cmd.description.agent_number": "Cambiar a agente por número",
-
+  "cmd.description.rename": "Renombrar la sesión actual con /session rename",
+  "cmd.description.opencode": "Entrar en modo OpenCode",
   "error.load_agents": "❌ No se pudo cargar la lista de agentes",
   "error.generic": "🔴 Algo salió mal.",
 
@@ -115,8 +121,6 @@ export const es: I18nDictionary = {
   "commands.execute_error": "🔴 No se pudo ejecutar el comando de OpenCode.",
   "commands.hint_select": '💡 Usa `/command <número>` para ejecutar un comando o `/command <número> [args]` para ejecutarlo con argumentos.',
   "commands.invalid_number": "Introduce número válido ({min}-{max}).",
-
-  "cmd.description.rename": "Renombrar la sesión actual con /session rename",
 
   "cli.usage":
     "Uso:\n  opencode-bot [start] [--mode sources|installed]\n  opencode-bot status\n  opencode-bot stop\n  opencode-bot config\n\nNotas:\n  - Sin comando, el valor por defecto es `start`\n  - `--mode` actualmente solo se admite para `start`",

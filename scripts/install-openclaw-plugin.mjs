@@ -1,13 +1,14 @@
 #!/usr/bin/env node
 
 import { spawnSync } from "node:child_process";
-import { existsSync, readdirSync, rmSync } from "node:fs";
+import { cpSync, existsSync, mkdirSync, readdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { homedir } from "node:os";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
 const scriptDir = dirname(fileURLToPath(import.meta.url));
 const repositoryRoot = resolve(scriptDir, "..");
+const releaseFolder = resolve(repositoryRoot, ".openclaw-release");
 const pluginId = "opencode-chat-bot";
 const packageName = "@luoyingwen/opencode-chat-bot";
 
@@ -148,6 +149,75 @@ function enablePlugin() {
   }
 }
 
+function restartGateway() {
+  log("bold", "Restarting gateway...");
+  const result = run("openclaw", ["gateway", "restart"], { stdio: "pipe" });
+
+  const output = `${result.stdout || ""}${result.stderr || ""}`
+    .split(/\r?\n/u)
+    .filter((line) => line && !line.includes("Config warnings"))
+    .join("\n");
+
+  if (output) {
+    process.stdout.write(`${output}\n`);
+  }
+
+  if (result.status !== 0) {
+    log("warn", "Failed to restart gateway automatically. Restart manually:");
+    log("info", "  openclaw gateway restart");
+  } else {
+    log("success", "Gateway restarted.");
+  }
+}
+
+function prepareReleaseFolder() {
+  log("bold", "Preparing release folder...");
+  
+  const packageJsonPath = resolve(repositoryRoot, "package.json");
+  const packageJson = JSON.parse(readFileSync(packageJsonPath, "utf8"));
+  const files = packageJson.files || [];
+
+  if (existsSync(releaseFolder)) {
+    rmSync(releaseFolder, { recursive: true, force: true });
+  }
+  mkdirSync(releaseFolder, { recursive: true });
+
+  for (const file of files) {
+    const srcPath = resolve(repositoryRoot, file);
+    const destPath = resolve(releaseFolder, file);
+    
+    if (!existsSync(srcPath)) {
+      log("warn", `Skipping missing file: ${file}`);
+      continue;
+    }
+    
+    if (file === "dist") {
+      cpSync(srcPath, destPath, { recursive: true });
+    } else {
+      cpSync(srcPath, destPath);
+    }
+    log("info", `Copied: ${file}`);
+  }
+
+  const releasePackageJson = {
+    name: packageJson.name,
+    version: packageJson.version,
+    description: packageJson.description,
+    type: packageJson.type,
+    main: packageJson.main,
+    bin: packageJson.bin,
+    exports: packageJson.exports,
+    openclaw: packageJson.openclaw,
+    engines: packageJson.engines,
+    dependencies: packageJson.dependencies,
+    peerDependencies: packageJson.peerDependencies,
+    peerDependenciesMeta: packageJson.peerDependenciesMeta,
+  };
+  
+  writeFileSync(resolve(releaseFolder, "package.json"), JSON.stringify(releasePackageJson, null, 2));
+  log("success", "Release folder prepared.");
+}
+
 function installLocal() {
   log("bold", "Installing OpenClawCode locally from a packed package...");
   checkBuild();
@@ -166,6 +236,7 @@ log("info", `Installing from tarball: ${tarballPath}`);
   process.stdout.write("\n");
   log("success", "Local installation complete.");
   enablePlugin();
+  restartGateway();
 }
 
 function installLink() {
@@ -175,13 +246,31 @@ function installLink() {
   cleanupInstallStages();
 
   log("info", `Linking from: ${repositoryRoot}`);
-  runOpenClawInstall(["--link", "--force", repositoryRoot]);
+  runOpenClawInstall(["--link", repositoryRoot]);
   cleanupInstallStages();
 
   process.stdout.write("\n");
   log("success", "Linked installation complete.");
   log("warn", "Linked installs use this working tree; rebuild after source changes.");
   enablePlugin();
+}
+
+function installLinkRelease() {
+  log("bold", "Linking from release folder...");
+  checkBuild();
+  checkOpenClaw();
+  cleanupInstallStages();
+  prepareReleaseFolder();
+
+  log("info", `Linking from: ${releaseFolder}`);
+  run("openclaw", ["plugins", "install", "--link", releaseFolder], { stdio: "inherit" });
+  cleanupInstallStages();
+
+  process.stdout.write("\n");
+  log("success", "Linked installation complete.");
+  log("warn", "Rebuild and re-run this command after source changes.");
+  enablePlugin();
+  restartGateway();
 }
 
 function showInfo() {
@@ -193,8 +282,8 @@ function showInfo() {
   log("success", "  npm run openclaw:install -- local");
   log("info", "  Install from an npm tarball for integration testing");
   process.stdout.write("\n");
-  log("success", "  npm run openclaw:install -- link");
-  log("info", "  Link this working tree with OpenClaw --link mode");
+  log("success", "  npm run openclaw:install -- link-release");
+  log("info", "  Link release folder (no scripts, passes security check)");
   process.stdout.write("\n");
   log("bold", "Installing from npm after publish:");
   log("success", `  openclaw plugins install ${packageName}`);
@@ -214,11 +303,12 @@ function showHelp() {
   process.stdout.write("\n");
   process.stdout.write("Usage: npm run openclaw:install -- [command]\n\n");
   process.stdout.write("Commands:\n");
-  process.stdout.write("  info       Show installation info (default)\n");
-  process.stdout.write("  local      Install locally from a packed tarball\n");
-  process.stdout.write("  link       Link this working tree through OpenClaw --link mode\n");
-  process.stdout.write("  publish    Dry-run npm package contents\n");
-  process.stdout.write("  help       Show this help\n");
+  process.stdout.write("  info          Show installation info (default)\n");
+  process.stdout.write("  local         Install locally from a packed tarball\n");
+  process.stdout.write("  link          Link this working tree (may fail security check)\n");
+  process.stdout.write("  link-release  Link release folder (recommended)\n");
+  process.stdout.write("  publish       Dry-run npm package contents\n");
+  process.stdout.write("  help          Show this help\n");
 }
 
 function main() {
@@ -232,6 +322,9 @@ function main() {
       break;
     case "link":
       installLink();
+      break;
+    case "link-release":
+      installLinkRelease();
       break;
     case "publish":
       dryRunPublish();

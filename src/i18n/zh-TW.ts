@@ -5,14 +5,21 @@ export const zhTW: I18nDictionary = {
   "cmd.description.new": "建立新工作階段",
   "cmd.description.stop": "停止目前操作",
   "cmd.description.sessions": "列出工作階段",
+  "cmd.description.session_number": "依序號選擇工作階段",
   "cmd.description.projects": "列出專案",
+  "cmd.description.project_number": "依序號選擇專案",
   "cmd.description.task": "建立排程任務",
   "cmd.description.tasks": "列出排程任務",
   "cmd.description.commands": "自訂命令",
+  "cmd.description.command_number": "依序號執行命令",
+  "cmd.description.auto_confirm": "切換目前工作階段的自動確認",
+  "cmd.description.permission": "顯示待處理權限請求狀態",
   "cmd.description.exit": "結束機器人應用程式",
   "cmd.description.help": "說明",
   "cmd.description.agents": "列出可用模式",
   "cmd.description.agent_number": "依序號切換模式",
+  "cmd.description.rename": "透過 /session rename 重新命名目前工作階段",
+  "cmd.description.opencode": "進入 OpenCode 模式",
   "error.load_agents": "❌ 載入代理清單失敗",
   "error.generic": "🔴 發生了一些問題。",
 
@@ -108,7 +115,6 @@ export const zhTW: I18nDictionary = {
   "commands.hint_select": "💡 使用 `/command <編號>` 執行命令，或使用 `/command <編號> [參數]` 攜帶參數執行。",
   "commands.invalid_number": "請輸入有效的命令編號（{min}-{max}）。",
 
-  "cmd.description.rename": "透過 /session rename 重新命名目前工作階段",
   "cli.usage":
     "用法：\n  opencode-bot [start] [--mode sources|installed]\n  opencode-bot status\n  opencode-bot stop\n  opencode-bot config\n\n說明：\n  - 不帶命令時預設執行 `start`\n  - `--mode` 目前僅支援 `start` 命令",
   "cli.placeholder.status":

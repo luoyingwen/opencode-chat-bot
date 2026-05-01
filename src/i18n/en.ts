@@ -3,14 +3,21 @@ export const en = {
   "cmd.description.new": "Create a new session",
   "cmd.description.stop": "Stop current action",
   "cmd.description.sessions": "List sessions",
+  "cmd.description.session_number": "Select a session by number",
   "cmd.description.projects": "List projects",
+  "cmd.description.project_number": "Select a project by number",
   "cmd.description.task": "Create a scheduled task",
   "cmd.description.tasks": "List scheduled tasks",
   "cmd.description.commands": "Custom commands",
+  "cmd.description.command_number": "Execute a command by number",
+  "cmd.description.auto_confirm": "Toggle auto-confirmation for current session",
+  "cmd.description.permission": "Show pending permission request status",
   "cmd.description.exit": "Exit the bot application",
   "cmd.description.help": "Help",
   "cmd.description.agents": "List available agents",
   "cmd.description.agent_number": "Switch to agent by number",
+  "cmd.description.rename": "Rename current session via /session rename",
+  "cmd.description.opencode": "Enter OpenCode mode for this conversation",
 
   "error.load_agents": "❌ Failed to load agents list",
   "error.generic": "🔴 Something went wrong.",
@@ -137,10 +144,8 @@ export const en = {
   "openclaw.model.selected": "✅ Model selected: {model}",
   "openclaw.prompt_error": "❌ An error occurred. Please try again.",
   "openclaw.help":
-    "📖 **OpenClawCode Commands**\n\n/opencode - Enter OpenCode mode for this conversation\n/exit - Leave OpenCode mode\n/status - Show OpenCode status\n/projects - List projects\n/project <number or path> - Select or create a project\n/sessions - List sessions\n/session <number> - Select a session\n/session new or /new - Create a session\n/rename [title] - Rename the current session\n/agents and /agent <number> - List or select agents\n/models and /model <number> - List or select models\n/commands and /command <number> - Run OpenCode project commands\n/task and /tasklist - Create or manage scheduled tasks\n/stop or /abort - Abort the active task or cancel an active flow\n\nPermission replies: /1 allow once, /2 always allow, /3 reject.",
+    "📖 **OpenCode Bot Commands**\n\n/opencode - Enter OpenCode mode for this conversation\n/exit - Leave OpenCode mode\n/status - Show OpenCode status\n/stop - Stop current action or cancel active flow\n/sessions - List sessions\n/session <number> - Select a session\n/session new - Create a new session\n/session rename [title] - Rename the current session\n/projects - List projects\n/project <number> - Select a project\n/agents - List available agents\n/agent <number> - Switch to agent by number\n/commands - List custom commands\n/command <number> - Execute a custom command\n/auto_confirm [on|off] - Toggle auto-confirmation for current session\n/task - Create a scheduled task\n/tasks - List scheduled tasks\n/permission - Show pending permission request status\n/help - Show this help\n\nPermission replies: /1 allow once, /2 always allow, /3 reject.",
   "openclaw.unknown_command": "⚠️ Unknown command: /{command}\n\n{help}",
-
-  "cmd.description.rename": "Rename current session via /session rename",
 
   "cli.usage":
     "Usage:\n  opencode-bot [start] [--mode sources|installed]\n  opencode-bot status\n  opencode-bot stop\n  opencode-bot config\n\nNotes:\n  - No command defaults to `start`\n  - `--mode` is currently supported for `start` only",

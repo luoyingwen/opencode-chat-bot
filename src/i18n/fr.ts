@@ -5,15 +5,21 @@ export const fr: I18nDictionary = {
   "cmd.description.new": "Créer une nouvelle session",
   "cmd.description.stop": "Arrêter l'action en cours",
   "cmd.description.sessions": "Lister les sessions",
+  "cmd.description.session_number": "Sélectionner une session par numéro",
   "cmd.description.projects": "Lister les projets",
+  "cmd.description.project_number": "Sélectionner un projet par numéro",
   "cmd.description.task": "Créer une tâche planifiée",
   "cmd.description.tasks": "Afficher les tâches planifiées",
   "cmd.description.commands": "Commandes personnalisées",
+  "cmd.description.command_number": "Exécuter une commande par numéro",
+  "cmd.description.auto_confirm": "Activer/désactiver la confirmation automatique",
+  "cmd.description.permission": "Afficher le statut des demandes de permission",
   "cmd.description.exit": "Quitter l'application du bot",
   "cmd.description.help": "Aide",
   "cmd.description.agents": "Lister les agents disponibles",
   "cmd.description.agent_number": "Changer d'agent par numéro",
-
+  "cmd.description.rename": "Renommer la session actuelle via /session rename",
+  "cmd.description.opencode": "Entrer en mode OpenCode",
   "error.load_agents": "❌ Impossible de charger la liste des modes",
   "error.generic": "🔴 Une erreur s'est produite.",
 
@@ -115,8 +121,6 @@ export const fr: I18nDictionary = {
   "commands.execute_error": "🔴 Impossible d'exécuter la commande OpenCode.",
   "commands.hint_select": '💡 Utilisez `/command <numéro>` pour exécuter une commande, ou `/command <numéro> [args]` avec arguments.',
   "commands.invalid_number": "Entrez numéro valide ({min}-{max}).",
-
-  "cmd.description.rename": "Renommer la session actuelle via /session rename",
 
   "cli.usage":
     "Utilisation :\n  opencode-bot [start] [--mode sources|installed]\n  opencode-bot status\n  opencode-bot stop\n  opencode-bot config\n\nNotes :\n  - Sans commande, `start` est utilisé par défaut\n  - `--mode` n'est actuellement pris en charge que pour `start`",

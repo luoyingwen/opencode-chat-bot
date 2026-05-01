@@ -8,8 +8,7 @@ import { interactionManager } from "../interaction/manager.js";
 import { clearAllInteractionState } from "../interaction/cleanup.js";
 import { getAvailableAgents, getStoredAgent, selectAgent } from "../agent/manager.js";
 import { getAgentDisplayName } from "../agent/types.js";
-import { getModelSelectionLists, getStoredModel, selectModel } from "../model/manager.js";
-import type { FavoriteModel } from "../model/types.js";
+import { isAutoConfirmEnabled, setAutoConfirm } from "../permission/auto-confirm.js";
 import { stopEventListening } from "../opencode/events.js";
 import { renameManager } from "../rename/manager.js";
 import { setScheduledTaskNotificationCallback } from "../scheduled-task/runtime.js";
@@ -261,23 +260,20 @@ async function handleSlashCommand(
     case "projects":
     case "project":
     case "sessions":
-    case "session":
       return executeSharedCommand(route, command.name, command.args);
-    case "new":
-      return executeSharedCommand(route, "session", "new");
+    case "session":
+      if (command.args.trim().toLowerCase().startsWith("rename")) {
+        return handleRenameCommand(route, routeKey, command.args.trim().slice(6).trim());
+      }
+      return executeSharedCommand(route, command.name, command.args);
     case "stop":
-    case "abort":
       return handleStopCommand(route, command.args);
-    case "rename":
-      return handleRenameCommand(route, routeKey, command.args);
+    case "auto_confirm":
+      return handleAutoConfirmCommand(route, command.args);
     case "agents":
       return handleAgentListCommand(route);
     case "agent":
       return handleAgentSwitchCommand(route, command.args);
-    case "models":
-      return handleModelListCommand(route);
-    case "model":
-      return handleModelSwitchCommand(route, command.args);
     case "commands":
       return handleOpenClawCommandsCommand(route);
     case "command":
@@ -375,6 +371,25 @@ async function handleRenameCommand(
   return `${t("rename.prompt", { title: state.currentSession.title })}\n\n${t("rename.hint_abort")}`;
 }
 
+async function handleAutoConfirmCommand(route: OpenClawRoute, args: string): Promise<string> {
+  const state = await settingsConversationRuntime.get(route);
+  if (!state.currentSession) {
+    return "❌ No active session";
+  }
+
+  const arg = args.trim().toLowerCase();
+  if (arg === "on") {
+    setAutoConfirm(state.currentSession.id, true);
+    return "✅ Auto_confirm enabled";
+  } else if (arg === "off") {
+    setAutoConfirm(state.currentSession.id, false);
+    return "✅ Auto_confirm disabled";
+  } else {
+    const status = isAutoConfirmEnabled(state.currentSession.id);
+    return `Auto_confirm status: ${status ? "ON" : "OFF"}`;
+  }
+}
+
 async function handleAgentListCommand(route: OpenClawRoute): Promise<string> {
   const agents = await getAvailableAgents(route);
   if (agents.length === 0) {
@@ -409,51 +424,6 @@ async function handleAgentSwitchCommand(route: OpenClawRoute, args: string): Pro
   const selectedAgent = agents[index - 1];
   selectAgent(selectedAgent.name, route);
   return t("agent.switch.success", { name: getAgentDisplayName(selectedAgent.name) });
-}
-
-async function handleModelListCommand(route: OpenClawRoute): Promise<string> {
-  const lists = await getModelSelectionLists();
-  const lines = [t("openclaw.models.header")];
-
-  appendModelLines(lines, t("openclaw.models.favorites"), lists.favorites, 0);
-  appendModelLines(lines, t("openclaw.models.recent"), lists.recent, lists.favorites.length);
-
-  const current = getStoredModel(route);
-  lines.push(
-    "",
-    t("openclaw.models.current", { model: `${current.providerID}/${current.modelID}` }),
-  );
-  lines.push("", t("openclaw.models.select_hint"));
-  return lines.join("\n");
-}
-
-function appendModelLines(
-  lines: string[],
-  title: string,
-  models: FavoriteModel[],
-  offset: number,
-): void {
-  if (models.length === 0) {
-    return;
-  }
-
-  lines.push("", title);
-  models.forEach((model, index) => {
-    lines.push(`${offset + index + 1}. ${model.providerID}/${model.modelID}`);
-  });
-}
-
-async function handleModelSwitchCommand(route: OpenClawRoute, args: string): Promise<string> {
-  const index = Number.parseInt(args.trim(), 10);
-  const lists = await getModelSelectionLists();
-  const models = [...lists.favorites, ...lists.recent];
-  if (Number.isNaN(index) || index < 1 || index > models.length) {
-    return t("openclaw.model.invalid_index", { max: models.length });
-  }
-
-  const selected = models[index - 1];
-  selectModel({ ...selected, variant: "default" }, route);
-  return t("openclaw.model.selected", { model: `${selected.providerID}/${selected.modelID}` });
 }
 
 async function handleOpenClawCommandCommand(route: OpenClawRoute, args: string): Promise<string> {

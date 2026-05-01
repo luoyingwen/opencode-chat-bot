@@ -42,6 +42,7 @@ import {
 } from "./commands.js";
 import { isAutoConfirmEnabled, setAutoConfirm } from "../permission/auto-confirm.js";
 import { createFeishuTextPromptPlatform } from "./prompt-platform.js";
+import { getSharedCommands, getValidCommands } from "../bot/commands/definitions.js";
 
 function isUserAllowed(userId: string): boolean {
   const allowed = config.feishu.allowedUsers;
@@ -258,7 +259,7 @@ async function handleRenameCommand(chatId: string, userId: string, arg?: string)
 }
 
 async function handleHelpCommand(chatId: string, userId: string): Promise<void> {
-  const commands = getLocalizedBotCommandsFeishu();
+  const commands = getSharedCommands();
   const lines = commands.map((item) => `/${item.command} - ${item.description}`);
   const message = `📖 **Commands**\n\n${lines.join("\n\n")}\n\n_Tip: Use \`/projects\` and \`/project <number>\` to select a project, then \`/sessions\` and \`/session <number>\` to select a session._`;
   await sendFeishuMessage(chatId, userId, message);
@@ -334,29 +335,12 @@ async function handleExitCommand(chatId: string, userId: string): Promise<void> 
   await exitApplication("feishu:/exit");
 }
 
-function getLocalizedBotCommandsFeishu(): { command: string; description: string }[] {
-  return [
-    { command: "status", description: t("cmd.description.status") },
-    { command: "stop", description: t("cmd.description.stop") },
-    { command: "sessions", description: t("cmd.description.sessions") },
-    { command: "session <number>", description: "Select a session by number" },
-    { command: "session new", description: t("cmd.description.new") },
-    { command: "session rename [title]", description: t("cmd.description.rename") },
-    { command: "projects", description: t("cmd.description.projects") },
-    { command: "project <number>", description: "Select a project by number" },
-    { command: "agents", description: t("cmd.description.agents") },
-    { command: "agent <number>", description: t("cmd.description.agent_number") },
-    { command: "commands", description: t("cmd.description.commands") },
-    { command: "command <number>", description: "Execute a command by number" },
-    {
-      command: "auto_confirm [on|off]",
-      description: "Toggle auto-confirmation for current session",
-    },
-    { command: "task", description: t("cmd.description.task") },
-    { command: "tasks", description: t("cmd.description.tasks") },
-    { command: "exit", description: t("cmd.description.exit") },
-    { command: "help", description: t("cmd.description.help") },
-  ];
+function handlePermissionStatusCommand(chatId: string, userId: string): void {
+  if (hasFeishuPendingPermissionForChat(userId, chatId)) {
+    void sendFeishuMessage(chatId, userId, t("openclaw.permission_pending"));
+  } else {
+    void sendFeishuMessage(chatId, userId, t("openclaw.permission_hint"));
+  }
 }
 
 function hasActiveTextInteraction(chatId: string, userId: string): boolean {
@@ -370,26 +354,6 @@ function hasActiveTextInteraction(chatId: string, userId: string): boolean {
     isUserInTaskListFlow(userId, chatId) ||
     renameManager.isWaitingForName(routeKey)
   );
-}
-
-function getValidCommands(): string[] {
-  return [
-    "status",
-    "stop",
-    "sessions",
-    "session",
-    "projects",
-    "project",
-    "agents",
-    "agent",
-    "commands",
-    "command",
-    "auto_confirm",
-    "task",
-    "tasks",
-    "exit",
-    "help",
-  ];
 }
 
 async function handleTextMessage(chatId: string, userId: string, text: string): Promise<void> {
@@ -491,7 +455,7 @@ function processMessage(userId: string, chatId: string, text: string, _messageId
 
     if (!validCommands.includes(commandName)) {
       // Unknown command - show error with available commands
-      const commands = getLocalizedBotCommandsFeishu();
+      const commands = getSharedCommands();
       const lines = commands.map((item) => `/${item.command} - ${item.description}`);
       const message = `⚠️ **Unknown command**: /${commandName}\n\n**Available commands:**\n\n${lines.join("\n\n")}\n\n_Use /help for more details._`;
       void sendFeishuMessage(chatId, userId, message);
@@ -566,6 +530,8 @@ function processMessage(userId: string, chatId: string, text: string, _messageId
     })();
   } else if (text.startsWith("/exit")) {
     void handleExitCommand(chatId, userId);
+  } else if (text.startsWith("/permission")) {
+    void handlePermissionStatusCommand(chatId, userId);
   } else if (text.startsWith("/help") || text === "help" || text === "帮助" || text === "/帮助") {
     void handleHelpCommand(chatId, userId);
   } else {
