@@ -240,22 +240,6 @@ log("info", `Installing from tarball: ${tarballPath}`);
 }
 
 function installLink() {
-  log("bold", "Linking OpenClawCode locally...");
-  checkBuild();
-  checkOpenClaw();
-  cleanupInstallStages();
-
-  log("info", `Linking from: ${repositoryRoot}`);
-  runOpenClawInstall(["--link", repositoryRoot]);
-  cleanupInstallStages();
-
-  process.stdout.write("\n");
-  log("success", "Linked installation complete.");
-  log("warn", "Linked installs use this working tree; rebuild after source changes.");
-  enablePlugin();
-}
-
-function installLinkRelease() {
   log("bold", "Linking from release folder...");
   checkBuild();
   checkOpenClaw();
@@ -282,8 +266,8 @@ function showInfo() {
   log("success", "  npm run openclaw:install -- local");
   log("info", "  Install from an npm tarball for integration testing");
   process.stdout.write("\n");
-  log("success", "  npm run openclaw:install -- link-release");
-  log("info", "  Link release folder (no scripts, passes security check)");
+  log("success", "  npm run openclaw:install -- link");
+  log("info", "  Link release folder (passes security check)");
   process.stdout.write("\n");
   log("bold", "Installing from npm after publish:");
   log("success", `  openclaw plugins install ${packageName}`);
@@ -303,12 +287,11 @@ function showHelp() {
   process.stdout.write("\n");
   process.stdout.write("Usage: npm run openclaw:install -- [command]\n\n");
   process.stdout.write("Commands:\n");
-  process.stdout.write("  info          Show installation info (default)\n");
-  process.stdout.write("  local         Install locally from a packed tarball\n");
-  process.stdout.write("  link          Link this working tree (may fail security check)\n");
-  process.stdout.write("  link-release  Link release folder (recommended)\n");
-  process.stdout.write("  publish       Dry-run npm package contents\n");
-  process.stdout.write("  help          Show this help\n");
+  process.stdout.write("  info       Show installation info (default)\n");
+  process.stdout.write("  local      Install locally from a packed tarball\n");
+  process.stdout.write("  link       Link release folder (passes security check)\n");
+  process.stdout.write("  publish    Dry-run npm package contents\n");
+  process.stdout.write("  help       Show this help\n");
 }
 
 function main() {
@@ -322,9 +305,6 @@ function main() {
       break;
     case "link":
       installLink();
-      break;
-    case "link-release":
-      installLinkRelease();
       break;
     case "publish":
       dryRunPublish();
