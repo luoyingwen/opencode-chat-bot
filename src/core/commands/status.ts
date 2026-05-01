@@ -35,7 +35,11 @@ export class StatusCommandHandler implements CommandHandler {
         lines.push(`**Agent:** ${getAgentDisplayName(currentAgent)}`);
       }
 
-      lines.push(`**Model:** ${formatModelForDisplay(currentModel.providerID, currentModel.modelID)}`);
+      if (currentModel.providerID && currentModel.modelID) {
+        lines.push(`**Model:** ${formatModelForDisplay(currentModel.providerID, currentModel.modelID)}`);
+      } else {
+        lines.push("**Model:** Not configured");
+      }
 
       const state = await context.runtime.get(context.route);
       lines.push("");
