@@ -2,6 +2,7 @@
 
 while true; do
     echo "[$(date '+%Y-%m-%d %H:%M:%S')] Building..."
+    npm install
     npm run build
     if [ $? -ne 0 ]; then
         echo "[$(date '+%Y-%m-%d %H:%M:%S')] Build failed. Waiting 15 seconds before retry..."
