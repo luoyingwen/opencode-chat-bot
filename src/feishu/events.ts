@@ -3,6 +3,7 @@ import { buildConversationRouteKey } from "../core/runtime/route-key.js";
 import { formatToolInfo } from "../summary/formatter.js";
 import type { ToolInfo, TokensInfo, SessionRetryInfo } from "../summary/aggregator.js";
 import type { PermissionRequest } from "../permission/types.js";
+import type { Question } from "../question/types.js";
 import { logger } from "../utils/logger.js";
 import { t } from "../i18n/index.js";
 import { PlatformEventRouter } from "../core/events/platform-router.js";
@@ -14,6 +15,7 @@ import {
   hasPendingTextPermission,
   handlePermissionReply,
 } from "../core/text-interactions/permission.js";
+import { questionManager } from "../question/manager.js";
 
 interface FeishuResponseTarget extends PlatformEventTarget {
   userId: string;
@@ -216,6 +218,51 @@ async function handleFeishuPermission(request: PermissionRequest): Promise<void>
   await sendMessage(target.chatId, target.userId, message);
 }
 
+function formatFeishuQuestionMessage(questions: Question[]): string {
+  const lines: string[] = [];
+  for (let i = 0; i < questions.length; i++) {
+    const q = questions[i];
+    const headerPrefix = q.header ? `**${q.header}**` : `**Question ${i + 1}**`;
+    lines.push(`${headerPrefix}: ${q.question}`);
+    for (let j = 0; j < q.options.length; j++) {
+      const opt = q.options[j];
+      const marker = q.multiple ? `[${j + 1}]` : `${j + 1}`;
+      lines.push(`  ${marker}. **${opt.label}** - ${opt.description}`);
+    }
+    if (q.multiple) {
+      lines.push(`  _Select multiple options by replying with numbers (e.g., "1,2,3")_`);
+    }
+    lines.push("");
+  }
+  return lines.join("\n");
+}
+
+function handleFeishuQuestion(questions: Question[], requestID: string): void {
+  const target = activeTarget;
+  if (!target) {
+    logger.debug(`[Feishu] handleQuestion: no active target, skipping`);
+    return;
+  }
+
+  logger.info(`[Feishu] Question received: ${questions.length} questions, requestID=${requestID}`);
+
+  questionManager.startQuestions(questions, requestID);
+
+  const message = formatFeishuQuestionMessage(questions);
+  void sendMessage(target.chatId, target.userId, message);
+}
+
+function handleFeishuQuestionError(): void {
+  const target = activeTarget;
+  if (!target) {
+    logger.debug(`[Feishu] handleQuestionError: no active target, skipping`);
+    return;
+  }
+
+  logger.info(`[Feishu] Question tool error, clearing active poll`);
+  questionManager.clear();
+}
+
 // Create platform router
 let eventRouter: PlatformEventRouter | null = null;
 
@@ -235,6 +282,12 @@ export function installFeishuEventRouting(): void {
       onSessionIdle: handleFeishuIdle,
       onPermission: (request: PermissionRequest) => {
         void handleFeishuPermission(request);
+      },
+      onQuestion: (questions: Question[], requestID: string) => {
+        handleFeishuQuestion(questions, requestID);
+      },
+      onQuestionError: () => {
+        handleFeishuQuestionError();
       },
     },
   });

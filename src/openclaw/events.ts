@@ -1,4 +1,5 @@
 import type { PermissionRequest } from "../permission/types.js";
+import type { Question } from "../question/types.js";
 import type { OpenClawRoute } from "./types.js";
 import { getOpenClawRouteKey } from "./route.js";
 import { sendOpenClawMessage } from "./client.js";
@@ -61,6 +62,12 @@ export function installOpenClawEventRouting(): void {
         const target = activeTarget;
         if (!target) return;
         void sharedHandlers.handlePermission(request, target.routeKey, target.directory);
+      },
+      onQuestion: (questions: Question[], requestID: string) => {
+        sharedHandlers.handleQuestion(questions, requestID);
+      },
+      onQuestionError: () => {
+        sharedHandlers.handleQuestionError();
       },
     },
   });

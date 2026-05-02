@@ -4,6 +4,8 @@ import { formatToolInfo } from "../../summary/formatter.js";
 import type { ToolInfo, SessionRetryInfo } from "../../summary/aggregator.js";
 import type { PermissionRequest } from "../../permission/types.js";
 import type { PlatformEventTarget } from "./types.js";
+import type { Question } from "../../question/types.js";
+import { questionManager } from "../../question/manager.js";
 import {
   formatTextPermissionMessage,
   getPermissionEmoji,
@@ -165,6 +167,51 @@ export function createSharedEventHandlers<TTarget extends PlatformEventTarget>(
     await config.sendMessage(target, message);
   };
 
+  const formatQuestionMessage = (questions: Question[]): string => {
+    const lines: string[] = [];
+    for (let i = 0; i < questions.length; i++) {
+      const q = questions[i];
+      const headerPrefix = q.header ? `**${q.header}**` : `**Question ${i + 1}**`;
+      lines.push(`${headerPrefix}: ${q.question}`);
+      for (let j = 0; j < q.options.length; j++) {
+        const opt = q.options[j];
+        const marker = q.multiple ? `[${j + 1}]` : `${j + 1}`;
+        lines.push(`  ${marker}. **${opt.label}** - ${opt.description}`);
+      }
+      if (q.multiple) {
+        lines.push(`  _Select multiple options by replying with numbers (e.g., "1,2,3")_`);
+      }
+      lines.push("");
+    }
+    return lines.join("\n");
+  };
+
+  const handleQuestion = (questions: Question[], requestID: string): void => {
+    const target = config.getActiveTarget();
+    if (!target) {
+      logger.debug(`[${config.platformName}] handleQuestion: no active target, skipping`);
+      return;
+    }
+
+    logger.info(`[${config.platformName}] Question received: ${questions.length} questions, requestID=${requestID}`);
+
+    questionManager.startQuestions(questions, requestID);
+
+    const message = formatQuestionMessage(questions);
+    void config.sendMessage(target, message);
+  };
+
+  const handleQuestionError = (): void => {
+    const target = config.getActiveTarget();
+    if (!target) {
+      logger.debug(`[${config.platformName}] handleQuestionError: no active target, skipping`);
+      return;
+    }
+
+    logger.info(`[${config.platformName}] Question tool error, clearing active poll`);
+    questionManager.clear();
+  };
+
   return {
     handleComplete,
     handleTool,
@@ -174,5 +221,7 @@ export function createSharedEventHandlers<TTarget extends PlatformEventTarget>(
     handleSessionRetry,
     handleIdle,
     handlePermission,
+    handleQuestion,
+    handleQuestionError,
   };
 }

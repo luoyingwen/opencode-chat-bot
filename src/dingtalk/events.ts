@@ -2,6 +2,7 @@ import type { DingTalkClient } from "./client.js";
 import { buildConversationRouteKey } from "../core/runtime/route-key.js";
 import { formatForDingTalk } from "./formatter.js";
 import type { PermissionRequest } from "../permission/types.js";
+import type { Question } from "../question/types.js";
 import { logger } from "../utils/logger.js";
 import { PlatformEventRouter } from "../core/events/platform-router.js";
 import { createSharedEventHandlers } from "../core/events/shared-handlers.js";
@@ -141,6 +142,12 @@ export function installDingTalkEventRouting(): void {
         const target = activeTarget;
         if (!target) return;
         void sharedHandlers.handlePermission(request, target.routeKey, target.directory);
+      },
+      onQuestion: (questions: Question[], requestID: string) => {
+        sharedHandlers.handleQuestion(questions, requestID);
+      },
+      onQuestionError: () => {
+        sharedHandlers.handleQuestionError();
       },
     },
   });

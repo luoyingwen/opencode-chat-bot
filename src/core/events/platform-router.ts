@@ -2,6 +2,7 @@ import { summaryAggregator } from "../../summary/aggregator.js";
 import type { OriginalCallbacks } from "./types.js";
 import { createEmptyOriginalCallbacks } from "./types.js";
 import { logger } from "../../utils/logger.js";
+import type { Question } from "../../question/types.js";
 
 export interface PlatformRouterConfig {
   platformName: string;
@@ -15,6 +16,8 @@ export interface PlatformRouterConfig {
     onSessionRetry: (retryInfo: import("../../summary/aggregator.js").SessionRetryInfo) => void;
     onSessionIdle: (sessionId: string) => void;
     onPermission: (request: import("../../permission/types.js").PermissionRequest) => void;
+    onQuestion: (questions: Question[], requestID: string) => void;
+    onQuestionError: () => void;
   };
 }
 
@@ -42,6 +45,8 @@ export class PlatformEventRouter {
     this.patchCallback("setOnSessionRetry", "onSessionRetry", this.config.handlers.onSessionRetry);
     this.patchCallback("setOnSessionIdle", "onSessionIdle", this.config.handlers.onSessionIdle);
     this.patchCallback("setOnPermission", "onPermission", this.config.handlers.onPermission);
+    this.patchCallback("setOnQuestion", "onQuestion", this.config.handlers.onQuestion);
+    this.patchCallback("setOnQuestionError", "onQuestionError", this.config.handlers.onQuestionError);
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const aggregator = summaryAggregator as any;
@@ -53,6 +58,8 @@ export class PlatformEventRouter {
     aggregator.setOnSessionRetry(null);
     aggregator.setOnSessionIdle(null);
     aggregator.setOnPermission(null);
+    aggregator.setOnQuestion(null);
+    aggregator.setOnQuestionError(null);
 
     logger.info(`[${this.config.platformName}] Event routing callbacks installed`);
   }
