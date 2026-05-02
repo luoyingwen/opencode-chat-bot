@@ -110,6 +110,7 @@ describe("core commands", () => {
       channelId: "test",
       accountId: "user-1",
     });
+    expect(mocked.isAutoConfirmEnabledMock).toHaveBeenCalledWith("session-1");
   });
 
   it("formats project list with active project marker", async () => {

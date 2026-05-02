@@ -2,6 +2,7 @@ import { opencodeClient } from "../../opencode/client.js";
 import { isTextInteractionCancelInput } from "./cancel.js";
 import { t } from "../../i18n/index.js";
 import { renameManager } from "../../rename/manager.js";
+import { interactionManager } from "../../interaction/manager.js";
 import { updateConversationState } from "../../settings/manager.js";
 import { logger } from "../../utils/logger.js";
 
@@ -9,6 +10,12 @@ export interface RenameSessionInfo {
   sessionId: string;
   directory: string;
   currentTitle: string;
+}
+
+export interface CurrentSessionInfo {
+  id: string;
+  title: string;
+  directory: string;
 }
 
 export async function renameSessionTitle(
@@ -63,4 +70,43 @@ export async function handleRenameTextInput(flowKey: string, text: string): Prom
   }
 
   return renameSessionTitle(flowKey, sessionInfo, text);
+}
+
+export async function handleRenameFlowSetup(
+  routeKey: string,
+  currentSession: CurrentSessionInfo,
+  userId: string,
+  titleArg?: string,
+): Promise<string> {
+  const nextTitle = titleArg?.trim();
+  
+  if (nextTitle) {
+    return renameSessionTitle(
+      routeKey,
+      {
+        sessionId: currentSession.id,
+        directory: currentSession.directory,
+        currentTitle: currentSession.title,
+      },
+      nextTitle,
+    );
+  }
+
+  renameManager.startWaiting(
+    currentSession.id,
+    currentSession.directory,
+    currentSession.title,
+    routeKey,
+  );
+
+  interactionManager.start({
+    kind: "rename",
+    expectedInput: "text",
+    metadata: {
+      sessionId: currentSession.id,
+      userId: userId,
+    },
+  });
+
+  return `${t("rename.prompt", { title: currentSession.title })}\n\n💡 ${t("rename.hint_abort")}`;
 }

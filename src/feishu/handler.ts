@@ -1,11 +1,16 @@
 import { config } from "../config.js";
 import { executeOpenCodeCommand } from "../core/commands/index.js";
+import {
+  executeAgentListCommand,
+  executeAgentSwitchCommand,
+  executeAutoConfirmCommand,
+} from "../core/commands/shared-handlers.js";
 import { executeTextPrompt } from "../core/execution/text-prompt.js";
 import { defaultOpenCodeGateway } from "../core/opencode/default-gateway.js";
 import { buildConversationRouteKey } from "../core/runtime/route-key.js";
 import { settingsConversationRuntime } from "../core/runtime/settings-runtime.js";
 import type { ConversationRoute } from "../core/runtime/types.js";
-import { handleRenameTextInput, renameSessionTitle } from "../core/text-interactions/rename.js";
+import { handleRenameTextInput, handleRenameFlowSetup } from "../core/text-interactions/rename.js";
 import { initFeishuClient, getFeishuClient } from "./client.js";
 import {
   setFeishuClient,
@@ -14,12 +19,6 @@ import {
   handleFeishuPermissionReply,
   hasFeishuPendingPermissionForChat,
 } from "./events.js";
-import {
-  getStoredAgent,
-  getAvailableAgents,
-  selectAgent,
-} from "../agent/manager.js";
-import { getAgentDisplayName } from "../agent/types.js";
 import { summaryAggregator } from "../summary/aggregator.js";
 import { clearAllInteractionState } from "../interaction/cleanup.js";
 import { interactionManager } from "../interaction/manager.js";
@@ -40,7 +39,6 @@ import {
   handleCommandsCommand,
   handleCommandByIndex,
 } from "./commands.js";
-import { isAutoConfirmEnabled, setAutoConfirm } from "../permission/auto-confirm.js";
 import { createFeishuTextPromptPlatform } from "./prompt-platform.js";
 import { getSharedCommands, getValidCommands } from "../bot/commands/definitions.js";
 
@@ -215,43 +213,13 @@ async function handleRenameCommand(chatId: string, userId: string, arg?: string)
       accountId: userId,
       conversationId: chatId,
     });
-    const nextTitle = arg?.trim();
-    if (nextTitle) {
-      const message = await renameSessionTitle(
-        routeKey,
-        {
-          sessionId: currentSession.id,
-          directory: currentSession.directory,
-          currentTitle: currentSession.title,
-        },
-        nextTitle,
-      );
-      await sendFeishuMessage(chatId, userId, message);
-      return;
-    }
 
-    // Start rename flow and set up state management
-    renameManager.startWaiting(
-      currentSession.id,
-      currentSession.directory,
-      currentSession.title,
-      routeKey,
-    );
-    interactionManager.start({
-      kind: "rename",
-      expectedInput: "text",
-      metadata: {
-        sessionId: currentSession.id,
-        userId: userId,
-      },
-    });
-
-    // Send prompt message with abort hint
-    const message =
-      t("rename.prompt", { title: currentSession.title }) + "\n\n" + "💡 " + t("rename.hint_abort");
+    const message = await handleRenameFlowSetup(routeKey, currentSession, userId, arg);
     await sendFeishuMessage(chatId, userId, message);
 
-    logger.info(`[Feishu] Waiting for new title for session: ${currentSession.id}`);
+    if (!arg?.trim()) {
+      logger.info(`[Feishu] Waiting for new title for session: ${currentSession.id}`);
+    }
   } catch (err) {
     logger.error("[Feishu] Error in rename command:", err);
     await sendFeishuMessage(chatId, userId, t("rename.error"));
@@ -266,68 +234,15 @@ async function handleHelpCommand(chatId: string, userId: string): Promise<void> 
 }
 
 async function handleAgentListCommand(chatId: string, userId: string): Promise<void> {
-  try {
-    const route = getFeishuRoute(chatId, userId);
-    const agents = await getAvailableAgents(route);
-
-    if (agents.length === 0) {
-      await sendFeishuMessage(chatId, userId, t("agent.list.empty"));
-      return;
-    }
-
-    const currentAgent = getStoredAgent(route);
-    const list = agents
-      .map((agent, index) => {
-        const marker = agent.name === currentAgent ? " ✅" : "";
-        return `${index + 1}. ${getAgentDisplayName(agent.name)}${marker}`;
-      })
-      .join("\n");
-
-    const message = t("agent.list.title", {
-      current: getAgentDisplayName(currentAgent),
-      list,
-    });
-
-    await sendFeishuMessage(chatId, userId, message);
-  } catch (err) {
-    logger.error("[Feishu] Error listing agents:", err);
-    await sendFeishuMessage(chatId, userId, t("error.load_agents"));
-  }
+  const route = getFeishuRoute(chatId, userId);
+  const message = await executeAgentListCommand(route);
+  await sendFeishuMessage(chatId, userId, message);
 }
 
-async function handleAgentSwitchCommand(
-  chatId: string,
-  userId: string,
-  arg: string,
-): Promise<void> {
-  const index = parseInt(arg, 10);
-
-  if (isNaN(index) || index < 1) {
-    await sendFeishuMessage(chatId, userId, t("agent.switch.invalid_index"));
-    return;
-  }
-
-  try {
-    const route = getFeishuRoute(chatId, userId);
-    const agents = await getAvailableAgents(route);
-
-    if (index > agents.length) {
-      await sendFeishuMessage(chatId, userId, t("agent.switch.invalid_index"));
-      return;
-    }
-
-    const selectedAgent = agents[index - 1];
-    selectAgent(selectedAgent.name, route);
-
-    await sendFeishuMessage(
-      chatId,
-      userId,
-      t("agent.switch.success", { name: getAgentDisplayName(selectedAgent.name) }),
-    );
-  } catch (err) {
-    logger.error("[Feishu] Error switching agent:", err);
-    await sendFeishuMessage(chatId, userId, t("agent.switch.error"));
-  }
+async function handleAgentSwitchCommand(chatId: string, userId: string, arg: string): Promise<void> {
+  const route = getFeishuRoute(chatId, userId);
+  const message = await executeAgentSwitchCommand(route, arg);
+  await sendFeishuMessage(chatId, userId, message);
 }
 
 async function handleExitCommand(chatId: string, userId: string): Promise<void> {
@@ -415,7 +330,7 @@ async function handleTextMessage(chatId: string, userId: string, text: string): 
   }
 }
 
-function processMessage(userId: string, chatId: string, text: string, _messageId: string): void {
+async function processMessage(userId: string, chatId: string, text: string, _messageId: string): Promise<void> {
   if (!isUserAllowed(userId)) {
     logger.warn(`[Feishu] Message from unauthorized user: ${userId}`);
     return;
@@ -433,7 +348,7 @@ function processMessage(userId: string, chatId: string, text: string, _messageId
         "/3": "reject",
       };
       const reply = replyMap[text];
-      const handled = handleFeishuPermissionReply(userId, chatId, reply);
+      const handled = await handleFeishuPermissionReply(userId, chatId, reply);
       if (handled) {
         return;
       }
@@ -513,20 +428,9 @@ function processMessage(userId: string, chatId: string, text: string, _messageId
   } else if (text.startsWith("/auto_confirm")) {
     const arg = text.slice(13).trim();
     void (async () => {
-      const { currentSession } = await getFeishuState(chatId, userId);
-
-      if (!currentSession) {
-        await sendFeishuMessage(chatId, userId, "❌ No active session");
-      } else if (arg === "on") {
-        setAutoConfirm(currentSession.id, true);
-        await sendFeishuMessage(chatId, userId, "✅ Auto_confirm enabled");
-      } else if (arg === "off") {
-        setAutoConfirm(currentSession.id, false);
-        await sendFeishuMessage(chatId, userId, "✅ Auto_confirm disabled");
-      } else {
-        const status = isAutoConfirmEnabled(currentSession.id);
-        await sendFeishuMessage(chatId, userId, `Auto_confirm status: ${status ? "ON" : "OFF"}`);
-      }
+      const route = getFeishuRoute(chatId, userId);
+      const message = await executeAutoConfirmCommand(route, arg);
+      await sendFeishuMessage(chatId, userId, message);
     })();
   } else if (text.startsWith("/exit")) {
     void handleExitCommand(chatId, userId);

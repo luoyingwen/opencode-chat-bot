@@ -1,14 +1,16 @@
 import type { OpenClawPluginApi } from "openclaw/plugin-sdk/core";
 import { executeOpenCodeCommand } from "../core/commands/index.js";
+import {
+  executeAgentListCommand,
+  executeAgentSwitchCommand,
+  executeAutoConfirmCommand,
+} from "../core/commands/shared-handlers.js";
 import { executeTextPrompt } from "../core/execution/text-prompt.js";
 import { defaultOpenCodeGateway } from "../core/opencode/default-gateway.js";
 import { settingsConversationRuntime } from "../core/runtime/settings-runtime.js";
-import { handleRenameTextInput, renameSessionTitle } from "../core/text-interactions/rename.js";
+import { handleRenameTextInput, handleRenameFlowSetup } from "../core/text-interactions/rename.js";
 import { interactionManager } from "../interaction/manager.js";
 import { clearAllInteractionState } from "../interaction/cleanup.js";
-import { getAvailableAgents, getStoredAgent, selectAgent } from "../agent/manager.js";
-import { getAgentDisplayName } from "../agent/types.js";
-import { isAutoConfirmEnabled, setAutoConfirm } from "../permission/auto-confirm.js";
 import { stopEventListening } from "../opencode/events.js";
 import { renameManager } from "../rename/manager.js";
 import { setScheduledTaskNotificationCallback } from "../scheduled-task/runtime.js";
@@ -343,87 +345,19 @@ async function handleRenameCommand(
     return t("rename.no_session");
   }
 
-  const nextTitle = args.trim();
-  if (nextTitle) {
-    return renameSessionTitle(
-      routeKey,
-      {
-        sessionId: state.currentSession.id,
-        directory: state.currentSession.directory,
-        currentTitle: state.currentSession.title,
-      },
-      nextTitle,
-    );
-  }
-
-  renameManager.startWaiting(
-    state.currentSession.id,
-    state.currentSession.directory,
-    state.currentSession.title,
-    routeKey,
-  );
-  interactionManager.start({
-    kind: "rename",
-    expectedInput: "text",
-    metadata: { sessionId: state.currentSession.id, userId: route.accountId },
-  });
-
-  return `${t("rename.prompt", { title: state.currentSession.title })}\n\n${t("rename.hint_abort")}`;
+  return handleRenameFlowSetup(routeKey, state.currentSession, route.accountId, args);
 }
 
 async function handleAutoConfirmCommand(route: OpenClawRoute, args: string): Promise<string> {
-  const state = await settingsConversationRuntime.get(route);
-  if (!state.currentSession) {
-    return "❌ No active session";
-  }
-
-  const arg = args.trim().toLowerCase();
-  if (arg === "on") {
-    setAutoConfirm(state.currentSession.id, true);
-    return "✅ Auto_confirm enabled";
-  } else if (arg === "off") {
-    setAutoConfirm(state.currentSession.id, false);
-    return "✅ Auto_confirm disabled";
-  } else {
-    const status = isAutoConfirmEnabled(state.currentSession.id);
-    return `Auto_confirm status: ${status ? "ON" : "OFF"}`;
-  }
+  return executeAutoConfirmCommand(route, args);
 }
 
 async function handleAgentListCommand(route: OpenClawRoute): Promise<string> {
-  const agents = await getAvailableAgents(route);
-  if (agents.length === 0) {
-    return t("agent.list.empty");
-  }
-
-  const currentAgent = getStoredAgent(route);
-  const list = agents
-    .map((agent, index) => {
-      const marker = agent.name === currentAgent ? " ✅" : "";
-      return `${index + 1}. ${getAgentDisplayName(agent.name)}${marker}`;
-    })
-    .join("\n");
-
-  return t("agent.list.title", {
-    current: getAgentDisplayName(currentAgent),
-    list,
-  });
+  return executeAgentListCommand(route);
 }
 
 async function handleAgentSwitchCommand(route: OpenClawRoute, args: string): Promise<string> {
-  const index = Number.parseInt(args.trim(), 10);
-  if (Number.isNaN(index) || index < 1) {
-    return t("agent.switch.invalid_index");
-  }
-
-  const agents = await getAvailableAgents(route);
-  if (index > agents.length) {
-    return t("agent.switch.invalid_index");
-  }
-
-  const selectedAgent = agents[index - 1];
-  selectAgent(selectedAgent.name, route);
-  return t("agent.switch.success", { name: getAgentDisplayName(selectedAgent.name) });
+  return executeAgentSwitchCommand(route, args);
 }
 
 async function handleOpenClawCommandCommand(route: OpenClawRoute, args: string): Promise<string> {

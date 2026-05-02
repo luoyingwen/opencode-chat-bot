@@ -44,3 +44,7 @@ export function getAutoConfirmSessions(): string[] {
     .filter(([, enabled]) => enabled)
     .map(([sessionId]) => sessionId);
 }
+
+export function __resetAutoConfirmForTests(): void {
+  autoConfirmState.clear();
+}
