@@ -116,25 +116,9 @@ export const config = {
   files: {
     maxFileSizeKb: parseInt(getEnvVar("CODE_FILE_MAX_SIZE_KB", false) || "100", 10),
   },
-  open: {
-    browserRoots: getEnvVar("OPEN_BROWSER_ROOTS", false),
-  },
-  stt: {
-    apiUrl: getEnvVar("STT_API_URL", false),
-    apiKey: getEnvVar("STT_API_KEY", false),
-    model: getEnvVar("STT_MODEL", false) || "whisper-large-v3-turbo",
-    language: getEnvVar("STT_LANGUAGE", false),
-  },
-  tts: {
-    apiUrl: getEnvVar("TTS_API_URL", false),
-    apiKey: getEnvVar("TTS_API_KEY", false),
-    model: getEnvVar("TTS_MODEL", false) || "gpt-4o-mini-tts",
-    voice: getEnvVar("TTS_VOICE", false) || "alloy",
-  },
   dingtalk: {
     appKey: getEnvVar("DINGTALK_APP_KEY", false),
     appSecret: getEnvVar("DINGTALK_APP_SECRET", false),
-    agentId: getEnvVar("DINGTALK_AGENT_ID", false),
     allowedUserId: getEnvVar("DINGTALK_ALLOWED_USER_ID", false),
     debug: getOptionalBooleanEnvVar("DINGTALK_DEBUG", false),
   },
@@ -143,7 +127,6 @@ export const config = {
     appSecret: getEnvVar("FEISHU_APP_SECRET", false),
     domain: getEnvVar("FEISHU_DOMAIN", false) || "feishu",
     allowedUsers: getEnvVar("FEISHU_ALLOWED_USERS", false),
-    streamEnabled: getOptionalBooleanEnvVar("FEISHU_STREAM_ENABLED", true),
   },
   openclaw: {
     enabled: getOptionalBooleanEnvVar("OPENCLAW_ENABLED", false),

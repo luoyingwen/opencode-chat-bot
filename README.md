@@ -337,14 +337,12 @@ When installed via npm, the configuration wizard handles the initial setup. The 
 | ------------------------------ | ---------------------------------------------------------------------------------- | :------: | ------------------------ |
 | `DINGTALK_APP_KEY`             | DingTalk App Key                                                                   |   No\*   | —                        |
 | `DINGTALK_APP_SECRET`          | DingTalk App Secret                                                                |   No\*   | —                        |
-| `DINGTALK_AGENT_ID`            | DingTalk Agent ID                                                                  |    No    | —                        |
 | `DINGTALK_ALLOWED_USER_ID`     | Allowed DingTalk staff ID                                                          |    No    | —                        |
 | `DINGTALK_DEBUG`               | Enable DingTalk SDK debug logs                                                     |    No    | `false`                  |
 | `FEISHU_APP_ID`                | Feishu App ID                                                                      |   No\*   | —                        |
 | `FEISHU_APP_SECRET`            | Feishu App Secret                                                                  |   No\*   | —                        |
 | `FEISHU_DOMAIN`                | Feishu API domain (`feishu` or compatible SDK domain)                              |    No    | `feishu`                 |
 | `FEISHU_ALLOWED_USERS`         | Comma-separated allowed Feishu user IDs                                            |    No    | —                        |
-| `FEISHU_STREAM_ENABLED`        | Enable Feishu stream mode                                                          |    No    | `true`                   |
 | `OPENCODE_API_URL`             | OpenCode server URL                                                                |    No    | `http://localhost:4096`  |
 | `OPENCODE_SERVER_USERNAME`     | Server auth username                                                               |    No    | `opencode`               |
 | `OPENCODE_SERVER_PASSWORD`     | Server auth password                                                               |    No    | —                        |
@@ -353,7 +351,6 @@ When installed via npm, the configuration wizard handles the initial setup. The 
 | `BOT_LOCALE`                   | Bot UI language (e.g. `en`, `de`, `es`, `ru`, `zh`, `zh-TW`)                       |    No    | `en`                     |
 | `SESSIONS_LIST_LIMIT`          | Sessions per page in `/sessions`                                                   |    No    | `10`                     |
 | `PROJECTS_LIST_LIMIT`          | Projects per page in `/projects`                                                   |    No    | `10`                     |
-| `OPEN_BROWSER_ROOTS`           | Comma-separated paths `/open` is allowed to browse (supports `~`)                  |    No    | `~` (home directory)     |
 | `COMMANDS_LIST_LIMIT`          | Commands per page in `/commands`                                                   |    No    | `10`                     |
 | `TASK_LIMIT`                   | Maximum scheduled tasks at once                                                    |    No    | `10`                     |
 | `BASH_TOOL_DISPLAY_MAX_LENGTH` | Max displayed length for bash tool commands (truncated if longer)                  |    No    | `128`                    |
@@ -363,14 +360,6 @@ When installed via npm, the configuration wizard handles the initial setup. The 
 | `RESPONSE_STREAM_THROTTLE_MS`  | Stream edit throttle (ms) for updates                                              |    No    | `500`                    |
 | `MESSAGE_FORMAT_MODE`          | Assistant reply formatting: `markdown` (MarkdownV2) or `raw`                       |    No    | `markdown`               |
 | `CODE_FILE_MAX_SIZE_KB`        | Max file size (KB) to send as document                                             |    No    | `100`                    |
-| `STT_API_URL`                  | Whisper-compatible API base URL (enables voice transcription)                      |    No    | —                        |
-| `STT_API_KEY`                  | API key for STT provider                                                           |    No    | —                        |
-| `STT_MODEL`                    | STT model name                                                                     |    No    | `whisper-large-v3-turbo` |
-| `STT_LANGUAGE`                 | Optional language hint for STT                                                     |    No    | —                        |
-| `TTS_API_URL`                  | TTS API base URL                                                                   |    No    | —                        |
-| `TTS_API_KEY`                  | TTS API key                                                                        |    No    | —                        |
-| `TTS_MODEL`                    | TTS model name passed to `/audio/speech`                                           |    No    | `gpt-4o-mini-tts`        |
-| `TTS_VOICE`                    | OpenAI-compatible TTS voice name                                                   |    No    | `alloy`                  |
 | `OPENCLAW_ENABLED`             | Enable OpenClaw adapter from environment fallback                                  |    No    | `false`                  |
 | `OPENCLAW_CHANNELS`            | Comma-separated OpenClaw channel filter                                            |    No    | —                        |
 | `OPENCLAW_ACCOUNT_IDS`         | Comma-separated OpenClaw account filter                                            |    No    | —                        |
@@ -383,35 +372,6 @@ When installed via npm, the configuration wizard handles the initial setup. The 
 > **Keep your `.env` file private.** It contains your bot tokens. Never commit it to version control.
 
 Logs are written to `./logs` when running from sources and to the runtime config directory `logs/` folder in `installed` mode. Log rotation depends on runtime mode: `sources` creates one file per bot launch, while `installed` appends to one file per day. Old log files are removed according to `LOG_RETENTION`.
-
-### STT and TTS Client Settings (Optional)
-
-The repository includes Whisper-compatible STT and OpenAI-compatible TTS client modules. Configure them with `STT_*` and `TTS_*` variables when using features that call those clients.
-
-Current DingTalk and Feishu message handlers do not process voice/audio attachments, so STT is not exposed as an end-user chat command in those platforms yet.
-
-TTS configuration example:
-
-```env
-TTS_API_URL=https://api.openai.com/v1
-TTS_API_KEY=your-tts-api-key
-TTS_MODEL=gpt-4o-mini-tts
-TTS_VOICE=alloy
-```
-
-Supported provider examples (Whisper-compatible):
-
-- **OpenAI**
-  - `STT_API_URL=https://api.openai.com/v1`
-  - `STT_MODEL=whisper-1`
-- **Groq**
-  - `STT_API_URL=https://api.groq.com/openai/v1`
-  - `STT_MODEL=whisper-large-v3-turbo`
-- **Together**
-  - `STT_API_URL=https://api.together.xyz/v1`
-  - `STT_MODEL=openai/whisper-large-v3`
-
-If STT variables are not set, transcription client calls are disabled.
 
 ### Model Configuration
 

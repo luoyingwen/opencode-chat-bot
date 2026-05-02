@@ -49,7 +49,6 @@ No public inbound ports are required for normal usage.
 ### Task handling
 
 - Send text prompts to OpenCode
-- Accept voice/audio messages, transcribe via Whisper-compatible STT API, and forward recognized text as prompts
 - Interrupt current task (ESC equivalent)
 - Handle OpenCode questions with inline options and custom text answers
 - Send selected/custom answers back to OpenCode (`question.reply`)
@@ -87,8 +86,6 @@ No public inbound ports are required for normal usage.
 - Configurable bot locale
 - Configurable visibility for service messages (thinking/tool calls)
 - Configurable max code file size in KB (default: 100)
-- Optional STT settings for voice transcription (`STT_API_URL`, `STT_API_KEY`, `STT_MODEL`, `STT_LANGUAGE`)
-- Optional TTS settings for global audio replies (`TTS_API_URL`, `TTS_API_KEY`, `TTS_MODEL`, `TTS_VOICE`)
 
 ## Current Product Scope
 
@@ -101,7 +98,6 @@ Current command set:
 - `/abort` - stop the current task
 - `/sessions` - show and switch recent sessions
 - `/projects` - show and switch projects
-- `/tts` - toggle global audio replies
 - `/task` - create a scheduled task
 - `/tasklist` - browse and delete scheduled tasks
 - `/session rename [title]` - rename current session
@@ -112,7 +108,7 @@ Current command set:
 
 Model, agent, variant, and context actions are available from the persistent bottom keyboard.
 
-Text messages (non-commands) are treated as prompts for OpenCode only when no blocking interaction is active. Voice/audio messages are transcribed and then sent as prompts when STT is configured. When `/tts` is enabled globally, completed assistant replies also include a generated audio file if TTS is configured.
+Text messages (non-commands) are treated as prompts for OpenCode only when no blocking interaction is active.
 
 OpenClaw support is exposed through the OpenClaw plugin entrypoint. OpenClaw conversations use `/opencode` to enter OpenCode intercept mode and `/exit` to leave it; once active, commands and normal text reuse the same shared execution, interaction, and state modules as DingTalk and Feishu.
 
@@ -153,8 +149,8 @@ Model picker behavior:
 - [x] Image attachments support (send photos/screenshots from supported chat platforms to OpenCode)
 - [x] PDF attachments support (send documents from supported chat platforms to OpenCode)
 - [x] Text file attachments support (send code/config/log files from supported chat platforms to OpenCode)
-- [x] Voice/audio transcription via Whisper-compatible APIs (OpenAI/Groq/Together and compatible providers)
-- [x] Optional global audio replies with `/tts` via OpenAI-compatible APIs
+- [ ] Voice/audio transcription via Whisper-compatible APIs (OpenAI/Groq/Together and compatible providers)
+- [ ] Optional global audio replies with `/tts` via OpenAI-compatible APIs
 - [x] OpenClaw plugin entrypoint built on shared command, prompt, interaction, and route-scoped state modules
 
 ## Current Task List

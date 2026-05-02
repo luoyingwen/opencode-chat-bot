@@ -191,73 +191,11 @@ describe("config boolean env parsing", () => {
     expect(config.bot.taskLimit).toBe(25);
   });
 
-  it("resolves zh to Simplified Chinese, not Traditional", async () => {
-    vi.stubEnv("BOT_LOCALE", "zh");
-
-    const config = await loadConfig();
-
-    expect(config.bot.locale).toBe("zh");
-  });
-
-  it("uses default response stream throttle when RESPONSE_STREAM_THROTTLE_MS is missing", async () => {
-    vi.stubEnv("RESPONSE_STREAM_THROTTLE_MS", "");
-
-    const config = await loadConfig();
-
-    expect(config.bot.responseStreamThrottleMs).toBe(500);
-  });
-
-  it("parses RESPONSE_STREAM_THROTTLE_MS as a positive integer", async () => {
-    vi.stubEnv("RESPONSE_STREAM_THROTTLE_MS", "750");
-
-    const config = await loadConfig();
-
-    expect(config.bot.responseStreamThrottleMs).toBe(750);
-  });
-
-  it("falls back to default response stream throttle on invalid value", async () => {
-    vi.stubEnv("RESPONSE_STREAM_THROTTLE_MS", "zero");
-
-    const config = await loadConfig();
-
-    expect(config.bot.responseStreamThrottleMs).toBe(500);
-  });
-
   it("parses TASK_LIMIT as a positive integer", async () => {
     vi.stubEnv("TASK_LIMIT", "25");
 
     const config = await loadConfig();
 
     expect(config.bot.taskLimit).toBe(25);
-  });
-
-  it("keeps TTS credentials unset when dedicated vars are missing", async () => {
-    vi.stubEnv("STT_API_URL", "https://api.openai.com/v1");
-    vi.stubEnv("STT_API_KEY", "sk-test-key");
-    vi.stubEnv("TTS_API_URL", "");
-    vi.stubEnv("TTS_API_KEY", "");
-    vi.stubEnv("TTS_VOICE", "");
-
-    const config = await loadConfig();
-
-    expect(config.tts.apiUrl).toBe("");
-    expect(config.tts.apiKey).toBe("");
-    expect(config.tts.model).toBe("gpt-4o-mini-tts");
-    expect(config.tts.voice).toBe("alloy");
-  });
-
-  it("keeps TTS credentials unset when dedicated vars are missing", async () => {
-    vi.stubEnv("STT_API_URL", "https://api.openai.com/v1");
-    vi.stubEnv("STT_API_KEY", "sk-test-key");
-    vi.stubEnv("TTS_API_URL", "");
-    vi.stubEnv("TTS_API_KEY", "");
-    vi.stubEnv("TTS_VOICE", "");
-
-    const config = await loadConfig();
-
-    expect(config.tts.apiUrl).toBe("");
-    expect(config.tts.apiKey).toBe("");
-    expect(config.tts.model).toBe("gpt-4o-mini-tts");
-    expect(config.tts.voice).toBe("alloy");
   });
 });

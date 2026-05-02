@@ -55,7 +55,6 @@ export interface Settings {
   currentModel?: ModelInfo;
   conversationStates?: Record<string, ConversationSettingsState>;
   pinnedMessageId?: number;
-  ttsEnabled?: boolean;
   sessionDirectoryCache?: SessionDirectoryCacheInfo;
   scheduledTasks?: ScheduledTask[];
   userChatMappings?: Record<string, UserChatMapping>; // userId -> mapping
@@ -269,15 +268,6 @@ export function setCurrentSession(sessionInfo: SessionInfo): void {
 
 export function clearSession(): void {
   updateConversationState(DEFAULT_CONVERSATION_ROUTE_KEY, { currentSession: null });
-}
-
-export function isTtsEnabled(): boolean {
-  return currentSettings.ttsEnabled === true;
-}
-
-export function setTtsEnabled(enabled: boolean): void {
-  currentSettings.ttsEnabled = enabled;
-  void writeSettingsFile(currentSettings);
 }
 
 export function getCurrentAgent(): string | undefined {
