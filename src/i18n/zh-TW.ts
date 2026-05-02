@@ -90,6 +90,10 @@ export const zhTW: I18nDictionary = {
   "task.kind.once": "一次性",
   "task.run.success": "⏰ 排程任務完成：{description}",
   "task.run.error": "🔴 排程任務失敗：{description}\n\n錯誤：{error}",
+  "task.run.error.interactive_question":
+    "排程任務請求了互動式問題，無法在無人值守時繼續。",
+  "task.run.error.interactive_permission":
+    "排程任務請求了互動式權限，無法在無人值守時繼續。",
 
   "tasklist.empty": "📭 目前沒有排程任務。",
   "tasklist.select": "請選擇一個排程任務：",

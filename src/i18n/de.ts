@@ -97,6 +97,10 @@ export const de: I18nDictionary = {
   "task.kind.once": "einmalig",
   "task.run.success": "⏰ Geplante Aufgabe abgeschlossen: {description}",
   "task.run.error": "🔴 Geplante Aufgabe fehlgeschlagen: {description}\n\nFehler: {error}",
+  "task.run.error.interactive_question":
+    "Geplante Aufgabe hat eine interaktive Frage gestellt und kann unbeaufsichtigt nicht fortfahren.",
+  "task.run.error.interactive_permission":
+    "Geplante Aufgabe hat eine interaktive Berechtigung angefordert und kann unbeaufsichtigt nicht fortfahren.",
 
   "tasklist.empty": "📭 Noch keine geplanten Aufgaben.",
   "tasklist.select": "Wähle eine geplante Aufgabe:",
