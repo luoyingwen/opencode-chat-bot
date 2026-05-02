@@ -102,7 +102,7 @@ export const es: I18nDictionary = {
   "tasklist.select": "Elige una tarea programada:",
   "tasklist.select_hint": "Escribe el número de la tarea para ver detalles, o \"cancel\", \"取消\" o /cancel para salir.",
   "tasklist.details":
-    "⏰ Tarea programada\n\nTarea: {prompt}\nProyecto: {project}\nHorario: {schedule}\n{cronLine}Zona horaria: {timezone}\nPróxima ejecución: {nextRunAt}\nÚltima ejecución: {lastRunAt}\nNúmero de ejecuciones: {runCount}",
+    "⏰ Tarea programada\n\nTarea: {prompt}\nProyecto: {project}\nHorario: {schedule}\nModelo: {model}\n{cronLine}Zona horaria: {timezone}\nPróxima ejecución: {nextRunAt}\nÚltima ejecución: {lastRunAt}\nNúmero de ejecuciones: {runCount}",
   "tasklist.details.cron": "Cron: {cron}",
   "tasklist.deleted_callback": "Eliminada",
   "tasklist.cancelled_callback": "Cancelado",

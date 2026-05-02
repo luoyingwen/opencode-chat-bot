@@ -102,7 +102,7 @@ export const fr: I18nDictionary = {
   "tasklist.select": "Sélectionnez une tâche planifiée :",
   "tasklist.select_hint": "Saisissez le numéro de la tâche pour voir les détails, ou \"cancel\", \"取消\" ou /cancel pour quitter.",
   "tasklist.details":
-    "⏰ Tâche planifiée\n\nTâche : {prompt}\nProjet : {project}\nPlanning : {schedule}\n{cronLine}Fuseau horaire : {timezone}\nProchaine exécution : {nextRunAt}\nDernière exécution : {lastRunAt}\nNombre d'exécutions : {runCount}",
+    "⏰ Tâche planifiée\n\nTâche : {prompt}\nProjet : {project}\nPlanning : {schedule}\nModèle : {model}\n{cronLine}Fuseau horaire : {timezone}\nProchaine exécution : {nextRunAt}\nDernière exécution : {lastRunAt}\nNombre d'exécutions : {runCount}",
   "tasklist.details.cron": "Cron : {cron}",
   "tasklist.deleted_callback": "Supprimée",
   "tasklist.cancelled_callback": "Annulé",

@@ -96,7 +96,7 @@ export const zh: I18nDictionary = {
   "tasklist.select": "请选择一个定时任务：",
   "tasklist.select_hint": "输入任务编号查看详情，或输入“取消”、\"cancel\" 或 /cancel 退出。",
   "tasklist.details":
-    "⏰ 定时任务\n\n任务：{prompt}\n项目：{project}\n计划：{schedule}\n{cronLine}时区：{timezone}\n下次运行：{nextRunAt}\n上次运行：{lastRunAt}\n运行次数：{runCount}",
+    "⏰ 定时任务\n\n任务：{prompt}\n项目：{project}\n计划：{schedule}\n模型：{model}\n{cronLine}时区：{timezone}\n下次运行：{nextRunAt}\n上次运行：{lastRunAt}\n运行次数：{runCount}",
   "tasklist.details.cron": "Cron: {cron}",
   "tasklist.deleted_callback": "已删除",
   "tasklist.cancelled_callback": "已取消",

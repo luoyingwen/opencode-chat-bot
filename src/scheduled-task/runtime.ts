@@ -3,7 +3,7 @@ import { formatSummaryWithMode } from "../summary/formatter.js";
 import { t } from "../i18n/index.js";
 import { logger } from "../utils/logger.js";
 import { safeBackgroundTask } from "../utils/safe-background-task.js";
-import { executeScheduledTask } from "./executor.js";
+import { executeScheduledTask, SCHEDULED_TASK_AGENT } from "./executor.js";
 import { foregroundSessionState } from "./foreground-state.js";
 import { computeNextRunAt, isTaskDue } from "./next-run.js";
 import {
@@ -77,11 +77,39 @@ function normalizeTaskPrompt(prompt: string): string {
   return `${normalized.slice(0, TASK_DESCRIPTION_PREVIEW_LENGTH)}...`;
 }
 
+function calculateElapsedMs(startedAt: string, finishedAt: string): number {
+  const startedAtMs = Date.parse(startedAt);
+  const finishedAtMs = Date.parse(finishedAt);
+
+  if (Number.isNaN(startedAtMs) || Number.isNaN(finishedAtMs)) {
+    return 0;
+  }
+
+  return finishedAtMs - startedAtMs;
+}
+
+function formatTaskFooter(
+  model: ScheduledTask["model"],
+  elapsedMs: number,
+): string {
+  const modelId = model.modelID;
+  const provider = model.providerID;
+  const modelLabel = provider && modelId ? `${provider}/${modelId}` : modelId || provider || "unknown";
+
+  const elapsedSec = elapsedMs / 1000;
+  const elapsedLabel = elapsedSec >= 60 ? `${elapsedSec.toFixed(1)}s` : `${elapsedSec.toFixed(1)}s`;
+
+  return `🛠️ ${SCHEDULED_TASK_AGENT} · 🤖 ${modelLabel} · 🕒 ${elapsedLabel}`;
+}
+
 function buildSuccessDelivery(
   task: ScheduledTask,
+  startedAt: string,
   runAt: string,
   resultText: string,
 ): QueuedScheduledTaskDelivery {
+  const elapsedMs = calculateElapsedMs(startedAt, runAt);
+
   return {
     taskId: task.id,
     scheduleSummary: task.scheduleSummary,
@@ -92,6 +120,7 @@ function buildSuccessDelivery(
       description: normalizeTaskPrompt(task.prompt),
     }),
     resultText,
+    footerText: formatTaskFooter(task.model, elapsedMs),
   };
 }
 
@@ -356,6 +385,7 @@ export class ScheduledTaskRuntime {
       if (result.status === "success") {
         await this.handleSuccessfulExecution(
           runningTask,
+          result.startedAt,
           result.finishedAt,
           result.resultText || "",
         );
@@ -373,10 +403,11 @@ export class ScheduledTaskRuntime {
 
   private async handleSuccessfulExecution(
     task: ScheduledTask,
+    startedAt: string,
     finishedAt: string,
     resultText: string,
   ): Promise<void> {
-    const delivery = buildSuccessDelivery(task, finishedAt, resultText);
+    const delivery = buildSuccessDelivery(task, startedAt, finishedAt, resultText);
 
     if (task.kind === "once") {
       await removeScheduledTask(task.id);
@@ -469,6 +500,11 @@ export class ScheduledTaskRuntime {
         for (const part of messageParts) {
           await callback(part);
         }
+
+        if (delivery.status === "success" && delivery.footerText) {
+          await callback(delivery.footerText);
+        }
+
         anySuccess = true;
       } catch (error) {
         logger.error(

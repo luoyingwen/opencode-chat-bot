@@ -95,7 +95,7 @@ export const zhTW: I18nDictionary = {
   "tasklist.select": "請選擇一個排程任務：",
   "tasklist.select_hint": "輸入任務編號查看詳情，或輸入「取消」、\"cancel\" 或 /cancel 退出。",
   "tasklist.details":
-    "⏰ 排程任務\n\n任務：{prompt}\n專案：{project}\n排程：{schedule}\n{cronLine}時區：{timezone}\n下次執行：{nextRunAt}\n上次執行：{lastRunAt}\n執行次數：{runCount}",
+    "⏰ 排程任務\n\n任務：{prompt}\n專案：{project}\n排程：{schedule}\n模型：{model}\n{cronLine}時區：{timezone}\n下次執行：{nextRunAt}\n上次執行：{lastRunAt}\n執行次數：{runCount}",
   "tasklist.details.cron": "Cron：{cron}",
   "tasklist.deleted_callback": "已刪除",
   "tasklist.cancelled_callback": "已取消",

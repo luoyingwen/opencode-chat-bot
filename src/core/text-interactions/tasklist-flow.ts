@@ -48,14 +48,26 @@ function sortTasks(tasks: ScheduledTask[]): ScheduledTask[] {
   });
 }
 
+function formatModelInfo(model: ScheduledTask["model"]): string {
+  const modelId = model.modelID;
+  const provider = model.providerID;
+  if (provider && modelId) {
+    return `${provider}/${modelId}`;
+  }
+  return modelId || provider || "unknown";
+}
+
 function formatTaskDetails(task: ScheduledTask): string {
   const cronLine =
     task.kind === "cron" ? `${t("tasklist.details.cron", { cron: task.cron })}\n` : "";
+
+  const modelInfo = formatModelInfo(task.model);
 
   return t("tasklist.details", {
     prompt: task.prompt,
     project: task.projectWorktree,
     schedule: task.scheduleSummary,
+    model: modelInfo,
     cronLine,
     timezone: task.timezone,
     nextRunAt: formatDateTime(task.nextRunAt, task.timezone),

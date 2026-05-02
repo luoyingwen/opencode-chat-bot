@@ -101,7 +101,7 @@ export const ru: I18nDictionary = {
   "tasklist.select": "Выберите задачу по расписанию:",
   "tasklist.select_hint": "Введите номер задачи, чтобы посмотреть детали, или \"cancel\", \"取消\" или /cancel для выхода.",
   "tasklist.details":
-    "⏰ Задача по расписанию\n\nЗадача: {prompt}\nПроект: {project}\nРасписание: {schedule}\n{cronLine}Часовой пояс: {timezone}\nСледующий запуск: {nextRunAt}\nПоследний запуск: {lastRunAt}\nКоличество запусков: {runCount}",
+    "⏰ Задача по расписанию\n\nЗадача: {prompt}\nПроект: {project}\nРасписание: {schedule}\nМодель: {model}\n{cronLine}Часовой пояс: {timezone}\nСледующий запуск: {nextRunAt}\nПоследний запуск: {lastRunAt}\nКоличество запусков: {runCount}",
   "tasklist.details.cron": "Cron: {cron}",
   "tasklist.deleted_callback": "Удалено",
   "tasklist.cancelled_callback": "Отменено",

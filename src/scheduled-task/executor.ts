@@ -2,8 +2,9 @@ import { opencodeClient } from "../opencode/client.js";
 import { logger } from "../utils/logger.js";
 import type { ScheduledTask, ScheduledTaskExecutionResult } from "./types.js";
 
-const SCHEDULED_TASK_AGENT = "build";
 const SCHEDULED_TASK_SESSION_TITLE = "Scheduled task run";
+
+export const SCHEDULED_TASK_AGENT = "build";
 
 function collectResponseText(
   parts: Array<{ type?: string; text?: string; ignored?: boolean }>,

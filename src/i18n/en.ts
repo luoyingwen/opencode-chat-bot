@@ -101,7 +101,7 @@ export const en = {
   "tasklist.select_hint":
     'Type a task number to view details, or "cancel", "取消", or /cancel to exit.',
   "tasklist.details":
-    "⏰ Scheduled task\n\nTask: {prompt}\nProject: {project}\nSchedule: {schedule}\n{cronLine}Timezone: {timezone}\nNext run: {nextRunAt}\nLast run: {lastRunAt}\nRun count: {runCount}",
+    "⏰ Scheduled task\n\nTask: {prompt}\nProject: {project}\nSchedule: {schedule}\nModel: {model}\n{cronLine}Timezone: {timezone}\nNext run: {nextRunAt}\nLast run: {lastRunAt}\nRun count: {runCount}",
   "tasklist.details.cron": "Cron: {cron}",
   "tasklist.deleted_callback": "Deleted",
   "tasklist.cancelled_callback": "Cancelled",
