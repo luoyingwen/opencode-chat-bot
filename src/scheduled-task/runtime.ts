@@ -13,7 +13,7 @@ import {
   replaceScheduledTasks,
   updateScheduledTask,
 } from "./store.js";
-import type { QueuedScheduledTaskDelivery, ScheduledTask } from "./types.js";
+import type { QueuedScheduledTaskDelivery, ScheduledTask, ScheduledTaskModel } from "./types.js";
 
 const MAX_TIMER_DELAY_MS = 2_147_483_647;
 const TASK_DESCRIPTION_PREVIEW_LENGTH = 64;
@@ -107,8 +107,10 @@ function buildSuccessDelivery(
   startedAt: string,
   runAt: string,
   resultText: string,
+  actualModel?: ScheduledTaskModel,
 ): QueuedScheduledTaskDelivery {
   const elapsedMs = calculateElapsedMs(startedAt, runAt);
+  const footerModel = actualModel || task.model;
 
   return {
     taskId: task.id,
@@ -120,7 +122,7 @@ function buildSuccessDelivery(
       description: normalizeTaskPrompt(task.prompt),
     }),
     resultText,
-    footerText: formatTaskFooter(task.model, elapsedMs),
+    footerText: formatTaskFooter(footerModel, elapsedMs),
   };
 }
 
@@ -388,6 +390,7 @@ export class ScheduledTaskRuntime {
           result.startedAt,
           result.finishedAt,
           result.resultText || "",
+          result.actualModel,
         );
       } else {
         await this.handleFailedExecution(
@@ -406,8 +409,9 @@ export class ScheduledTaskRuntime {
     startedAt: string,
     finishedAt: string,
     resultText: string,
+    actualModel?: ScheduledTaskModel,
   ): Promise<void> {
-    const delivery = buildSuccessDelivery(task, startedAt, finishedAt, resultText);
+    const delivery = buildSuccessDelivery(task, startedAt, finishedAt, resultText, actualModel);
 
     if (task.kind === "once") {
       await removeScheduledTask(task.id);

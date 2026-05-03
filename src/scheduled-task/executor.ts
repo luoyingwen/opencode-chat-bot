@@ -1,7 +1,8 @@
+import { getSessionModel } from "../model/session-model.js";
 import { opencodeClient } from "../opencode/client.js";
 import { t } from "../i18n/index.js";
 import { logger } from "../utils/logger.js";
-import type { ScheduledTask, ScheduledTaskExecutionResult } from "./types.js";
+import type { ScheduledTask, ScheduledTaskExecutionResult, ScheduledTaskModel } from "./types.js";
 
 const SCHEDULED_TASK_SESSION_TITLE = "Scheduled task run";
 
@@ -203,6 +204,7 @@ export async function executeScheduledTask(
 ): Promise<ScheduledTaskExecutionResult> {
   const startedAt = new Date().toISOString();
   let sessionId: string | null = null;
+  let actualModel: ScheduledTaskModel | undefined;
 
   try {
     const { data: session, error: createError } = await opencodeClient.session.create({
@@ -258,6 +260,15 @@ export async function executeScheduledTask(
       throw new Error("Scheduled task returned an empty assistant response");
     }
 
+    const sessionModelResult = await getSessionModel(session.id);
+    if (sessionModelResult?.model) {
+      actualModel = {
+        providerID: sessionModelResult.model.providerID,
+        modelID: sessionModelResult.model.modelID,
+        variant: null,
+      };
+    }
+
     return {
       taskId: task.id,
       status: "success",
@@ -265,6 +276,7 @@ export async function executeScheduledTask(
       finishedAt: new Date().toISOString(),
       resultText,
       errorMessage: null,
+      actualModel,
     };
   } catch (error) {
     const errorMessage = toErrorMessage(error);
@@ -279,6 +291,7 @@ export async function executeScheduledTask(
       finishedAt: new Date().toISOString(),
       resultText: null,
       errorMessage,
+      actualModel,
     };
   } finally {
     if (sessionId) {

@@ -1,6 +1,7 @@
 import { fetchCurrentAgent } from "../../agent/manager.js";
 import { getAgentDisplayName } from "../../agent/types.js";
 import { fetchCurrentModel } from "../../model/manager.js";
+import { getSessionModel, formatModelDisplay } from "../../model/session-model.js";
 import { formatModelForDisplay } from "../../model/types.js";
 import { isAutoConfirmEnabled } from "../../permission/auto-confirm.js";
 import { logger } from "../../utils/logger.js";
@@ -12,7 +13,7 @@ export class StatusCommandHandler implements CommandHandler {
   async handle(context: CommandContext): Promise<CommandResult> {
     try {
       const currentAgent = await fetchCurrentAgent(context.route);
-      const currentModel = fetchCurrentModel(context.route);
+      const storedModel = fetchCurrentModel(context.route);
       const health = await context.gateway.health();
 
       if (!health) {
@@ -35,13 +36,29 @@ export class StatusCommandHandler implements CommandHandler {
         lines.push(`**Agent:** ${getAgentDisplayName(currentAgent)}`);
       }
 
-      if (currentModel.providerID && currentModel.modelID) {
-        lines.push(`**Model:** ${formatModelForDisplay(currentModel.providerID, currentModel.modelID)}`);
+      const state = await context.runtime.get(context.route);
+
+      if (state.currentSession) {
+        const sessionModelResult = await getSessionModel(state.currentSession.id);
+        if (sessionModelResult) {
+          const modelDisplay = formatModelDisplay(sessionModelResult.model);
+          const defaultFlag = sessionModelResult.isExplicit ? "" : " (default)";
+          lines.push(`**Model:** ${modelDisplay}${defaultFlag}`);
+        } else {
+          const fallbackDisplay =
+            storedModel.providerID && storedModel.modelID
+              ? formatModelForDisplay(storedModel.providerID, storedModel.modelID)
+              : "Not configured";
+          lines.push(`**Model:** ${fallbackDisplay} (stored)`);
+        }
       } else {
-        lines.push("**Model:** Not configured");
+        if (storedModel.providerID && storedModel.modelID) {
+          lines.push(`**Model:** ${formatModelForDisplay(storedModel.providerID, storedModel.modelID)}`);
+        } else {
+          lines.push("**Model:** Not configured");
+        }
       }
 
-      const state = await context.runtime.get(context.route);
       lines.push("");
       if (state.currentProject) {
         lines.push(`**Project:** ${state.currentProject.name || state.currentProject.worktree}`);

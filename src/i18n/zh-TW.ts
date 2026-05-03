@@ -88,6 +88,7 @@ export const zhTW: I18nDictionary = {
   "task.schedule_too_frequent": "循環排程太頻繁。允許的最小間隔為每 5 分鐘一次。",
   "task.kind.cron": "循環",
   "task.kind.once": "一次性",
+  "task.model.default": "預設",
   "task.run.success": "⏰ 排程任務完成：{description}",
   "task.run.error": "🔴 排程任務失敗：{description}\n\n錯誤：{error}",
   "task.run.error.interactive_question":

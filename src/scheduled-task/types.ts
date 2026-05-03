@@ -101,6 +101,7 @@ export interface ScheduledTaskExecutionResult {
   finishedAt: string;
   resultText: string | null;
   errorMessage: string | null;
+  actualModel?: ScheduledTaskModel;
 }
 
 export interface QueuedScheduledTaskDelivery {

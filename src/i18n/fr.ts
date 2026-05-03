@@ -95,6 +95,7 @@ export const fr: I18nDictionary = {
     "Le planning récurrent est trop fréquent. L'intervalle minimum autorisé est d'une fois toutes les 5 minutes.",
   "task.kind.cron": "récurrente",
   "task.kind.once": "ponctuelle",
+  "task.model.default": "par défaut",
   "task.run.success": "⏰ Tâche planifiée terminée : {description}",
   "task.run.error": "🔴 Échec de la tâche planifiée : {description}\n\nErreur : {error}",
   "task.run.error.interactive_question":

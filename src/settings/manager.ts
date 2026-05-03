@@ -1,4 +1,5 @@
 import type { ModelInfo } from "../model/types.js";
+import type { OpenClawRoute } from "../openclaw/types.js";
 import { cloneScheduledTask, type ScheduledTask } from "../scheduled-task/types.js";
 import path from "node:path";
 import { getRuntimePaths } from "../runtime/paths.js";
@@ -58,6 +59,7 @@ export interface Settings {
   sessionDirectoryCache?: SessionDirectoryCacheInfo;
   scheduledTasks?: ScheduledTask[];
   userChatMappings?: Record<string, UserChatMapping>; // userId -> mapping
+  openClawLastRoute?: OpenClawRoute;
 }
 
 function cloneScheduledTasks(tasks: ScheduledTask[] | undefined): ScheduledTask[] | undefined {
@@ -357,6 +359,20 @@ export function clearUserChatMapping(userId: string): Promise<void> {
     return writeSettingsFile(currentSettings);
   }
   return Promise.resolve();
+}
+
+export function getOpenClawLastRoute(): OpenClawRoute | undefined {
+  return currentSettings.openClawLastRoute;
+}
+
+export function setOpenClawLastRoute(route: OpenClawRoute): Promise<void> {
+  currentSettings.openClawLastRoute = route;
+  return writeSettingsFile(currentSettings);
+}
+
+export function clearOpenClawLastRoute(): Promise<void> {
+  currentSettings.openClawLastRoute = undefined;
+  return writeSettingsFile(currentSettings);
 }
 
 export function __resetSettingsForTests(): void {

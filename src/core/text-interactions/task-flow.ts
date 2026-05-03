@@ -3,6 +3,7 @@ import { config } from "../../config.js";
 import { isTextInteractionCancelInput } from "./cancel.js";
 import { getDateLocale, t } from "../../i18n/index.js";
 import { getStoredModel } from "../../model/manager.js";
+import { getSessionModel } from "../../model/session-model.js";
 import { getConversationState } from "../../settings/manager.js";
 import { parseTaskSchedule } from "../../scheduled-task/schedule-parser.js";
 import { addScheduledTask, listScheduledTasks } from "../../scheduled-task/store.js";
@@ -74,13 +75,16 @@ function formatParsedScheduleMessage(schedule: ParsedTaskSchedule): string {
 
 function formatTaskCreatedMessage(task: ScheduledTask): string {
   const variant = task.model.variant ? ` (${task.model.variant})` : "";
-  const model = `${task.model.providerID}/${task.model.modelID}${variant}`;
+  const hasModel = task.model.providerID && task.model.modelID;
+  const modelDisplay = hasModel
+    ? `${task.model.providerID}/${task.model.modelID}${variant}`
+    : t("task.model.default");
   const cronLine = task.kind === "cron" ? `${t("task.created.cron", { cron: task.cron })}\n` : "";
 
   return t("task.created", {
     description: truncateTaskPrompt(task.prompt),
     project: task.projectWorktree,
-    model,
+    model: modelDisplay,
     schedule: task.scheduleSummary,
     cronLine,
     nextRunAt: task.nextRunAt ? formatScheduledDate(task.nextRunAt, task.timezone) : "-",
@@ -223,6 +227,33 @@ function buildScheduledTask(
   };
 }
 
+async function resolveTaskModel(flowKey: string): Promise<ScheduledTaskModel> {
+  const state = getConversationState(flowKey);
+  const sessionId = state?.currentSession?.id;
+
+  if (sessionId) {
+    const sessionModelResult = await getSessionModel(sessionId);
+    if (sessionModelResult?.model) {
+      return {
+        providerID: sessionModelResult.model.providerID,
+        modelID: sessionModelResult.model.modelID,
+        variant: null,
+      };
+    }
+  }
+
+  const storedModel = getStoredModel(flowKey);
+  if (storedModel.providerID && storedModel.modelID) {
+    return createScheduledTaskModel(storedModel);
+  }
+
+  return {
+    providerID: "",
+    modelID: "",
+    variant: null,
+  };
+}
+
 export async function handleTextTaskCommand(flowKey: string): Promise<string> {
   const currentProject = getConversationState(flowKey)?.currentProject;
   if (!currentProject) {
@@ -235,11 +266,13 @@ export async function handleTextTaskCommand(flowKey: string): Promise<string> {
 
   clearTaskState(flowKey, "new_task_started");
 
+  const model = await resolveTaskModel(flowKey);
+
   taskStates.set(flowKey, {
     stage: "awaiting_schedule",
     projectId: currentProject.id,
     projectWorktree: currentProject.worktree,
-    model: createScheduledTaskModel(getStoredModel(flowKey)),
+    model,
     scheduleText: "",
     parsedSchedule: null,
     lastActivity: Date.now(),

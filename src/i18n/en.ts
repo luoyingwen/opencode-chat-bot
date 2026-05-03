@@ -93,6 +93,7 @@ export const en = {
     "Recurring schedule is too frequent. The minimum allowed interval is once every 5 minutes.",
   "task.kind.cron": "recurring",
   "task.kind.once": "one-time",
+  "task.model.default": "default",
   "task.run.success": "⏰ Scheduled task completed: {description}",
   "task.run.error": "🔴 Scheduled task failed: {description}\n\nError: {error}",
   "task.run.error.interactive_question":

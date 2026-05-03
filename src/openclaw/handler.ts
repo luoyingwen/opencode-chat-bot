@@ -18,6 +18,7 @@ import { summaryAggregator } from "../summary/aggregator.js";
 import { t } from "../i18n/index.js";
 import { logger } from "../utils/logger.js";
 import { initializeSharedRuntime } from "../app/initialize-shared-runtime.js";
+import { getOpenClawLastRoute, setOpenClawLastRoute } from "../settings/manager.js";
 import { initOpenClawClient, sendOpenClawMessage } from "./client.js";
 import {
   explainOpenClawScopeMismatch,
@@ -81,7 +82,16 @@ export function initializeOpenClawHandler(params: {
     await sendOpenClawMessage(lastNotificationRoute, text);
   });
 
-  runtimeReady = initializeSharedRuntime();
+  runtimeReady = initializeSharedRuntime().then(() => {
+    const persisted = getOpenClawLastRoute();
+    if (persisted) {
+      lastNotificationRoute = persisted;
+      logger.info(
+        `[OpenClaw] Restored last notification route: ${persisted.channelId}/${persisted.accountId}/${persisted.conversationId}`,
+      );
+    }
+  });
+
   logger.info(
     `[OpenClaw] Handler initialized enabled=${runtimeConfig.enabled} channels=${runtimeConfig.channels.join(",") || "all"}`,
   );
@@ -118,6 +128,7 @@ export async function handleOpenClawBeforeDispatch(
   }
 
   lastNotificationRoute = route;
+  void setOpenClawLastRoute(route);
   const resultText = await processOpenClawText(route, text);
   return resultText ? { handled: true, text: resultText } : undefined;
 }
