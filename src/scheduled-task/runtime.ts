@@ -58,14 +58,19 @@ export function clearFeishuNotificationCallback(): void {
 }
 
 function buildScheduledTaskSuccessMessageParts(delivery: QueuedScheduledTaskDelivery): string[] {
+  let fullText: string;
+
   if (!delivery.resultText) {
-    return [delivery.notificationText];
+    fullText = delivery.notificationText;
+  } else {
+    fullText = `${delivery.notificationText}\n\n${delivery.resultText}`;
   }
 
-  return formatSummaryWithMode(
-    `${delivery.notificationText}\n\n${delivery.resultText}`,
-    config.bot.messageFormatMode,
-  );
+  if (delivery.footerText) {
+    fullText = `${fullText}\n\n${delivery.footerText}`;
+  }
+
+  return formatSummaryWithMode(fullText, config.bot.messageFormatMode);
 }
 
 function normalizeTaskPrompt(prompt: string): string {
@@ -503,10 +508,6 @@ export class ScheduledTaskRuntime {
 
         for (const part of messageParts) {
           await callback(part);
-        }
-
-        if (delivery.status === "success" && delivery.footerText) {
-          await callback(delivery.footerText);
         }
 
         anySuccess = true;
