@@ -57,7 +57,7 @@ describe("runtime/paths", () => {
       const runtimePaths = getRuntimePaths();
 
       expect(runtimePaths.mode).toBe("installed");
-      expect(runtimePaths.appHome).toBe(path.join("C:\\Users\\test\\AppData\\Roaming", "opencode-bot"));
+      expect(runtimePaths.appHome).toBe(path.join("C:\\Users\\test\\AppData\\Roaming", "opencode-chat-bot"));
       expect(runtimePaths.logsDirPath).toBe(path.join(runtimePaths.appHome, "logs"));
     } finally {
       restorePlatform();

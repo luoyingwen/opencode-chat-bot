@@ -5,7 +5,7 @@ import { describe, expect, it, vi } from "vitest";
 import { setRuntimeMode } from "../../src/runtime/mode.js";
 
 async function createTempHome(): Promise<string> {
-  return fs.mkdtemp(path.join(os.tmpdir(), "opencode-bot-logger-"));
+  return fs.mkdtemp(path.join(os.tmpdir(), "opencode-chat-bot-logger-"));
 }
 
 async function loadLoggerModule() {

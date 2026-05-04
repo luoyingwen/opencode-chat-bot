@@ -63,7 +63,7 @@ export const fr: I18nDictionary = {
   "runtime.wizard.not_configured_starting":
     "L'application n'est pas encore configurée. Lancement de l'assistant...\n",
   "runtime.wizard.tty_required":
-    "L'assistant interactif nécessite un terminal TTY. Exécutez `opencode-bot config` dans un shell interactif.",
+    "L'assistant interactif nécessite un terminal TTY. Exécutez `opencode-chat-bot config` dans un shell interactif.",
 
   "rename.no_session": "⚠️ Aucune session active. Créez ou sélectionnez d'abord une session.",
   "rename.prompt": "📝 Entrez le nouveau titre de la session :\n\nActuel : {title}",
@@ -128,7 +128,7 @@ export const fr: I18nDictionary = {
   "commands.invalid_number": "Entrez numéro valide ({min}-{max}).",
 
   "cli.usage":
-    "Utilisation :\n  opencode-bot [start] [--mode sources|installed]\n  opencode-bot status\n  opencode-bot stop\n  opencode-bot config\n\nNotes :\n  - Sans commande, `start` est utilisé par défaut\n  - `--mode` n'est actuellement pris en charge que pour `start`",
+    "Utilisation :\n  opencode-chat-bot [start] [--mode sources|installed]\n  opencode-chat-bot status\n  opencode-chat-bot stop\n  opencode-chat-bot config\n\nNotes :\n  - Sans commande, `start` est utilisé par défaut\n  - `--mode` n'est actuellement pris en charge que pour `start`",
   "cli.placeholder.status":
     "La commande `status` est actuellement un placeholder. Les vraies vérifications d'état seront ajoutées dans la couche service (Phase 5).",
   "cli.placeholder.stop":

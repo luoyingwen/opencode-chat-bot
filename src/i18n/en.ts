@@ -62,7 +62,7 @@ export const en = {
   "runtime.wizard.not_configured_starting":
     "Application is not configured yet. Starting wizard...\n",
   "runtime.wizard.tty_required":
-    "Interactive wizard requires a TTY terminal. Run `opencode-bot config` in an interactive shell.",
+    "Interactive wizard requires a TTY terminal. Run `opencode-chat-bot config` in an interactive shell.",
 
   "rename.no_session": "⚠️ No active session. Create or select a session first.",
   "rename.prompt": "📝 Enter new title for session:\n\nCurrent: {title}",
@@ -154,7 +154,7 @@ export const en = {
   "openclaw.unknown_command": "⚠️ Unknown command: /{command}\n\n{help}",
 
   "cli.usage":
-    "Usage:\n  opencode-bot [start] [--mode sources|installed]\n  opencode-bot status\n  opencode-bot stop\n  opencode-bot config\n\nNotes:\n  - No command defaults to `start`\n  - `--mode` is currently supported for `start` only",
+    "Usage:\n  opencode-chat-bot [start] [--mode sources|installed]\n  opencode-chat-bot status\n  opencode-chat-bot stop\n  opencode-chat-bot config\n\nNotes:\n  - No command defaults to `start`\n  - `--mode` is currently supported for `start` only",
   "cli.placeholder.status":
     "Command `status` is currently a placeholder. Real status checks will be added in service layer (Phase 5).",
   "cli.placeholder.stop":

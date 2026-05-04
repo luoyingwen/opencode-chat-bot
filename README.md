@@ -2,8 +2,6 @@
 
 fork from <https://github.com/grinev/opencode-chat-bot>
 
-新增：支援 DingTalk、Feishu、OpenClaw、proxy、zh-TW、文件日志、定时任务
-
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 [![Node.js](https://img.shields.io/badge/node-%3E%3D20-brightgreen)](https://nodejs.org)
 
@@ -107,8 +105,8 @@ npm run openclaw:install -- link
 When installed as a package, use the CLI command:
 
 ```bash
-opencode-bot config
-opencode-bot start
+opencode-chat-bot config
+opencode-chat-bot start
 ```
 
 On first launch, the interactive wizard asks for interface language, standalone bot credentials, allowed users, OpenCode API URL, and optional OpenCode server credentials.
@@ -367,7 +365,7 @@ When installed via npm, the configuration wizard handles the initial setup. The 
 | `LOG_LEVEL`                    | Log level (`debug`, `info`, `warn`, `error`)                                       |    No    | `info`                   |
 | `LOG_RETENTION`                | Number of log files to keep: launch files in `sources`, daily files in `installed` |    No    | `10`                     |
 
-> **\*At least one standalone bot platform must be configured when running `opencode-bot start`:** DingTalk (`DINGTALK_APP_KEY` + `DINGTALK_APP_SECRET`) or Feishu (`FEISHU_APP_ID` + `FEISHU_APP_SECRET`). OpenClaw is loaded separately by the OpenClaw plugin runtime.
+> **\*At least one standalone bot platform must be configured when running `opencode-chat-bot start`:** DingTalk (`DINGTALK_APP_KEY` + `DINGTALK_APP_SECRET`) or Feishu (`FEISHU_APP_ID` + `FEISHU_APP_SECRET`). OpenClaw is loaded separately by the OpenClaw plugin runtime.
 
 > **Keep your `.env` file private.** It contains your bot tokens. Never commit it to version control.
 
@@ -452,7 +450,7 @@ Since the bot runs locally on your machine and connects to your local OpenCode s
 
 **Linux: permission denied errors**
 
-- Make sure the CLI binary has execute permission: `chmod +x $(which opencode-bot)`
+- Make sure the CLI binary has execute permission: `chmod +x $(which opencode-chat-bot)`
 - Check that the config directory is writable: `~/.config/opencode-chat-bot/`
 
 ## Contributing

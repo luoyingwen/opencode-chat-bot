@@ -62,7 +62,7 @@ export const ru: I18nDictionary = {
   "runtime.wizard.not_configured_starting":
     "Приложение еще не сконфигурировано. Запускаю wizard...\n",
   "runtime.wizard.tty_required":
-    "Интерактивный wizard требует TTY-терминал. Запустите `opencode-bot config` в интерактивной оболочке.",
+    "Интерактивный wizard требует TTY-терминал. Запустите `opencode-chat-bot config` в интерактивной оболочке.",
 
   "rename.no_session": "⚠️ Нет активной сессии. Сначала создайте или выберите сессию.",
   "rename.prompt": "📝 Введите новое название сессии:\n\nТекущее: {title}",
@@ -127,7 +127,7 @@ export const ru: I18nDictionary = {
   "commands.invalid_number": "Введите правильный номер ({min}-{max}).",
 
   "cli.usage":
-    "Использование:\n  opencode-bot [start] [--mode sources|installed]\n  opencode-bot status\n  opencode-bot stop\n  opencode-bot config\n\nЗаметки:\n  - Без команды по умолчанию используется `start`\n  - `--mode` сейчас поддерживается только для `start`",
+    "Использование:\n  opencode-chat-bot [start] [--mode sources|installed]\n  opencode-chat-bot status\n  opencode-chat-bot stop\n  opencode-chat-bot config\n\nЗаметки:\n  - Без команды по умолчанию используется `start`\n  - `--mode` сейчас поддерживается только для `start`",
   "cli.placeholder.status":
     "Команда `status` пока работает как заглушка. Реальная проверка статуса появится на этапе service-слоя (Этап 5).",
   "cli.placeholder.stop":

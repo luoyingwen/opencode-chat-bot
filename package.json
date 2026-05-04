@@ -5,7 +5,7 @@
   "type": "module",
   "main": "./dist/index.js",
   "bin": {
-    "opencode-bot": "dist/cli.js"
+    "opencode-chat-bot": "dist/cli.js"
   },
   "exports": {
     ".": "./dist/index.js",

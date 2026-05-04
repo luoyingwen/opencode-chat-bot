@@ -57,7 +57,7 @@ describe("session/cache-manager", () => {
   let tempHome: string;
 
   beforeEach(async () => {
-    tempHome = await mkdtemp(path.join(os.tmpdir(), "opencode-bot-cache-"));
+    tempHome = await mkdtemp(path.join(os.tmpdir(), "opencode-chat-bot-cache-"));
     process.env.OPENCODE_BOT_HOME = tempHome;
     setRuntimeMode("installed");
     await loadSettings();

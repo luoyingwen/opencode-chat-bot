@@ -91,24 +91,29 @@ No public inbound ports are required for normal usage.
 
 ### Bot commands
 
-Current command set:
+Current shared command set (DingTalk, Feishu, and OpenClaw):
 
 - `/status` - server, project, and session status
-- `/session new` - create a new session
-- `/abort` - stop the current task
+- `/stop` - stop the current task
 - `/sessions` - show and switch recent sessions
-- `/projects` - show and switch projects
-- `/task` - create a scheduled task
-- `/tasklist` - browse and delete scheduled tasks
+- `/session <number>` - select a session by number
+- `/session new` - create a new session
 - `/session rename [title]` - rename current session
+- `/projects` - show and switch projects
+- `/project <number>` - select a project by number
+- `/agents` - show and select agents
+- `/agent <number>` - select an agent by number
 - `/commands` - browse and run custom commands (plus built-ins like `init` and `review`)
-- `/opencode_start` - start local OpenCode server
-- `/opencode_stop` - stop local OpenCode server
+- `/command <number> [args]` - run a listed OpenCode command
+- `/auto_confirm [on|off]` - toggle permission auto-confirm for the current session
+- `/task` - create a scheduled task
+- `/tasks` - browse and delete scheduled tasks
+- `/permission` - show pending permission state
+- `/exit` - stop this bot process
 - `/help` - show command help
 
-Model, agent, variant, and context actions are available from the persistent bottom keyboard.
-
-Text messages (non-commands) are treated as prompts for OpenCode only when no blocking interaction is active.
+OpenClaw-only commands:
+- `/opencode` - enter OpenCode mode for this conversation
 
 OpenClaw support is exposed through the OpenClaw plugin entrypoint. OpenClaw conversations use `/opencode` to enter OpenCode intercept mode and `/exit` to leave it; once active, commands and normal text reuse the same shared execution, interaction, and state modules as DingTalk and Feishu.
 
@@ -116,9 +121,9 @@ Interaction routing rules:
 
 - Only one interactive flow can be active at a time (permission, question, rename, scheduled task, command flows)
 - While an interaction is active, unrelated input is blocked with a contextual hint
-- Allowed utility commands during active interactions: `/help`, `/status`, `/abort`
+- Allowed utility commands during active interactions: `/help`, `/status`, `/stop`
 - Unknown slash commands return an explicit fallback message
-- Text-first scheduled task and task list flows expire after inactivity; other interaction flows wait for explicit completion (`answer`, `cancel`, `/abort`, reset/cleanup)
+- Text-first scheduled task and task list flows expire after inactivity; other interaction flows wait for explicit completion (`answer`, `cancel`, `/stop`, reset/cleanup)
 
 Model picker behavior:
 
@@ -130,9 +135,8 @@ Model picker behavior:
 ### Main features already implemented
 
 - [x] Single-user access control by allowed platform user ID
-- [x] OpenCode server control from chat (`/status`, `/opencode_start`, `/opencode_stop`)
 - [x] Project and session management from chat (`/projects`, `/sessions`, `/session new`)
-- [x] Remote task execution and interruption support (`/abort`)
+- [x] Remote task execution and interruption support (`/stop`)
 - [x] Chat-friendly result delivery, including sending generated code/files when needed
 - [x] Interactive question and permission handling directly in chat with text-first replies
 - [x] Live pinned session status in chat (project, model, context usage, changed files)
@@ -140,15 +144,13 @@ Model picker behavior:
 - [x] Built-in and custom command catalog access (`/commands`)
 - [x] Scheduled task creation flow (`/task`)
 - [x] Scheduled task runtime execution with deferred chat delivery
-- [x] Scheduled task list and deletion flow (`/tasklist`)
-- [x] Shared text-first interaction core for `/session rename`, `/task`, `/tasklist`, and permission replies across DingTalk and Feishu
+- [x] Scheduled task list and deletion flow (`/tasks`)
+- [x] Shared text-first interaction core for `/session rename`, `/task`, `/tasks`, and permission replies across DingTalk and Feishu
 - [x] Persistent settings between restarts (`settings.json`)
 - [x] UI localization support via i18n files
 - [x] Service message visibility controls (thinking/tool updates)
 - [x] Sending code blocks as text files when needed
-- [x] Image attachments support (send photos/screenshots from supported chat platforms to OpenCode)
-- [x] PDF attachments support (send documents from supported chat platforms to OpenCode)
-- [x] Text file attachments support (send code/config/log files from supported chat platforms to OpenCode)
+- [ ] Image, PDF, and text file attachments support (currently shows "not supported" notice)
 - [ ] Voice/audio transcription via Whisper-compatible APIs (OpenAI/Groq/Together and compatible providers)
 - [ ] Optional global audio replies with `/tts` via OpenAI-compatible APIs
 - [x] OpenClaw plugin entrypoint built on shared command, prompt, interaction, and route-scoped state modules
@@ -163,13 +165,15 @@ Open tasks for upcoming iterations:
 - [x] Dynamic subagent activity display during task execution
 - [ ] Git tree support
 - [ ] Docker runtime support and deployment guide
-- [ ] OpenCode server monitoring with automatic restart on stop/crash
+- [ ] OpenCode server management commands (`/opencode_start`, `/opencode_stop`) with process monitoring and automatic restart
 
 ## Possible Improvements
 
 Optional or longer-term enhancements:
 
-- [x] Create new OpenCode projects directly from chat
+- [ ] Create new OpenCode projects directly from chat with full initialization
 - [ ] Add project file browsing helpers (for example, `ls` and `open` flows)
 - [ ] Add a bot settings command with in-chat UI
+- [ ] Image, PDF, and text file attachments support
+- [ ] Voice/audio transcription and TTS reply support
 

@@ -41,7 +41,7 @@ describe("scheduled-task/store", () => {
   let tempHome: string;
 
   beforeEach(async () => {
-    tempHome = await mkdtemp(path.join(os.tmpdir(), "opencode-bot-task-store-"));
+    tempHome = await mkdtemp(path.join(os.tmpdir(), "opencode-chat-bot-task-store-"));
     process.env.OPENCODE_BOT_HOME = tempHome;
     setRuntimeMode("installed");
     __resetSettingsForTests();

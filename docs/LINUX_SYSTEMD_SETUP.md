@@ -8,14 +8,14 @@ This guide covers setting up the OpenCode Bot with systemd on Linux.
 
 ```bash
 npm install -g @luoyingwen/opencode-chat-bot@latest
-opencode-bot config
+opencode-chat-bot config
 ```
 
 ## 2. Get the required paths
 
 ```bash
 which node
-which opencode-bot
+which opencode-chat-bot
 dirname "$(which node)"
 ```
 
@@ -23,7 +23,7 @@ Use these values in the service file:
 
 - `<USER>`: your Linux user
 - `<NODE_PATH>`: output of `which node`
-- `<OPENCODE_BOT_PATH>`: output of `which opencode-bot`
+- `<OPENCODE_BOT_PATH>`: output of `which opencode-chat-bot`
 - `<NODE_BIN_DIR>`: output of `dirname "$(which node)"`
 
 ## 3. Create the service file
@@ -79,7 +79,7 @@ After=network.target
 Type=simple
 User=admin
 Environment=PATH=/home/admin/.nvm/versions/node/v20.20.2/bin:/usr/local/bin:/usr/bin:/bin
-ExecStart=/home/admin/.nvm/versions/node/v20.20.2/bin/node /home/admin/.nvm/versions/node/v20.20.2/bin/opencode-bot
+ExecStart=/home/admin/.nvm/versions/node/v20.20.2/bin/node /home/admin/.nvm/versions/node/v20.20.2/bin/opencode-chat-bot
 Restart=on-failure
 RestartSec=5
 

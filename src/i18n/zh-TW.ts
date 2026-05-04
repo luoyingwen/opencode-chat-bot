@@ -59,7 +59,7 @@ export const zhTW: I18nDictionary = {
   "runtime.wizard.saved": "設定已儲存：\n- {envPath}\n- {settingsPath}\n",
   "runtime.wizard.not_configured_starting": "應用程式尚未設定。正在啟動精靈...\n",
   "runtime.wizard.tty_required":
-    "互動式精靈需要 TTY 終端。請在互動式 shell 中執行 `opencode-bot config`。",
+    "互動式精靈需要 TTY 終端。請在互動式 shell 中執行 `opencode-chat-bot config`。",
 
   "rename.no_session": "⚠️ 沒有作用中的工作階段。請先建立或選擇一個工作階段。",
   "rename.prompt": "📝 請輸入工作階段的新標題：\n\n目前：{title}",
@@ -121,7 +121,7 @@ export const zhTW: I18nDictionary = {
   "commands.invalid_number": "請輸入有效的命令編號（{min}-{max}）。",
 
   "cli.usage":
-    "用法：\n  opencode-bot [start] [--mode sources|installed]\n  opencode-bot status\n  opencode-bot stop\n  opencode-bot config\n\n說明：\n  - 不帶命令時預設執行 `start`\n  - `--mode` 目前僅支援 `start` 命令",
+    "用法：\n  opencode-chat-bot [start] [--mode sources|installed]\n  opencode-chat-bot status\n  opencode-chat-bot stop\n  opencode-chat-bot config\n\n說明：\n  - 不帶命令時預設執行 `start`\n  - `--mode` 目前僅支援 `start` 命令",
   "cli.placeholder.status":
     "命令 `status` 目前是佔位符。真實狀態檢查將會在 service 層（階段 5）加入。",
   "cli.placeholder.stop":
