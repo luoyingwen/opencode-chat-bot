@@ -120,7 +120,6 @@ export const config = {
     appKey: getEnvVar("DINGTALK_APP_KEY", false),
     appSecret: getEnvVar("DINGTALK_APP_SECRET", false),
     allowedUserId: getEnvVar("DINGTALK_ALLOWED_USER_ID", false),
-    debug: getOptionalBooleanEnvVar("DINGTALK_DEBUG", false),
   },
   feishu: {
     appId: getEnvVar("FEISHU_APP_ID", false),

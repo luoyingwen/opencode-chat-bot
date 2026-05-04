@@ -106,12 +106,10 @@ export class DingTalkClient {
     this.client = new DWClient({
       clientId: clientConfig.appKey,
       clientSecret: clientConfig.appSecret,
-      debug: config.dingtalk.debug,
-      keepAlive: true, // Enable SDK keep-alive mechanism
+      debug: false,
+      keepAlive: true,
     });
-    logger.info(
-      `[DingTalk] Client instance created (keepAlive=true, debug=${config.dingtalk.debug})`,
-    );
+    logger.info("[DingTalk] Client instance created (keepAlive=true)");
   }
 
   onConnectionStatus(handler: ConnectionStatusHandler): void {

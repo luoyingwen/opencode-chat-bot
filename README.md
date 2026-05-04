@@ -327,7 +327,6 @@ When installed via npm, the configuration wizard handles the initial setup. The 
 | `DINGTALK_APP_KEY`             | DingTalk App Key                                                                   |   No\*   | —                        |
 | `DINGTALK_APP_SECRET`          | DingTalk App Secret                                                                |   No\*   | —                        |
 | `DINGTALK_ALLOWED_USER_ID`     | Allowed DingTalk staff ID                                                          |    No    | —                        |
-| `DINGTALK_DEBUG`               | Enable DingTalk SDK debug logs                                                     |    No    | `false`                  |
 | `FEISHU_APP_ID`                | Feishu App ID                                                                      |   No\*   | —                        |
 | `FEISHU_APP_SECRET`            | Feishu App Secret                                                                  |   No\*   | —                        |
 | `FEISHU_DOMAIN`                | Feishu API domain (`feishu` or compatible SDK domain)                              |    No    | `feishu`                 |
