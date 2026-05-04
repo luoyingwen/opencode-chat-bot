@@ -222,7 +222,10 @@ From the application details page:
 
 ### Step 3: Configure User Access
 
-Set `DINGTALK_ALLOWED_USER_ID` to restrict access to a specific DingTalk user ID (staff ID). If not set, all users who can message the robot will be allowed.
+Set `DINGTALK_ALLOWED_USER_ID` to restrict access to a specific DingTalk staff ID.
+
+- **If set**: Only the matching user can interact with the bot
+- **If not set**: All users who can message the robot are allowed (public mode)
 
 ### Step 4: Configure Environment
 
@@ -276,7 +279,10 @@ From the application details page:
 
 ### Step 3: Configure User Access
 
-Set `FEISHU_ALLOWED_USERS` to restrict access to one or more Feishu user IDs (comma-separated open IDs). If not set, all users who can message the bot will be allowed.
+Set `FEISHU_ALLOWED_USERS` to restrict access to specific Feishu user IDs (comma-separated open IDs).
+
+- **If set**: Only listed users can interact with the bot
+- **If not set**: All users who can message the bot are allowed (public mode)
 
 ### Step 4: Configure Environment
 
@@ -326,11 +332,11 @@ When installed via npm, the configuration wizard handles the initial setup. The 
 | ------------------------------ | ---------------------------------------------------------------------------------- | :------: | ------------------------ |
 | `DINGTALK_APP_KEY`             | DingTalk App Key                                                                   |   No\*   | —                        |
 | `DINGTALK_APP_SECRET`          | DingTalk App Secret                                                                |   No\*   | —                        |
-| `DINGTALK_ALLOWED_USER_ID`     | Allowed DingTalk staff ID                                                          |    No    | —                        |
+| `DINGTALK_ALLOWED_USER_ID`     | Allowed DingTalk staff ID (unset = public mode)   |    No    | —                        |
 | `FEISHU_APP_ID`                | Feishu App ID                                                                      |   No\*   | —                        |
 | `FEISHU_APP_SECRET`            | Feishu App Secret                                                                  |   No\*   | —                        |
 | `FEISHU_DOMAIN`                | Feishu API domain (`feishu` or compatible SDK domain)                              |    No    | `feishu`                 |
-| `FEISHU_ALLOWED_USERS`         | Comma-separated allowed Feishu user IDs                                            |    No    | —                        |
+| `FEISHU_ALLOWED_USERS`         | Comma-separated allowed Feishu user IDs (unset = public mode) |    No    | —                        |
 | `OPENCODE_API_URL`             | OpenCode server URL                                                                |    No    | `http://localhost:4096`  |
 | `OPENCODE_SERVER_USERNAME`     | Server auth username                                                               |    No    | `opencode`               |
 | `OPENCODE_SERVER_PASSWORD`     | Server auth password                                                               |    No    | —                        |
