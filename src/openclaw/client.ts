@@ -1,12 +1,9 @@
 import type { OpenClawPluginApi } from "openclaw/plugin-sdk/core";
 import { logger } from "../utils/logger.js";
-import type { OpenClawClientOptions, OpenClawRoute, OpenClawRuntimeConfig } from "./types.js";
+import type { OpenClawClientOptions, OpenClawRoute } from "./types.js";
 
 class OpenClawClient {
-  constructor(
-    private readonly api: OpenClawPluginApi,
-    readonly config: OpenClawRuntimeConfig,
-  ) {}
+  constructor(private readonly api: OpenClawPluginApi) {}
 
   async sendMessage(route: OpenClawRoute, text: string): Promise<void> {
     const normalizedText = text.trim();
@@ -38,7 +35,7 @@ class OpenClawClient {
 let openClawClient: OpenClawClient | null = null;
 
 export function initOpenClawClient(options: OpenClawClientOptions): OpenClawClient {
-  openClawClient = new OpenClawClient(options.api, options.config);
+  openClawClient = new OpenClawClient(options.api);
   return openClawClient;
 }
 
@@ -46,14 +43,10 @@ export function getOpenClawClient(): OpenClawClient {
   if (!openClawClient) {
     throw new Error("OpenClaw client has not been initialized");
   }
-
   return openClawClient;
 }
 
 export async function sendOpenClawMessage(route: OpenClawRoute, text: string): Promise<void> {
-  await getOpenClawClient().sendMessage(route, text);
-}
-
-export function __resetOpenClawClientForTests(): void {
-  openClawClient = null;
+  const client = getOpenClawClient();
+  await client.sendMessage(route, text);
 }

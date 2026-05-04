@@ -21,12 +21,6 @@ import { initializeSharedRuntime } from "../app/initialize-shared-runtime.js";
 import { getOpenClawLastRoute, setOpenClawLastRoute } from "../settings/manager.js";
 import { initOpenClawClient, sendOpenClawMessage } from "./client.js";
 import {
-  explainOpenClawScopeMismatch,
-  matchesOpenClawScope,
-  readOpenClawPluginConfig,
-  resolveOpenClawRuntimeConfig,
-} from "./config.js";
-import {
   clearOpenClawActive,
   handleOpenClawPermissionReply,
   hasOpenClawPendingPermission,
@@ -37,7 +31,6 @@ import type {
   OpenClawDispatchResult,
   OpenClawPluginEventContext,
   OpenClawRoute,
-  OpenClawRuntimeConfig,
 } from "./types.js";
 import { handleOpenClawCommandByIndex, handleOpenClawCommandsCommand } from "./commands.js";
 import {
@@ -56,7 +49,6 @@ import {
 const ENTER_OPENCODE_COMMAND = "opencode";
 const LEAVE_OPENCODE_COMMAND = "exit";
 
-let runtimeConfig: OpenClawRuntimeConfig | null = null;
 let runtimeReady: Promise<void> | null = null;
 let lastNotificationRoute: OpenClawRoute | null = null;
 
@@ -67,11 +59,8 @@ interface SlashCommand {
 
 export function initializeOpenClawHandler(params: {
   api: OpenClawPluginApi;
-  pluginConfig?: unknown;
 }): void {
-  const pluginConfig = readOpenClawPluginConfig(params.pluginConfig);
-  runtimeConfig = resolveOpenClawRuntimeConfig(pluginConfig);
-  initOpenClawClient({ api: params.api, config: runtimeConfig });
+  initOpenClawClient({ api: params.api });
 
   setScheduledTaskNotificationCallback("OpenClaw", async (text: string) => {
     if (!lastNotificationRoute) {
@@ -92,33 +81,19 @@ export function initializeOpenClawHandler(params: {
     }
   });
 
-  logger.info(
-    `[OpenClaw] Handler initialized enabled=${runtimeConfig.enabled} channels=${runtimeConfig.channels.join(",") || "all"}`,
-  );
+  logger.info("[OpenClaw] Handler initialized");
 }
 
 export async function handleOpenClawMessageReceived(
-  event: unknown,
-  context: OpenClawPluginEventContext,
-): Promise<void> {
-  const config = getRuntimeConfig();
-  const route = createOpenClawRoute(event, context);
-  const mismatch = explainOpenClawScopeMismatch(config, route);
-  if (mismatch) {
-    logger.debug(`[OpenClaw] Ignoring message_received: ${mismatch}`);
-  }
-}
+  _event: unknown,
+  _context: OpenClawPluginEventContext,
+): Promise<void> {}
 
 export async function handleOpenClawBeforeDispatch(
   event: unknown,
   context: OpenClawPluginEventContext,
 ): Promise<OpenClawDispatchResult | undefined> {
-  const config = getRuntimeConfig();
-
   const route = createOpenClawRoute(event, context);
-  if (!matchesOpenClawScope(config, route)) {
-    return undefined;
-  }
 
   await runtimeReady;
 
@@ -131,14 +106,6 @@ export async function handleOpenClawBeforeDispatch(
   void setOpenClawLastRoute(route);
   const resultText = await processOpenClawText(route, text);
   return resultText ? { handled: true, text: resultText } : undefined;
-}
-
-function getRuntimeConfig(): OpenClawRuntimeConfig {
-  if (!runtimeConfig) {
-    runtimeConfig = resolveOpenClawRuntimeConfig();
-  }
-
-  return runtimeConfig;
 }
 
 export function extractOpenClawText(event: unknown): string | null {

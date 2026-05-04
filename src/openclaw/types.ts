@@ -7,29 +7,8 @@ export interface OpenClawRoute extends ConversationRoute {
   conversationId: string;
 }
 
-export interface OpenClawScopeContext {
-  channelId?: string;
-  accountId?: string;
-  conversationId?: string;
-}
-
-export interface OpenClawRuntimeConfig {
-  enabled: boolean;
-  channels: string[];
-  accountIds: string[];
-  conversationIds: string[];
-}
-
-export interface OpenClawPluginConfigInput {
-  enabled?: boolean;
-  channels?: string[];
-  accountIds?: string[];
-  conversationIds?: string[];
-}
-
 export interface OpenClawClientOptions {
   api: OpenClawPluginApi;
-  config: OpenClawRuntimeConfig;
 }
 
 export interface OpenClawInboundMessage {

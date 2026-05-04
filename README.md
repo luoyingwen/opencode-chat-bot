@@ -192,14 +192,10 @@ npm run openclaw:install -- link
 
 After building, OpenClaw can discover the plugin from `package.json` under `openclaw.extensions`, from the `./openclaw-plugin` export, or from `openclaw.plugin.json` for runtimes that read plugin metadata files.
 
-OpenClaw plugin config can restrict the adapter by channel, account, or conversation. OpenClaw runtime plugin config takes precedence over environment fallback values. Environment fallback values are available as `OPENCLAW_ENABLED`, `OPENCLAW_CHANNELS`, `OPENCLAW_ACCOUNT_IDS`, and `OPENCLAW_CONVERSATION_IDS`.
-
 Example OpenClaw configuration:
 
 ```bash
 openclaw config set plugins.entries.opencode-chat-bot.enabled true
-openclaw config set plugins.entries.opencode-chat-bot.config.accountIds '["account1"]'
-openclaw config set plugins.entries.opencode-chat-bot.config.conversationIds '["conv1"]'
 ```
 
 ## DingTalk Bot Setup
@@ -341,27 +337,6 @@ When installed via npm, the configuration wizard handles the initial setup. The 
 | `FEISHU_APP_SECRET`            | Feishu App Secret                                                                  |   No\*   | —                        |
 | `FEISHU_DOMAIN`                | Feishu API domain (`feishu` or compatible SDK domain)                              |    No    | `feishu`                 |
 | `FEISHU_ALLOWED_USER_ID`       | Locked Feishu user ID (unset = auto-lock)     |    No    | —                        |
-| `OPENCODE_API_URL`             | OpenCode server URL                                                                |    No    | `http://localhost:4096`  |
-| `OPENCODE_SERVER_USERNAME`     | Server auth username                                                               |    No    | `opencode`               |
-| `OPENCODE_SERVER_PASSWORD`     | Server auth password                                                               |    No    | —                        |
-| `OPENCODE_MODEL_PROVIDER`      | Default model provider                                                             |   Yes    | `opencode`               |
-| `OPENCODE_MODEL_ID`            | Default model ID                                                                   |   Yes    | `big-pickle`             |
-| `BOT_LOCALE`                   | Bot UI language (e.g. `en`, `de`, `es`, `ru`, `zh`, `zh-TW`)                       |    No    | `en`                     |
-| `SESSIONS_LIST_LIMIT`          | Sessions per page in `/sessions`                                                   |    No    | `10`                     |
-| `PROJECTS_LIST_LIMIT`          | Projects per page in `/projects`                                                   |    No    | `10`                     |
-| `COMMANDS_LIST_LIMIT`          | Commands per page in `/commands`                                                   |    No    | `10`                     |
-| `TASK_LIMIT`                   | Maximum scheduled tasks at once                                                    |    No    | `10`                     |
-| `BASH_TOOL_DISPLAY_MAX_LENGTH` | Max displayed length for bash tool commands (truncated if longer)                  |    No    | `128`                    |
-| `HIDE_THINKING_MESSAGES`       | Hide `💭 Thinking...` service messages                                             |    No    | `false`                  |
-| `HIDE_TOOL_CALL_MESSAGES`      | Hide tool-call service messages (`💻 bash ...`, `📖 read ...`, etc.)               |    No    | `false`                  |
-| `HIDE_TOOL_FILE_MESSAGES`      | Hide file edit documents sent as `.txt` attachments (`edit_*.txt`, `write_*.txt`)  |    No    | `false`                  |
-| `RESPONSE_STREAM_THROTTLE_MS`  | Stream edit throttle (ms) for updates                                              |    No    | `500`                    |
-| `MESSAGE_FORMAT_MODE`          | Assistant reply formatting: `markdown` (MarkdownV2) or `raw`                       |    No    | `markdown`               |
-| `CODE_FILE_MAX_SIZE_KB`        | Max file size (KB) to send as document                                             |    No    | `100`                    |
-| `OPENCLAW_ENABLED`             | Enable OpenClaw adapter from environment fallback                                  |    No    | `false`                  |
-| `OPENCLAW_CHANNELS`            | Comma-separated OpenClaw channel filter                                            |    No    | —                        |
-| `OPENCLAW_ACCOUNT_IDS`         | Comma-separated OpenClaw account filter                                            |    No    | —                        |
-| `OPENCLAW_CONVERSATION_IDS`    | Comma-separated OpenClaw conversation filter                                       |    No    | —                        |
 | `LOG_LEVEL`                    | Log level (`debug`, `info`, `warn`, `error`)                                       |    No    | `info`                   |
 | `LOG_RETENTION`                | Number of log files to keep: launch files in `sources`, daily files in `installed` |    No    | `10`                     |
 

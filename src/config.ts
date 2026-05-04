@@ -58,18 +58,6 @@ function getOptionalBooleanEnvVar(key: string, defaultValue: boolean): boolean {
   return defaultValue;
 }
 
-function getOptionalStringListEnvVar(key: string): string[] {
-  const value = getEnvVar(key, false).trim();
-  if (!value) {
-    return [];
-  }
-
-  return value
-    .split(",")
-    .map((item) => item.trim())
-    .filter((item) => item.length > 0);
-}
-
 function getOptionalMessageFormatModeEnvVar(
   key: string,
   defaultValue: MessageFormatMode,
@@ -128,12 +116,6 @@ function buildConfig() {
       appSecret: getEnvVar("FEISHU_APP_SECRET", false),
       domain: getEnvVar("FEISHU_DOMAIN", false) || "feishu",
       allowedUserId: getEnvVar("FEISHU_ALLOWED_USER_ID", false),
-    },
-    openclaw: {
-      enabled: getOptionalBooleanEnvVar("OPENCLAW_ENABLED", false),
-      channels: getOptionalStringListEnvVar("OPENCLAW_CHANNELS"),
-      accountIds: getOptionalStringListEnvVar("OPENCLAW_ACCOUNT_IDS"),
-      conversationIds: getOptionalStringListEnvVar("OPENCLAW_CONVERSATION_IDS"),
     },
   };
 }
