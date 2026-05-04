@@ -68,6 +68,7 @@
   "dependencies": {
     "@larksuiteoapi/node-sdk": "^1.60.0",
     "@opencode-ai/sdk": "^1.1.21",
+    "async-mutex": "^0.5.0",
     "better-sqlite3": "^12.6.2",
     "dingtalk-stream": "^2.1.4",
     "dotenv": "^17.2.3"

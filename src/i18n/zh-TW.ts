@@ -134,6 +134,13 @@ export const zhTW: I18nDictionary = {
   "cli.args.unknown_option": "未知選項：{value}",
   "cli.args.mode_only_start": "選項 --mode 僅支援 start 命令",
 
-  "openclaw.processing":
-    "⚙️ 處理中...\n\n💡 您目前處於 OpenCode 拦截模式，輸入 /exit 退出。",
+"openclaw.processing":
+    "⚙️ 處理中...\n\n💡 您正處於 OpenCode 拦截模式，輸入 /exit 退出。",
+
+  "openclaw.permission_hint":
+    "🔐 **权限请求**\n\n请回复:\n/1 - 允许一次\n/2 - 总是允许\n/3 - 拒绝",
+
+  "auto_lock.success": "✅ Bot 已锁定到您的账号 ({userId})。其他使用者无法存取。",
+  "auto_lock.race_rejected": "❌ Bot 已被其他使用者锁定。拒绝存取。",
+  "permission.denied": "❌ 拒绝存取。",
 };

@@ -222,10 +222,12 @@ From the application details page:
 
 ### Step 3: Configure User Access
 
-Set `DINGTALK_ALLOWED_USER_ID` to restrict access to a specific DingTalk staff ID.
+Bot automatically locks to the first user who sends a message.
 
-- **If set**: Only the matching user can interact with the bot
-- **If not set**: All users who can message the robot are allowed (public mode)
+- **If unset**: Auto-lock to first user
+- **If set**: Only matching user can access
+
+Set `DINGTALK_ALLOWED_USER_ID` to pre-configure a specific DingTalk staff ID.
 
 ### Step 4: Configure Environment
 
@@ -234,7 +236,7 @@ Add to your `.env`:
 ```env
 DINGTALK_APP_KEY=your-app-key
 DINGTALK_APP_SECRET=your-app-secret
-DINGTALK_ALLOWED_USER_ID=your-staff-id
+# DINGTALK_ALLOWED_USER_ID= (optional, auto-locks to first user if unset)
 ```
 
 ### Step 5: Test
@@ -279,10 +281,12 @@ From the application details page:
 
 ### Step 3: Configure User Access
 
-Set `FEISHU_ALLOWED_USERS` to restrict access to specific Feishu user IDs (comma-separated open IDs).
+Bot automatically locks to the first user who sends a message.
 
-- **If set**: Only listed users can interact with the bot
-- **If not set**: All users who can message the bot are allowed (public mode)
+- **If unset**: Auto-lock to first user  
+- **If set**: Only matching user can access
+
+Set `FEISHU_ALLOWED_USER_ID` to pre-configure a specific Feishu user ID (open ID).
 
 ### Step 4: Configure Environment
 
@@ -291,7 +295,7 @@ Add to your `.env`:
 ```env
 FEISHU_APP_ID=your-app-id
 FEISHU_APP_SECRET=your-app-secret
-FEISHU_ALLOWED_USERS=user_id_1,user_id_2
+# FEISHU_ALLOWED_USER_ID= (optional, auto-locks to first user if unset)
 ```
 
 ### Step 5: Test
@@ -332,11 +336,11 @@ When installed via npm, the configuration wizard handles the initial setup. The 
 | ------------------------------ | ---------------------------------------------------------------------------------- | :------: | ------------------------ |
 | `DINGTALK_APP_KEY`             | DingTalk App Key                                                                   |   No\*   | —                        |
 | `DINGTALK_APP_SECRET`          | DingTalk App Secret                                                                |   No\*   | —                        |
-| `DINGTALK_ALLOWED_USER_ID`     | Allowed DingTalk staff ID (unset = public mode)   |    No    | —                        |
+| `DINGTALK_ALLOWED_USER_ID`     | Locked DingTalk staff ID (unset = auto-lock)  |    No    | —                        |
 | `FEISHU_APP_ID`                | Feishu App ID                                                                      |   No\*   | —                        |
 | `FEISHU_APP_SECRET`            | Feishu App Secret                                                                  |   No\*   | —                        |
 | `FEISHU_DOMAIN`                | Feishu API domain (`feishu` or compatible SDK domain)                              |    No    | `feishu`                 |
-| `FEISHU_ALLOWED_USERS`         | Comma-separated allowed Feishu user IDs (unset = public mode) |    No    | —                        |
+| `FEISHU_ALLOWED_USER_ID`       | Locked Feishu user ID (unset = auto-lock)     |    No    | —                        |
 | `OPENCODE_API_URL`             | OpenCode server URL                                                                |    No    | `http://localhost:4096`  |
 | `OPENCODE_SERVER_USERNAME`     | Server auth username                                                               |    No    | `opencode`               |
 | `OPENCODE_SERVER_PASSWORD`     | Server auth password                                                               |    No    | —                        |
@@ -382,8 +386,8 @@ To add a model to favorites, open OpenCode TUI (`opencode`), go to model selecti
 
 The bot enforces strict **user whitelists**:
 
-- **DingTalk:** Only the user whose staff ID matches `DINGTALK_ALLOWED_USER_ID` can interact (if set)
-- **Feishu:** Only users whose open IDs are listed in `FEISHU_ALLOWED_USERS` can interact (if set)
+- **DingTalk**: Auto-locked to first user, or matches `DINGTALK_ALLOWED_USER_ID` if pre-configured
+- **Feishu**: Auto-locked to first user, or matches `FEISHU_ALLOWED_USER_ID` if pre-configured
 
 Messages from unauthorized sources are silently ignored and logged.
 
@@ -433,7 +437,7 @@ Since the bot runs locally on your machine and connects to your local OpenCode s
 
 - Verify bot is enabled and webhook URL is configured correctly
 - Check `FEISHU_APP_ID` and `FEISHU_APP_SECRET` are correct
-- Check `FEISHU_ALLOWED_USERS` if access is restricted
+- Check `FEISHU_ALLOWED_USER_ID` if access is restricted
 - Ensure the bot is published and available to users
 
 **OpenClaw plugin does not respond**

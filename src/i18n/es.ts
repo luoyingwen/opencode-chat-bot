@@ -143,4 +143,11 @@ export const es: I18nDictionary = {
 
   "openclaw.processing":
     "⚙️ Procesando...\n\n💡 Estás en el modo intercept de OpenCode. Ingresa /exit para salir.",
+
+  "openclaw.permission_hint":
+    "🔐 **Solicitud de permiso**\n\nPor favor responda:\n/1 - Permitir una vez\n/2 - Permitir siempre\n/3 - Rechazar",
+
+  "auto_lock.success": "✅ Bot bloqueado a tu cuenta ({userId}). Otros usuarios no pueden acceder.",
+  "auto_lock.race_rejected": "❌ Bot bloqueado por otro usuario. Acceso denegado.",
+  "permission.denied": "❌ Acceso denegado.",
 };

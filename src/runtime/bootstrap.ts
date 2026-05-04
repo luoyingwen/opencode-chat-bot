@@ -33,7 +33,7 @@ export interface WizardEnvValues {
   DINGTALK_ALLOWED_USER_ID?: string;
   FEISHU_APP_ID?: string;
   FEISHU_APP_SECRET?: string;
-  FEISHU_ALLOWED_USERS?: string;
+  FEISHU_ALLOWED_USER_ID?: string;
   OPENCODE_API_URL?: string;
   OPENCODE_SERVER_USERNAME?: string;
   OPENCODE_SERVER_PASSWORD?: string;
@@ -53,10 +53,12 @@ function isValidHttpUrl(value: string): boolean {
 export function validateRuntimeEnvValues(values: Record<string, string>): EnvValidationResult {
   const hasDingTalk = !!(
     values.DINGTALK_APP_KEY?.trim() &&
-    values.DINGTALK_APP_SECRET?.trim() &&
-    values.DINGTALK_ALLOWED_USER_ID?.trim()
+    values.DINGTALK_APP_SECRET?.trim()
   );
-  const hasFeishu = !!(values.FEISHU_APP_ID?.trim() && values.FEISHU_APP_SECRET?.trim());
+  const hasFeishu = !!(
+    values.FEISHU_APP_ID?.trim() &&
+    values.FEISHU_APP_SECRET?.trim()
+  );
 
   if (!hasDingTalk && !hasFeishu) {
     return {
@@ -115,7 +117,7 @@ export function buildEnvFileContent(existingContent: string, values: WizardEnvVa
     ["DINGTALK_ALLOWED_USER_ID", values.DINGTALK_ALLOWED_USER_ID],
     ["FEISHU_APP_ID", values.FEISHU_APP_ID],
     ["FEISHU_APP_SECRET", values.FEISHU_APP_SECRET],
-    ["FEISHU_ALLOWED_USERS", values.FEISHU_ALLOWED_USERS],
+    ["FEISHU_ALLOWED_USER_ID", values.FEISHU_ALLOWED_USER_ID],
     ["OPENCODE_API_URL", values.OPENCODE_API_URL],
     ["OPENCODE_SERVER_USERNAME", values.OPENCODE_SERVER_USERNAME],
     ["OPENCODE_SERVER_PASSWORD", values.OPENCODE_SERVER_PASSWORD],
@@ -290,7 +292,7 @@ async function initializeConfigTemplate(
     DINGTALK_ALLOWED_USER_ID: existingParsed.DINGTALK_ALLOWED_USER_ID,
     FEISHU_APP_ID: existingParsed.FEISHU_APP_ID,
     FEISHU_APP_SECRET: existingParsed.FEISHU_APP_SECRET,
-    FEISHU_ALLOWED_USERS: existingParsed.FEISHU_ALLOWED_USERS,
+    FEISHU_ALLOWED_USER_ID: existingParsed.FEISHU_ALLOWED_USER_ID,
     OPENCODE_API_URL: existingParsed.OPENCODE_API_URL,
     OPENCODE_SERVER_USERNAME: existingParsed.OPENCODE_SERVER_USERNAME,
     OPENCODE_SERVER_PASSWORD: existingParsed.OPENCODE_SERVER_PASSWORD,

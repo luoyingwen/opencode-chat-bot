@@ -133,9 +133,15 @@ export const en = {
   "openclaw.mode.exited": "✅ OpenCode mode disabled for this OpenClaw conversation.",
   "openclaw.mode.inactive": "OpenCode mode was not active for this OpenClaw conversation.",
   "openclaw.no_pending_permission": "⚠️ No pending permission request.",
-  "openclaw.permission_pending": "A permission request is pending. Reply with /1, /2, or /3.",
-  "openclaw.permission_hint":
+"openclaw.permission_pending": "A permission request is pending. Reply with /1, /2, or /3.",
+  "openclaw.permission_no_pending":
     "No pending permission request. When one appears, reply with /1, /2, or /3.",
+  "openclaw.permission_hint":
+    "🔐 **Permission Request**\n\nPlease reply:\n/1 - Allow once\n/2 - Always allow\n/3 - Reject",
+
+  "auto_lock.success": "✅ Bot locked to your account ({userId}). Other users cannot access.",
+  "auto_lock.race_rejected": "❌ Bot locked by another user. Access denied.",
+  "permission.denied": "❌ Access denied.",
   "openclaw.processing":
     "⚙️ Processing...\n\n💡 You are in OpenCode intercept mode. Enter /exit to quit.",
   "openclaw.command_failed": "❌ Command failed.",

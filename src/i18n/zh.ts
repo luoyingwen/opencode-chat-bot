@@ -136,4 +136,11 @@ export const zh: I18nDictionary = {
 
   "openclaw.processing":
     "⚙️ 处理中...\n\n💡 您正处于 OpenCode 拦截模式，输入 /exit 退出。",
+
+  "openclaw.permission_hint":
+    "🔐 **权限请求**\n\n请回复:\n/1 - 允许一次\n/2 - 总是允许\n/3 - 拒绝",
+
+  "auto_lock.success": "✅ Bot 已锁定到您的账号 ({userId})。其他用户无法访问。",
+  "auto_lock.race_rejected": "❌ Bot 已被其他用户锁定。拒绝访问。",
+  "permission.denied": "❌ 拒绝访问。",
 };

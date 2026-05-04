@@ -142,4 +142,11 @@ export const ru: I18nDictionary = {
 
   "openclaw.processing":
     "⚙️ Обработка...\n\n💡 Вы в режиме intercept OpenCode. Введите /exit для выхода.",
+
+  "openclaw.permission_hint":
+    "🔐 **Запрос разрешения**\n\nПожалуйста, ответьте:\n/1 - Разрешить один раз\n/2 - Разрешить всегда\n/3 - Отклонить",
+
+  "auto_lock.success": "✅ Bot заблокирован на ваш аккаунт ({userId}). Другие пользователи не могут получить доступ.",
+  "auto_lock.race_rejected": "❌ Bot заблокирован другим пользователем. Доступ запрещён.",
+  "permission.denied": "❌ Доступ запрещён.",
 };

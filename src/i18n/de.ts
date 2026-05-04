@@ -143,5 +143,12 @@ export const de: I18nDictionary = {
 
   "openclaw.processing":
     "⚙️ Bearbeitung...\n\n💡 Sie befinden sich im OpenCode-Intercept-Modus. Geben Sie /exit ein, um zu beenden.",
+
+  "openclaw.permission_hint":
+    "🔐 **Berechtigungsanfrage**\n\nBitte antworten:\n/1 - Einmal erlauben\n/2 - Immer erlauben\n/3 - Ablehnen",
+
+  "auto_lock.success": "✅ Bot auf Ihr Konto ({userId}) gesperrt. Andere Benutzer können nicht zugreifen.",
+  "auto_lock.race_rejected": "❌ Bot von anderem Benutzer gesperrt. Zugriff verweigert.",
+  "permission.denied": "❌ Zugriff verweigert.",
 };
 

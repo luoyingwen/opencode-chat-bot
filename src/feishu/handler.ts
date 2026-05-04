@@ -11,6 +11,7 @@ import { buildConversationRouteKey } from "../core/runtime/route-key.js";
 import { settingsConversationRuntime } from "../core/runtime/settings-runtime.js";
 import type { ConversationRoute } from "../core/runtime/types.js";
 import { handleRenameTextInput, handleRenameFlowSetup } from "../core/text-interactions/rename.js";
+import { updateEnvValue } from "../runtime/env-updater.js";
 import { initFeishuClient, getFeishuClient } from "./client.js";
 import {
   setFeishuClient,
@@ -43,14 +44,9 @@ import { createFeishuTextPromptPlatform } from "./prompt-platform.js";
 import { getSharedCommands, getValidCommands } from "../bot/commands/definitions.js";
 
 function isUserAllowed(userId: string): boolean {
-  const allowed = config.feishu.allowedUsers;
-  if (!allowed) return true;
-  const allowedList = allowed
-    .split(",")
-    .map((s) => s.trim())
-    .filter(Boolean);
-  if (allowedList.length === 0) return true;
-  return allowedList.includes(userId);
+  const allowed = config.feishu.allowedUserId;
+  if (!allowed?.trim()) return true;
+  return userId === allowed.trim();
 }
 
 function getFeishuRoute(chatId: string, userId: string): ConversationRoute {
@@ -331,6 +327,20 @@ async function handleTextMessage(chatId: string, userId: string, text: string): 
 }
 
 async function processMessage(userId: string, chatId: string, text: string, _messageId: string): Promise<void> {
+  const allowedUserId = config.feishu.allowedUserId;
+
+  if (!allowedUserId?.trim()) {
+    const success = await updateEnvValue("FEISHU_ALLOWED_USER_ID", userId);
+
+    if (success) {
+      logger.info(`[Feishu] Auto-locked to first user: ${userId}`);
+      await sendFeishuMessage(chatId, userId, t("auto_lock.success", { userId }));
+    } else {
+      await sendFeishuMessage(chatId, userId, t("auto_lock.race_rejected"));
+      return;
+    }
+  }
+
   if (!isUserAllowed(userId)) {
     logger.warn(`[Feishu] Message from unauthorized user: ${userId}`);
     return;
@@ -462,15 +472,11 @@ export async function initializeFeishuHandler(): Promise<void> {
   // Enhanced notification callback that uses stored user-chat mappings
   setFeishuNotificationCallback(async (text: string, targetUserId?: string) => {
     // Try to find target user
-    const allowedUsers = config.feishu.allowedUsers
-      .split(",")
-      .map((item) => item.trim())
-      .filter(Boolean);
-
-    // If specific user requested, try that first
+    const allowedUserId = config.feishu.allowedUserId;
+    
     let userId = targetUserId;
-    if (!userId && allowedUsers.length > 0) {
-      userId = allowedUsers[0];
+    if (!userId && allowedUserId?.trim()) {
+      userId = allowedUserId.trim();
     }
 
     if (!userId) {

@@ -11,6 +11,7 @@ import { buildConversationRouteKey } from "../core/runtime/route-key.js";
 import { settingsConversationRuntime } from "../core/runtime/settings-runtime.js";
 import type { ConversationRoute } from "../core/runtime/types.js";
 import { handleRenameTextInput, handleRenameFlowSetup } from "../core/text-interactions/rename.js";
+import { updateEnvValue } from "../runtime/env-updater.js";
 import {
   initDingTalkClient,
   getDingTalkClient,
@@ -31,7 +32,6 @@ import { renameManager } from "../rename/manager.js";
 import { stopEventListening } from "../opencode/events.js";
 import { logger } from "../utils/logger.js";
 import { t } from "../i18n/index.js";
-import { exitApplication } from "../app/exit-app.js";
 import { handleTaskCommand, handleTaskTextInput, isUserInTaskFlow } from "./task.js";
 import {
   handleTaskListCommand,
@@ -39,6 +39,7 @@ import {
   isUserInTaskListFlow,
 } from "./tasklist.js";
 import { setDingTalkNotificationCallback } from "../scheduled-task/runtime.js";
+import { exitApplication } from "../app/exit-app.js";
 import {
   handleCommandsCommand,
   handleCommandByIndex,
@@ -348,6 +349,20 @@ async function handleTextMessage(userId: string, text: string): Promise<void> {
 }
 
 async function processMessage(userId: string, text: string, sessionWebhook: string): Promise<void> {
+  const allowedUserId = config.dingtalk.allowedUserId;
+
+  if (!allowedUserId?.trim()) {
+    const success = await updateEnvValue("DINGTALK_ALLOWED_USER_ID", userId);
+
+    if (success) {
+      logger.info(`[DingTalk] Auto-locked to first user: ${userId}`);
+      await sendDingTalkMessage(userId, t("auto_lock.success", { userId }));
+    } else {
+      await sendDingTalkMessage(userId, t("auto_lock.race_rejected"));
+      return;
+    }
+  }
+
   if (!isUserAllowed(userId)) {
     logger.warn(`[DingTalk] Message from unauthorized user: ${userId}`);
     return;
