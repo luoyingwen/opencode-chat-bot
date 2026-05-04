@@ -219,7 +219,6 @@ From the application details page:
 
 - **AppKey** → `DINGTALK_APP_KEY`
 - **AppSecret** → `DINGTALK_APP_SECRET`
-- **AgentId** (optional) → `DINGTALK_AGENT_ID`
 
 ### Step 3: Configure User Access
 
@@ -232,7 +231,6 @@ Add to your `.env`:
 ```env
 DINGTALK_APP_KEY=your-app-key
 DINGTALK_APP_SECRET=your-app-secret
-DINGTALK_AGENT_ID=your-agent-id
 DINGTALK_ALLOWED_USER_ID=your-staff-id
 ```
 
