@@ -27,16 +27,12 @@ export async function startBotApp(): Promise<void> {
   const version = await getBotVersion();
   const logFilePath = getLogFilePath();
 
-  const hasDingTalk = !!(
-    config.dingtalk.appKey &&
-    config.dingtalk.appSecret &&
-    config.dingtalk.allowedUserId
-  );
+  const hasDingTalk = !!(config.dingtalk.appKey && config.dingtalk.appSecret);
   const hasFeishu = !!(config.feishu.appId && config.feishu.appSecret);
 
   if (!hasDingTalk && !hasFeishu) {
     throw new Error(
-      "No bot platform configured. Set DINGTALK_APP_KEY + DINGTALK_APP_SECRET + DINGTALK_ALLOWED_USER_ID, or FEISHU_APP_ID + FEISHU_APP_SECRET.",
+      "No bot platform configured. Set DINGTALK_APP_KEY + DINGTALK_APP_SECRET, or FEISHU_APP_ID + FEISHU_APP_SECRET.",
     );
   }
 

@@ -1,3 +1,19 @@
+// Clear HTTP proxy env vars to avoid WebSocket proxy issues
+// dingtalk-stream uses ws library which doesn't work well with HTTP proxies
+const proxyEnvVars = [
+  "HTTP_PROXY",
+  "HTTPS_PROXY",
+  "http_proxy",
+  "https_proxy",
+  "ALL_PROXY",
+  "all_proxy",
+  "NO_PROXY",
+  "no_proxy",
+];
+for (const key of proxyEnvVars) {
+  delete process.env[key];
+}
+
 import { resolveRuntimeMode, setRuntimeMode } from "./runtime/mode.js";
 import { logger } from "./utils/logger.js";
 
@@ -34,6 +50,8 @@ async function main(): Promise<void> {
 
   const { initializeLogger } = await import("./utils/logger.js");
   await initializeLogger();
+
+  logger.info("[Proxy] HTTP proxy env vars cleared for WebSocket compatibility");
 
   const { startBotApp } = await import("./app/start-bot-app.js");
   await startBotApp();
