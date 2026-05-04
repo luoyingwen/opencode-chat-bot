@@ -123,36 +123,53 @@ For Linux `systemd` setup, see [docs/LINUX_SYSTEMD_SETUP.md](docs/LINUX_SYSTEMD_
 
 ## Bot Commands
 
-### DingTalk / Feishu Commands
+### Shared Commands (All Platforms)
+
+All platforms support the same core command set:
 
 | Command                   | Description                                             |
 | ------------------------- | ------------------------------------------------------- |
 | `/status`                 | Server health, current project, session, and model info |
-| `/session new`            | Create a new session                                    |
 | `/stop`                   | Stop the current task                                   |
 | `/sessions`               | Browse recent sessions                                  |
 | `/session <n>`            | Select a session by number                              |
+| `/session new`            | Create a new session                                    |
+| `/session rename [title]` | Rename the current session                              |
 | `/projects`               | Browse available projects                               |
 | `/project <n>`            | Select a project by number                              |
-| `/project <path>`         | Create/select a project by path (DingTalk/Feishu only)  |
 | `/agents`                 | Browse available agents                                 |
 | `/agent <n>`              | Select an agent by number                               |
-| `/session rename [title]` | Rename the current session                              |
 | `/commands`               | Browse and run custom commands                          |
 | `/command <n> [args]`     | Run a listed OpenCode command                           |
 | `/auto_confirm [on\|off]` | Toggle permission auto-confirm for the current session  |
 | `/task`                   | Create a scheduled task                                 |
 | `/tasks`                  | Browse and delete scheduled tasks                       |
-| `/exit`                   | Stop this bot process                                   |
+| `/permission`             | Show pending permission state                           |
 | `/help`                   | Show available commands                                 |
+
+Permission quick replies (all platforms):
+| Command | Description                          |
+| ------- | ------------------------------------ |
+| `/1`    | Allow once                           |
+| `/2`    | Always allow                         |
+| `/3`    | Reject                               |
 
 Any regular text message is sent as a prompt to the coding agent only when no blocking interaction is active.
 
+### Platform-Specific Commands
+
+| Platform        | Command          | Description                                     |
+| --------------- | ---------------- | ----------------------------------------------- |
+| DingTalk/Feishu | `/project <path>` | Create/select a project by absolute path        |
+| OpenClaw        | `/opencode`      | Enter OpenCode mode for this conversation       |
+| DingTalk/Feishu | `/exit`          | Stop the standalone bot process                 |
+| OpenClaw        | `/exit`          | Leave OpenCode mode for this conversation       |
+
 > **Note:** DingTalk and Feishu currently support text and markdown messages. Image, voice, and file messages will show a "not supported" notice.
 
-`/exit` stops the bot process. Under normal usage, start `opencode serve` yourself before launching the bot.
+Under normal usage, start `opencode serve` yourself before launching the standalone bot. OpenClaw users should send `/opencode` in the conversation before sending OpenCode commands or prompts.
 
-### OpenClaw Plugin Commands
+### OpenClaw Plugin Setup
 
 OpenClaw loads `./dist/openclaw-plugin.js` and reuses the same shared command, prompt, task, permission, and route-scoped state modules as DingTalk and Feishu. Use `/opencode` in a conversation to enter OpenCode mode. While active, OpenClaw commands and normal text are handled by OpenCode. Use `/exit` to leave OpenCode mode for that conversation.
 
@@ -174,30 +191,6 @@ npm run openclaw:install -- link
 ```
 
 After building, OpenClaw can discover the plugin from `package.json` under `openclaw.extensions`, from the `./openclaw-plugin` export, or from `openclaw.plugin.json` for runtimes that read plugin metadata files.
-
-| Command                       | Description                                             |
-| ----------------------------- | ------------------------------------------------------- |
-| `/opencode`                   | Enter OpenCode mode for this OpenClaw conversation      |
-| `/exit`                       | Leave OpenCode mode for this OpenClaw conversation      |
-| `/help`                       | Show OpenClawCode commands                              |
-| `/status`                     | Server health, current project, session, and model info |
-| `/projects`                   | Browse available projects                               |
-| `/project <number or path>`   | Select a project by number or path                      |
-| `/sessions`                   | Browse recent sessions                                  |
-| `/session <number>`           | Select a session by number                              |
-| `/session new` or `/new`      | Create a new session                                    |
-| `/rename [title]`             | Rename the current session                              |
-| `/agents` / `/agent <number>` | List or select agents                                   |
-| `/models` / `/model <number>` | List or select models                                   |
-| `/commands`                   | List OpenCode project commands                          |
-| `/command <number> [args]`    | Run a listed OpenCode command                           |
-| `/task`                       | Create a scheduled task                                 |
-| `/tasklist` or `/tasks`       | Browse and manage scheduled tasks                       |
-| `/permission`                 | Show pending permission state                           |
-| `/1`, `/2`, `/3`              | Permission replies: allow once, always allow, reject    |
-| `/stop` or `/abort`           | Abort current task or cancel active flow                |
-| `/opencode_start`             | Start a managed OpenCode server process                 |
-| `/opencode_stop`              | Stop the managed OpenCode server process                |
 
 OpenClaw plugin config can restrict the adapter by channel, account, or conversation. OpenClaw runtime plugin config takes precedence over environment fallback values. Environment fallback values are available as `OPENCLAW_ENABLED`, `OPENCLAW_CHANNELS`, `OPENCLAW_ACCOUNT_IDS`, and `OPENCLAW_CONVERSATION_IDS`.
 
@@ -307,7 +300,7 @@ FEISHU_ALLOWED_USERS=user_id_1,user_id_2
 
 ## Scheduled Tasks
 
-Scheduled tasks let you prepare prompts in advance and run them automatically later or on a recurring schedule. This is useful for periodic checks, routine code maintenance, or tasks you want OpenCode to execute while you are away from your computer. Use `/task` to create a scheduled task and `/tasklist` to review or delete existing ones.
+Scheduled tasks let you prepare prompts in advance and run them automatically later or on a recurring schedule. This is useful for periodic checks, routine code maintenance, or tasks you want OpenCode to execute while you are away from your computer. Use `/task` to create a scheduled task and `/tasks` to review or delete existing ones.
 
 - Each task is created from the currently selected OpenCode project and model
 - Scheduled executions currently always run with the `build` agent
