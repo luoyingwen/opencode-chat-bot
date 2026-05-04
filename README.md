@@ -137,6 +137,7 @@ All platforms support the same core command set:
 | `/session rename [title]` | Rename the current session                              |
 | `/projects`               | Browse available projects                               |
 | `/project <n>`            | Select a project by number                              |
+| `/project <path>`         | Create/select a project by absolute path                |
 | `/agents`                 | Browse available agents                                 |
 | `/agent <n>`              | Select an agent by number                               |
 | `/commands`               | Browse and run custom commands                          |
@@ -158,12 +159,11 @@ Any regular text message is sent as a prompt to the coding agent only when no bl
 
 ### Platform-Specific Commands
 
-| Platform        | Command          | Description                                     |
-| --------------- | ---------------- | ----------------------------------------------- |
-| DingTalk/Feishu | `/project <path>` | Create/select a project by absolute path        |
-| OpenClaw        | `/opencode`      | Enter OpenCode mode for this conversation       |
-| DingTalk/Feishu | `/exit`          | Stop the standalone bot process                 |
-| OpenClaw        | `/exit`          | Leave OpenCode mode for this conversation       |
+| Platform        | Command     | Description                                     |
+| --------------- | ----------- | ----------------------------------------------- |
+| OpenClaw        | `/opencode` | Enter OpenCode mode for this conversation       |
+| DingTalk/Feishu | `/exit`     | Stop the standalone bot process                 |
+| OpenClaw        | `/exit`     | Leave OpenCode mode for this conversation       |
 
 > **Note:** DingTalk and Feishu currently support text and markdown messages. Image, voice, and file messages will show a "not supported" notice.
 
