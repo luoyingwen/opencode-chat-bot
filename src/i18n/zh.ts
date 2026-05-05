@@ -61,6 +61,14 @@ export const zh: I18nDictionary = {
   "runtime.wizard.not_configured_starting": "应用尚未配置。正在启动向导...\n",
   "runtime.wizard.tty_required":
     "交互式向导需要 TTY 终端。请在交互式 shell 中运行 `opencode-chat-bot config`。",
+  "runtime.wizard.ask_dingtalk": "是否配置钉钉机器人？(y/N)\n> ",
+  "runtime.wizard.ask_dingtalk_key": "钉钉 App Key：\n> ",
+  "runtime.wizard.ask_dingtalk_secret": "钉钉 App Secret：\n> ",
+  "runtime.wizard.ask_dingtalk_user_id": "钉钉允许的用户 ID（可选，按 Enter 跳过）：\n> ",
+  "runtime.wizard.ask_feishu": "是否配置飞书机器人？(y/N)\n> ",
+  "runtime.wizard.ask_feishu_id": "飞书 App ID：\n> ",
+  "runtime.wizard.ask_feishu_secret": "飞书 App Secret：\n> ",
+  "runtime.wizard.ask_feishu_user_id": "飞书允许的用户 ID（可选，按 Enter 跳过）：\n> ",
 
   "rename.no_session": "⚠️ 没有活动会话。请先创建或选择一个会话。",
   "rename.prompt": "📝 请输入会话的新标题：\n\n当前：{title}",
@@ -122,11 +130,7 @@ export const zh: I18nDictionary = {
   "commands.invalid_number": "请输入有效的命令编号（{min}-{max}）。",
 
   "cli.usage":
-    "用法:\n  opencode-chat-bot [start] [--mode sources|installed]\n  opencode-chat-bot status\n  opencode-chat-bot stop\n  opencode-chat-bot config\n\n注意:\n  - 无命令时默认为 `start`\n  - `--mode` 当前仅支持 `start`",
-  "cli.placeholder.status": "`status` 命令当前为占位符。实际状态检查将在服务层中添加（第5阶段）。",
-  "cli.placeholder.stop":
-    "`stop` 命令当前为占位符。实际后台进程停止功能将在服务层中添加（第5阶段）。",
-  "cli.placeholder.unavailable": "命令不可用。",
+    "用法:\n  opencode-chat-bot [start] [--mode sources|installed]\n  opencode-chat-bot config\n\n注意:\n  - 无命令时默认为 `start`\n  - `--mode` 当前仅支持 `start`",
   "cli.error.prefix": "CLI 错误：{message}",
   "cli.args.unknown_command": "未知命令：{value}",
   "cli.args.mode_requires_value": "选项 --mode 需要一个值：sources|installed",

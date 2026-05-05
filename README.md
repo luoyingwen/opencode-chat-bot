@@ -81,7 +81,33 @@ opencode serve
 
 The bot connects to the OpenCode API at `http://localhost:4096` by default. Override it with `OPENCODE_API_URL`.
 
-### 3. Run From Source
+### 3. Install from npm
+
+The package is published on npm as `@luoyingwen/opencode-chat-bot`.
+
+#### OpenClaw Plugin
+
+```bash
+openclaw plugins install @luoyingwen/opencode-chat-bot
+openclaw config set plugins.entries.opencode-chat-bot.config.enabled true
+openclaw gateway restart
+```
+
+Send `/opencode` in the conversation to enter OpenCode mode, then send prompts or commands.
+
+#### Standalone Bot
+
+```bash
+npm install -g @luoyingwen/opencode-chat-bot
+opencode-chat-bot config
+opencode-chat-bot start
+```
+
+The config wizard will guide you through selecting a language and configuring Feishu or DingTalk credentials.
+
+For Linux `systemd` setup, see [docs/LINUX_SYSTEMD_SETUP.md](docs/LINUX_SYSTEMD_SETUP.md).
+
+### 4. Run From Source
 
 ```bash
 git clone https://github.com/luoyingwen/opencode-chat-bot.git
@@ -92,7 +118,9 @@ cp .env.example .env
 npm run dev
 ```
 
-### 4. OpenClaw Local Plugin Install
+### 5. OpenClaw Local Plugin Install
+
+For local development and testing, build and install the plugin from source:
 
 ```bash
 npm install
@@ -107,18 +135,16 @@ For local iteration, use link mode instead:
 npm run openclaw:install -- link
 ```
 
-### 5. Installed CLI Mode
+### 6. Installed CLI Mode
 
-When installed as a package, use the CLI command:
+When installed globally via npm, use the CLI commands directly:
 
 ```bash
 opencode-chat-bot config
 opencode-chat-bot start
 ```
 
-On first launch, the interactive wizard asks for interface language, standalone bot credentials, allowed users, OpenCode API URL, and optional OpenCode server credentials.
-
-For Linux `systemd` setup, see [docs/LINUX_SYSTEMD_SETUP.md](docs/LINUX_SYSTEMD_SETUP.md).
+On first launch, the interactive wizard asks for interface language and platform credentials.
 
 ## Supported Platforms (Node.js)
 

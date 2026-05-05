@@ -13,14 +13,6 @@ import {
   type Locale,
 } from "../i18n/index.js";
 
-const FALLBACK_MODEL_PROVIDER = "opencode";
-const FALLBACK_MODEL_ID = "big-pickle";
-
-interface ModelDefaults {
-  provider: string;
-  modelId: string;
-}
-
 interface EnvValidationResult {
   isValid: boolean;
   reason?: string;
@@ -37,8 +29,6 @@ export interface WizardEnvValues {
   OPENCODE_API_URL?: string;
   OPENCODE_SERVER_USERNAME?: string;
   OPENCODE_SERVER_PASSWORD?: string;
-  OPENCODE_MODEL_PROVIDER: string;
-  OPENCODE_MODEL_ID: string;
 }
 
 function isValidHttpUrl(value: string): boolean {
@@ -66,14 +56,6 @@ export function validateRuntimeEnvValues(values: Record<string, string>): EnvVal
       reason:
         "Missing supported platform credentials. Configure DingTalk or Feishu credentials.",
     };
-  }
-
-  if (!values.OPENCODE_MODEL_PROVIDER || values.OPENCODE_MODEL_PROVIDER.trim().length === 0) {
-    return { isValid: false, reason: "Missing OPENCODE_MODEL_PROVIDER" };
-  }
-
-  if (!values.OPENCODE_MODEL_ID || values.OPENCODE_MODEL_ID.trim().length === 0) {
-    return { isValid: false, reason: "Missing OPENCODE_MODEL_ID" };
   }
 
   const apiUrl = values.OPENCODE_API_URL?.trim();
@@ -107,22 +89,29 @@ function finalizeEnvContent(lines: string[]): string {
   return `${lines.join("\n")}\n`;
 }
 
+const STRIPPED_KEYS = [
+  "OPENCODE_MODEL_PROVIDER",
+  "OPENCODE_MODEL_ID",
+];
+
 export function buildEnvFileContent(existingContent: string, values: WizardEnvValues): string {
   let lines = normalizeEnvLineEndings(existingContent);
 
+  for (const key of STRIPPED_KEYS) {
+    lines = removeEnvKey(lines, key);
+  }
+
   const orderedUpdates: Array<[keyof WizardEnvValues, string | undefined]> = [
     ["BOT_LOCALE", values.BOT_LOCALE],
-    ["DINGTALK_APP_KEY", values.DINGTALK_APP_KEY],
-    ["DINGTALK_APP_SECRET", values.DINGTALK_APP_SECRET],
-    ["DINGTALK_ALLOWED_USER_ID", values.DINGTALK_ALLOWED_USER_ID],
     ["FEISHU_APP_ID", values.FEISHU_APP_ID],
     ["FEISHU_APP_SECRET", values.FEISHU_APP_SECRET],
     ["FEISHU_ALLOWED_USER_ID", values.FEISHU_ALLOWED_USER_ID],
+    ["DINGTALK_APP_KEY", values.DINGTALK_APP_KEY],
+    ["DINGTALK_APP_SECRET", values.DINGTALK_APP_SECRET],
+    ["DINGTALK_ALLOWED_USER_ID", values.DINGTALK_ALLOWED_USER_ID],
     ["OPENCODE_API_URL", values.OPENCODE_API_URL],
     ["OPENCODE_SERVER_USERNAME", values.OPENCODE_SERVER_USERNAME],
     ["OPENCODE_SERVER_PASSWORD", values.OPENCODE_SERVER_PASSWORD],
-    ["OPENCODE_MODEL_PROVIDER", values.OPENCODE_MODEL_PROVIDER],
-    ["OPENCODE_MODEL_ID", values.OPENCODE_MODEL_ID],
   ];
 
   for (const [key, value] of orderedUpdates) {
@@ -177,32 +166,6 @@ function getEnvExamplePath(): string {
 
 async function loadEnvExampleContent(): Promise<string> {
   return fs.readFile(getEnvExamplePath(), "utf-8");
-}
-
-async function loadModelDefaultsFromEnvExample(): Promise<ModelDefaults> {
-  const fallbackDefaults: ModelDefaults = {
-    provider: FALLBACK_MODEL_PROVIDER,
-    modelId: FALLBACK_MODEL_ID,
-  };
-
-  try {
-    const content = await fs.readFile(getEnvExamplePath(), "utf-8");
-    const parsed = dotenv.parse(content);
-
-    const provider = parsed.OPENCODE_MODEL_PROVIDER?.trim();
-    const modelId = parsed.OPENCODE_MODEL_ID?.trim();
-
-    if (!provider || !modelId) {
-      return fallbackDefaults;
-    }
-
-    return {
-      provider,
-      modelId,
-    };
-  } catch {
-    return fallbackDefaults;
-  }
 }
 
 async function askVisible(question: string): Promise<string> {
@@ -276,28 +239,22 @@ async function validateExistingEnv(envFilePath: string): Promise<EnvValidationRe
 async function initializeConfigTemplate(
   runtimePaths: RuntimePaths,
   locale: Locale,
+  platformValues: Pick<WizardEnvValues, "FEISHU_APP_ID" | "FEISHU_APP_SECRET" | "FEISHU_ALLOWED_USER_ID" | "DINGTALK_APP_KEY" | "DINGTALK_APP_SECRET" | "DINGTALK_ALLOWED_USER_ID">,
 ): Promise<void> {
-  const [existingContent, envExampleContent, modelDefaults] = await Promise.all([
-    readEnvFileIfExists(runtimePaths.envFilePath),
-    loadEnvExampleContent(),
-    loadModelDefaultsFromEnvExample(),
-  ]);
-
-  const baseContent = existingContent ?? envExampleContent;
+  const existingContent = await readEnvFileIfExists(runtimePaths.envFilePath);
+  const baseContent = existingContent ?? (await loadEnvExampleContent());
   const existingParsed = dotenv.parse(baseContent);
   const envValues: WizardEnvValues = {
     BOT_LOCALE: locale,
-    DINGTALK_APP_KEY: existingParsed.DINGTALK_APP_KEY,
-    DINGTALK_APP_SECRET: existingParsed.DINGTALK_APP_SECRET,
-    DINGTALK_ALLOWED_USER_ID: existingParsed.DINGTALK_ALLOWED_USER_ID,
-    FEISHU_APP_ID: existingParsed.FEISHU_APP_ID,
-    FEISHU_APP_SECRET: existingParsed.FEISHU_APP_SECRET,
-    FEISHU_ALLOWED_USER_ID: existingParsed.FEISHU_ALLOWED_USER_ID,
+    FEISHU_APP_ID: platformValues.FEISHU_APP_ID || existingParsed.FEISHU_APP_ID,
+    FEISHU_APP_SECRET: platformValues.FEISHU_APP_SECRET || existingParsed.FEISHU_APP_SECRET,
+    FEISHU_ALLOWED_USER_ID: platformValues.FEISHU_ALLOWED_USER_ID || existingParsed.FEISHU_ALLOWED_USER_ID,
+    DINGTALK_APP_KEY: platformValues.DINGTALK_APP_KEY || existingParsed.DINGTALK_APP_KEY,
+    DINGTALK_APP_SECRET: platformValues.DINGTALK_APP_SECRET || existingParsed.DINGTALK_APP_SECRET,
+    DINGTALK_ALLOWED_USER_ID: platformValues.DINGTALK_ALLOWED_USER_ID || existingParsed.DINGTALK_ALLOWED_USER_ID,
     OPENCODE_API_URL: existingParsed.OPENCODE_API_URL,
     OPENCODE_SERVER_USERNAME: existingParsed.OPENCODE_SERVER_USERNAME,
     OPENCODE_SERVER_PASSWORD: existingParsed.OPENCODE_SERVER_PASSWORD,
-    OPENCODE_MODEL_PROVIDER: existingParsed.OPENCODE_MODEL_PROVIDER || modelDefaults.provider,
-    OPENCODE_MODEL_ID: existingParsed.OPENCODE_MODEL_ID || modelDefaults.modelId,
   };
 
   const envContent = buildEnvFileContent(baseContent, envValues);
@@ -326,10 +283,50 @@ export async function ensureRuntimeConfigForStart(): Promise<void> {
   }
 
   process.stdout.write(t("runtime.wizard.not_configured_starting"));
-  await initializeConfigTemplate(runtimePaths, getLocale());
-  throw new Error(
-    `Bot platform credentials are missing or incomplete. Review ${runtimePaths.envFilePath} and rerun the command.`,
-  );
+  const locale = await askLocale();
+  setRuntimeLocale(locale);
+  process.stdout.write("\n");
+  const platformValues = await askPlatformCredentials();
+  await initializeConfigTemplate(runtimePaths, locale, platformValues);
+
+  const recheckResult = await validateExistingEnv(runtimePaths.envFilePath);
+  if (!recheckResult.isValid) {
+    throw new Error(
+      `Bot platform credentials are missing or incomplete. Review ${runtimePaths.envFilePath} and rerun the command.`,
+    );
+  }
+}
+
+async function askYesNo(prompt: string): Promise<boolean> {
+  const answer = (await askVisible(prompt)).toLowerCase();
+  return answer === "y" || answer === "yes";
+}
+
+async function askPlatformCredentials(): Promise<Pick<WizardEnvValues, "FEISHU_APP_ID" | "FEISHU_APP_SECRET" | "FEISHU_ALLOWED_USER_ID" | "DINGTALK_APP_KEY" | "DINGTALK_APP_SECRET" | "DINGTALK_ALLOWED_USER_ID">> {
+  const values: Pick<WizardEnvValues, "FEISHU_APP_ID" | "FEISHU_APP_SECRET" | "FEISHU_ALLOWED_USER_ID" | "DINGTALK_APP_KEY" | "DINGTALK_APP_SECRET" | "DINGTALK_ALLOWED_USER_ID"> = {};
+
+  process.stdout.write("\n");
+  const configureFeishu = await askYesNo(t("runtime.wizard.ask_feishu"));
+  if (configureFeishu) {
+    values.FEISHU_APP_ID = await askVisible(t("runtime.wizard.ask_feishu_id"));
+    values.FEISHU_APP_SECRET = await askVisible(t("runtime.wizard.ask_feishu_secret"));
+    const userId = await askVisible(t("runtime.wizard.ask_feishu_user_id"));
+    if (userId) {
+      values.FEISHU_ALLOWED_USER_ID = userId;
+    }
+  }
+
+  const configureDingTalk = await askYesNo(t("runtime.wizard.ask_dingtalk"));
+  if (configureDingTalk) {
+    values.DINGTALK_APP_KEY = await askVisible(t("runtime.wizard.ask_dingtalk_key"));
+    values.DINGTALK_APP_SECRET = await askVisible(t("runtime.wizard.ask_dingtalk_secret"));
+    const userId = await askVisible(t("runtime.wizard.ask_dingtalk_user_id"));
+    if (userId) {
+      values.DINGTALK_ALLOWED_USER_ID = userId;
+    }
+  }
+
+  return values;
 }
 
 export async function runConfigWizardCommand(): Promise<void> {
@@ -351,5 +348,6 @@ export async function runConfigWizardCommand(): Promise<void> {
   process.stdout.write("\n");
   process.stdout.write(t("runtime.wizard.start"));
   process.stdout.write("\n");
-  await initializeConfigTemplate(runtimePaths, locale);
+  const platformValues = await askPlatformCredentials();
+  await initializeConfigTemplate(runtimePaths, locale, platformValues);
 }

@@ -2,32 +2,26 @@ import { describe, expect, it } from "vitest";
 import { buildEnvFileContent, validateRuntimeEnvValues } from "../../src/runtime/bootstrap.js";
 
 describe("runtime/bootstrap", () => {
-  it("validates required runtime env values for DingTalk", () => {
+  it("validates required DingTalk credentials", () => {
     const result = validateRuntimeEnvValues({
       DINGTALK_APP_KEY: "ding-key",
       DINGTALK_APP_SECRET: "ding-secret",
       DINGTALK_ALLOWED_USER_ID: "staff-id",
-      OPENCODE_MODEL_PROVIDER: "opencode",
-      OPENCODE_MODEL_ID: "big-pickle",
     });
 
     expect(result).toEqual({ isValid: true });
   });
 
-  it("fails validation when required model values are missing", () => {
-    const result = validateRuntimeEnvValues({
-      FEISHU_APP_ID: "cli_a1b2c3",
-      FEISHU_APP_SECRET: "feishu-secret",
-    });
+  it("fails validation when no supported platform is configured", () => {
+    const result = validateRuntimeEnvValues({});
 
     expect(result.isValid).toBe(false);
-    expect(result.reason).toContain("OPENCODE_MODEL_PROVIDER");
+    expect(result.reason).toContain("platform credentials");
   });
 
-  it("fails validation when no supported platform is configured", () => {
+  it("fails validation when only partial DingTalk credentials", () => {
     const result = validateRuntimeEnvValues({
-      OPENCODE_MODEL_PROVIDER: "opencode",
-      OPENCODE_MODEL_ID: "big-pickle",
+      DINGTALK_APP_KEY: "ding-key",
     });
 
     expect(result.isValid).toBe(false);
@@ -55,8 +49,6 @@ describe("runtime/bootstrap", () => {
       DINGTALK_APP_SECRET: "new-secret",
       DINGTALK_ALLOWED_USER_ID: "new-user-id",
       OPENCODE_SERVER_USERNAME: "new-user",
-      OPENCODE_MODEL_PROVIDER: "old-provider",
-      OPENCODE_MODEL_ID: "old-model",
     });
 
     expect(updated).toContain("CUSTOM_FLAG=enabled");
@@ -67,30 +59,43 @@ describe("runtime/bootstrap", () => {
     expect(updated).toContain("DINGTALK_APP_SECRET=new-secret");
     expect(updated).toContain("DINGTALK_ALLOWED_USER_ID=new-user-id");
     expect(updated).not.toContain("OPENCODE_API_URL=");
-    expect(updated).toContain("OPENCODE_MODEL_PROVIDER=old-provider");
-    expect(updated).toContain("OPENCODE_MODEL_ID=old-model");
+    expect(updated).not.toContain("OPENCODE_MODEL_PROVIDER=");
+    expect(updated).not.toContain("OPENCODE_MODEL_ID=");
   });
 
-  it("adds missing required model keys", () => {
+  it("strips OPENCODE_MODEL_PROVIDER and OPENCODE_MODEL_ID from existing content", () => {
+    const existingContent = [
+      "OPENCODE_MODEL_PROVIDER=GitHub Copilot",
+      "OPENCODE_MODEL_ID=claude-opus-4.6",
+      "",
+    ].join("\n");
+
+    const updated = buildEnvFileContent(existingContent, {
+      BOT_LOCALE: "en",
+      FEISHU_APP_ID: "cli_123",
+      FEISHU_APP_SECRET: "secret-123",
+    });
+
+    expect(updated).not.toContain("OPENCODE_MODEL_PROVIDER");
+    expect(updated).not.toContain("OPENCODE_MODEL_ID");
+  });
+
+  it("writes platform credentials provided by wizard", () => {
     const updated = buildEnvFileContent("", {
       BOT_LOCALE: "en",
       FEISHU_APP_ID: "cli_123",
       FEISHU_APP_SECRET: "secret-123",
       OPENCODE_SERVER_USERNAME: "opencode",
       OPENCODE_SERVER_PASSWORD: "secret",
-      OPENCODE_MODEL_PROVIDER: "opencode",
-      OPENCODE_MODEL_ID: "big-pickle",
       OPENCODE_API_URL: "https://localhost:4096",
     });
 
     expect(updated).toContain("BOT_LOCALE=en");
-  expect(updated).toContain("FEISHU_APP_ID=cli_123");
-  expect(updated).toContain("FEISHU_APP_SECRET=secret-123");
+    expect(updated).toContain("FEISHU_APP_ID=cli_123");
+    expect(updated).toContain("FEISHU_APP_SECRET=secret-123");
     expect(updated).toContain("OPENCODE_API_URL=https://localhost:4096");
     expect(updated).toContain("OPENCODE_SERVER_USERNAME=opencode");
     expect(updated).toContain("OPENCODE_SERVER_PASSWORD=secret");
-    expect(updated).toContain("OPENCODE_MODEL_PROVIDER=opencode");
-    expect(updated).toContain("OPENCODE_MODEL_ID=big-pickle");
   });
 
   it("removes server password when wizard value is empty", () => {
@@ -105,8 +110,6 @@ describe("runtime/bootstrap", () => {
       FEISHU_APP_ID: "cli_456",
       FEISHU_APP_SECRET: "secret-456",
       OPENCODE_SERVER_USERNAME: "opencode",
-      OPENCODE_MODEL_PROVIDER: "opencode",
-      OPENCODE_MODEL_ID: "big-pickle",
     });
 
     expect(updated).toContain("OPENCODE_SERVER_USERNAME=opencode");

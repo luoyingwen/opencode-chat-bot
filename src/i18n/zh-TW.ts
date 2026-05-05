@@ -121,12 +121,7 @@ export const zhTW: I18nDictionary = {
   "commands.invalid_number": "請輸入有效的命令編號（{min}-{max}）。",
 
   "cli.usage":
-    "用法：\n  opencode-chat-bot [start] [--mode sources|installed]\n  opencode-chat-bot status\n  opencode-chat-bot stop\n  opencode-chat-bot config\n\n說明：\n  - 不帶命令時預設執行 `start`\n  - `--mode` 目前僅支援 `start` 命令",
-  "cli.placeholder.status":
-    "命令 `status` 目前是佔位符。真實狀態檢查將會在 service 層（階段 5）加入。",
-  "cli.placeholder.stop":
-    "命令 `stop` 目前是佔位符。真實的背景程序停止將會在 service 層（階段 5）加入。",
-  "cli.placeholder.unavailable": "命令不可用。",
+    "用法：\n  opencode-chat-bot [start] [--mode sources|installed]\n  opencode-chat-bot config\n\n說明：\n  - 不帶命令時預設執行 `start`\n  - `--mode` 目前僅支援 `start` 命令",
   "cli.error.prefix": "CLI 錯誤：{message}",
   "cli.args.unknown_command": "未知命令：{value}",
   "cli.args.mode_requires_value": "選項 --mode 需要一個值：sources|installed",

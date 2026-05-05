@@ -128,12 +128,7 @@ export const es: I18nDictionary = {
   "commands.invalid_number": "Introduce número válido ({min}-{max}).",
 
   "cli.usage":
-    "Uso:\n  opencode-chat-bot [start] [--mode sources|installed]\n  opencode-chat-bot status\n  opencode-chat-bot stop\n  opencode-chat-bot config\n\nNotas:\n  - Sin comando, el valor por defecto es `start`\n  - `--mode` actualmente solo se admite para `start`",
-  "cli.placeholder.status":
-    "El comando `status` es actualmente un marcador de posición. Las comprobaciones reales de estado se agregarán en la capa de servicio (Fase 5).",
-  "cli.placeholder.stop":
-    "El comando `stop` es actualmente un marcador de posición. La detención real del proceso en segundo plano se agregará en la capa de servicio (Fase 5).",
-  "cli.placeholder.unavailable": "El comando no esta disponible.",
+    "Uso:\n  opencode-chat-bot [start] [--mode sources|installed]\n  opencode-chat-bot config\n\nNotas:\n  - Sin comando, el valor por defecto es `start`\n  - `--mode` actualmente solo se admite para `start`",
   "cli.error.prefix": "Error de CLI: {message}",
   "cli.args.unknown_command": "Comando desconocido: {value}",
   "cli.args.mode_requires_value": "La opción --mode requiere un valor: sources|installed",

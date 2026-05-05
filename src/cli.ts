@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
 import type { RuntimeMode } from "./runtime/mode.js";
-import { parseCliArgs, type CliCommand } from "./cli/args.js";
+import { parseCliArgs } from "./cli/args.js";
 import { resolveRuntimeMode, setRuntimeMode } from "./runtime/mode.js";
 import { t } from "./i18n/index.js";
 
@@ -19,18 +19,6 @@ function writeStderr(message: string): void {
 
 function printUsage(): void {
   writeStdout(t("cli.usage"));
-}
-
-function getPlaceholderMessage(command: Exclude<CliCommand, "start">): string {
-  if (command === "status") {
-    return t("cli.placeholder.status");
-  }
-
-  if (command === "stop") {
-    return t("cli.placeholder.stop");
-  }
-
-  return t("cli.placeholder.unavailable");
 }
 
 async function runStartCommand(mode?: RuntimeMode): Promise<number> {
@@ -67,13 +55,6 @@ async function runConfigCommand(): Promise<number> {
   return EXIT_SUCCESS;
 }
 
-async function runPlaceholderCommand(
-  command: Exclude<CliCommand, "start" | "config">,
-): Promise<number> {
-  writeStdout(getPlaceholderMessage(command));
-  return EXIT_SUCCESS;
-}
-
 async function runCli(argv: string[]): Promise<number> {
   const parsedArgs = parseCliArgs(argv);
 
@@ -94,7 +75,7 @@ async function runCli(argv: string[]): Promise<number> {
     return runConfigCommand();
   }
 
-  return runPlaceholderCommand(parsedArgs.command);
+  return EXIT_SUCCESS;
 }
 
 void runCli(process.argv.slice(2))

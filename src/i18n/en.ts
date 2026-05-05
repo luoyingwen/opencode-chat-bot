@@ -63,6 +63,14 @@ export const en = {
     "Application is not configured yet. Starting wizard...\n",
   "runtime.wizard.tty_required":
     "Interactive wizard requires a TTY terminal. Run `opencode-chat-bot config` in an interactive shell.",
+  "runtime.wizard.ask_dingtalk": "Configure DingTalk bot? (y/N)\n> ",
+  "runtime.wizard.ask_dingtalk_key": "DingTalk App Key:\n> ",
+  "runtime.wizard.ask_dingtalk_secret": "DingTalk App Secret:\n> ",
+  "runtime.wizard.ask_dingtalk_user_id": "DingTalk Allowed User ID (optional, press Enter to skip):\n> ",
+  "runtime.wizard.ask_feishu": "Configure Feishu bot? (y/N)\n> ",
+  "runtime.wizard.ask_feishu_id": "Feishu App ID:\n> ",
+  "runtime.wizard.ask_feishu_secret": "Feishu App Secret:\n> ",
+  "runtime.wizard.ask_feishu_user_id": "Feishu Allowed User ID (optional, press Enter to skip):\n> ",
 
   "rename.no_session": "⚠️ No active session. Create or select a session first.",
   "rename.prompt": "📝 Enter new title for session:\n\nCurrent: {title}",
@@ -160,12 +168,7 @@ export const en = {
   "openclaw.unknown_command": "⚠️ Unknown command: /{command}\n\n{help}",
 
   "cli.usage":
-    "Usage:\n  opencode-chat-bot [start] [--mode sources|installed]\n  opencode-chat-bot status\n  opencode-chat-bot stop\n  opencode-chat-bot config\n\nNotes:\n  - No command defaults to `start`\n  - `--mode` is currently supported for `start` only",
-  "cli.placeholder.status":
-    "Command `status` is currently a placeholder. Real status checks will be added in service layer (Phase 5).",
-  "cli.placeholder.stop":
-    "Command `stop` is currently a placeholder. Real background process stop will be added in service layer (Phase 5).",
-  "cli.placeholder.unavailable": "Command is unavailable.",
+    "Usage:\n  opencode-chat-bot [start] [--mode sources|installed]\n  opencode-chat-bot config\n\nNotes:\n  - No command defaults to `start`\n  - `--mode` is currently supported for `start` only",
   "cli.error.prefix": "CLI error: {message}",
   "cli.args.unknown_command": "Unknown command: {value}",
   "cli.args.mode_requires_value": "Option --mode requires a value: sources|installed",

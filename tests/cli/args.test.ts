@@ -56,14 +56,6 @@ describe("cli/args", () => {
     expect(parsed.error).toContain("Invalid mode value");
   });
 
-  it("rejects --mode for non-start commands", () => {
-    const parsed = parseCliArgs(["status", "--mode", "sources"]);
-
-    expect(parsed.command).toBe("status");
-    expect(parsed.showHelp).toBe(true);
-    expect(parsed.error).toContain("supported only for the start command");
-  });
-
   it("shows help when requested", () => {
     const parsed = parseCliArgs(["--help"]);
 

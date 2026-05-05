@@ -127,12 +127,7 @@ export const ru: I18nDictionary = {
   "commands.invalid_number": "Введите правильный номер ({min}-{max}).",
 
   "cli.usage":
-    "Использование:\n  opencode-chat-bot [start] [--mode sources|installed]\n  opencode-chat-bot status\n  opencode-chat-bot stop\n  opencode-chat-bot config\n\nЗаметки:\n  - Без команды по умолчанию используется `start`\n  - `--mode` сейчас поддерживается только для `start`",
-  "cli.placeholder.status":
-    "Команда `status` пока работает как заглушка. Реальная проверка статуса появится на этапе service-слоя (Этап 5).",
-  "cli.placeholder.stop":
-    "Команда `stop` пока работает как заглушка. Реальная остановка фонового процесса появится на этапе service-слоя (Этап 5).",
-  "cli.placeholder.unavailable": "Команда недоступна.",
+    "Использование:\n  opencode-chat-bot [start] [--mode sources|installed]\n  opencode-chat-bot config\n\nЗаметки:\n  - Без команды по умолчанию используется `start`\n  - `--mode` сейчас поддерживается только для `start`",
   "cli.error.prefix": "CLI error: {message}",
   "cli.args.unknown_command": "Неизвестная команда: {value}",
   "cli.args.mode_requires_value": "Опция --mode требует значение: sources|installed",
