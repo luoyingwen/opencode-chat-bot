@@ -83,9 +83,9 @@ The bot connects to the OpenCode API at `http://localhost:4096` by default. Over
 
 ### 3. Install from npm
 
-The package is published on npm as `@luoyingwen/opencode-chat-bot`.
+The package is published on npm as `@luoyingwen/opencode-chat-bot`. Choose **one** of the two modes below — they cannot be used together.
 
-#### OpenClaw Plugin
+#### Option A: OpenClaw Plugin (recommended for OpenClaw users)
 
 ```bash
 openclaw plugins install @luoyingwen/opencode-chat-bot
@@ -95,7 +95,7 @@ openclaw gateway restart
 
 Send `/opencode` in the conversation to enter OpenCode mode, then send prompts or commands.
 
-#### Standalone Bot
+#### Option B: Standalone Bot (recommended for DingTalk/Feishu users)
 
 ```bash
 npm install -g @luoyingwen/opencode-chat-bot
