@@ -27,11 +27,7 @@ import {
 } from "./events.js";
 import { createOpenClawTextPromptPlatform } from "./prompt-platform.js";
 import { createOpenClawRoute, getOpenClawRouteKey } from "./route.js";
-import type {
-  OpenClawDispatchResult,
-  OpenClawPluginEventContext,
-  OpenClawRoute,
-} from "./types.js";
+import type { OpenClawDispatchResult, OpenClawPluginEventContext, OpenClawRoute } from "./types.js";
 import { handleOpenClawCommandByIndex, handleOpenClawCommandsCommand } from "./commands.js";
 import {
   clearOpenClawTaskState,
@@ -57,9 +53,7 @@ interface SlashCommand {
   args: string;
 }
 
-export function initializeOpenClawHandler(params: {
-  api: OpenClawPluginApi;
-}): void {
+export function initializeOpenClawHandler(params: { api: OpenClawPluginApi }): void {
   initOpenClawClient({ api: params.api });
 
   setScheduledTaskNotificationCallback("OpenClaw", async (text: string) => {
@@ -239,6 +233,8 @@ async function handleSlashCommand(
     case "status":
     case "projects":
     case "project":
+    case "models":
+    case "model":
     case "sessions":
       return executeSharedCommand(route, command.name, command.args);
     case "session":

@@ -6,6 +6,8 @@ export const en = {
   "cmd.description.session_number": "Select a session by number",
   "cmd.description.projects": "List projects",
   "cmd.description.project_number": "Select a project by number",
+  "cmd.description.models": "List models",
+  "cmd.description.model_number": "Select a model by number",
   "cmd.description.task": "Create a scheduled task",
   "cmd.description.tasks": "List scheduled tasks",
   "cmd.description.commands": "Custom commands",
@@ -66,11 +68,13 @@ export const en = {
   "runtime.wizard.ask_dingtalk": "Configure DingTalk bot? (y/N)\n> ",
   "runtime.wizard.ask_dingtalk_key": "DingTalk App Key:\n> ",
   "runtime.wizard.ask_dingtalk_secret": "DingTalk App Secret:\n> ",
-  "runtime.wizard.ask_dingtalk_user_id": "DingTalk Allowed User ID (optional, press Enter to skip):\n> ",
+  "runtime.wizard.ask_dingtalk_user_id":
+    "DingTalk Allowed User ID (optional, press Enter to skip):\n> ",
   "runtime.wizard.ask_feishu": "Configure Feishu bot? (y/N)\n> ",
   "runtime.wizard.ask_feishu_id": "Feishu App ID:\n> ",
   "runtime.wizard.ask_feishu_secret": "Feishu App Secret:\n> ",
-  "runtime.wizard.ask_feishu_user_id": "Feishu Allowed User ID (optional, press Enter to skip):\n> ",
+  "runtime.wizard.ask_feishu_user_id":
+    "Feishu Allowed User ID (optional, press Enter to skip):\n> ",
 
   "rename.no_session": "⚠️ No active session. Create or select a session first.",
   "rename.prompt": "📝 Enter new title for session:\n\nCurrent: {title}",
@@ -141,7 +145,7 @@ export const en = {
   "openclaw.mode.exited": "✅ OpenCode mode disabled for this OpenClaw conversation.",
   "openclaw.mode.inactive": "OpenCode mode was not active for this OpenClaw conversation.",
   "openclaw.no_pending_permission": "⚠️ No pending permission request.",
-"openclaw.permission_pending": "A permission request is pending. Reply with /1, /2, or /3.",
+  "openclaw.permission_pending": "A permission request is pending. Reply with /1, /2, or /3.",
   "openclaw.permission_no_pending":
     "No pending permission request. When one appears, reply with /1, /2, or /3.",
   "openclaw.permission_hint":
@@ -164,7 +168,7 @@ export const en = {
   "openclaw.model.selected": "✅ Model selected: {model}",
   "openclaw.prompt_error": "❌ An error occurred. Please try again.",
   "openclaw.help":
-    "📖 **OpenCode Chat Bot Commands**\n\n/opencode - Enter OpenCode mode for this conversation\n/exit - Leave OpenCode mode\n/status - Show OpenCode status\n/stop - Stop current action or cancel active flow\n/sessions - List sessions\n/session <number> - Select a session\n/session new - Create a new session\n/session rename [title] - Rename the current session\n/projects - List projects\n/project <number> - Select a project\n/agents - List available agents\n/agent <number> - Switch to agent by number\n/commands - List custom commands\n/command <number> - Execute a custom command\n/auto_confirm [on|off] - Toggle auto-confirmation for current session\n/task - Create a scheduled task\n/tasks - List scheduled tasks\n/permission - Show pending permission request status\n/help - Show this help\n\nPermission replies: /1 allow once, /2 always allow, /3 reject.",
+    "📖 **OpenCode Chat Bot Commands**\n\n/opencode - Enter OpenCode mode for this conversation\n/exit - Leave OpenCode mode\n/status - Show OpenCode status\n/stop - Stop current action or cancel active flow\n/sessions - List sessions\n/session <number> - Select a session\n/session new - Create a new session\n/session rename [title] - Rename the current session\n/projects - List projects\n/project <number> - Select a project\n/models - List models\n/model <number> - Select a model\n/agents - List available agents\n/agent <number> - Switch to agent by number\n/commands - List custom commands\n/command <number> - Execute a custom command\n/auto_confirm [on|off] - Toggle auto-confirmation for current session\n/task - Create a scheduled task\n/tasks - List scheduled tasks\n/permission - Show pending permission request status\n/help - Show this help\n\nPermission replies: /1 allow once, /2 always allow, /3 reject.",
   "openclaw.unknown_command": "⚠️ Unknown command: /{command}\n\n{help}",
 
   "cli.usage":

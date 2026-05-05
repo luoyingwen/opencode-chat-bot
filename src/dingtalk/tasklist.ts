@@ -14,7 +14,10 @@ export async function handleTaskListCommand(userId: string): Promise<string> {
   return handleTextTaskListCommand(getFlowKey(userId));
 }
 
-export async function handleTaskListTextInput(userId: string, text: string): Promise<string | null> {
+export async function handleTaskListTextInput(
+  userId: string,
+  text: string,
+): Promise<string | null> {
   return handleTextTaskListInput(getFlowKey(userId), text);
 }
 

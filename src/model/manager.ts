@@ -284,9 +284,7 @@ export async function getModelSelectionLists(): Promise<ModelSelectionLists> {
  * Validate stored selected model against OpenCode providers catalog.
  * If selected model is unavailable, fallback to env default model.
  */
-export async function reconcileStoredModelSelection(
-  route?: ConversationRoute,
-): Promise<void> {
+export async function reconcileStoredModelSelection(route?: ConversationRoute): Promise<void> {
   const currentModel = getStoredModelState(route);
 
   if (!currentModel?.providerID || !currentModel.modelID) {

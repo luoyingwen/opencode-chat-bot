@@ -33,7 +33,9 @@ export async function renameSessionTitle(
     return t("rename.empty_title");
   }
 
-  logger.info(`[RenameFlow] Renaming session ${sessionInfo.sessionId} for ${flowKey} to: ${newTitle}`);
+  logger.info(
+    `[RenameFlow] Renaming session ${sessionInfo.sessionId} for ${flowKey} to: ${newTitle}`,
+  );
 
   try {
     const { data: updatedSession, error } = await opencodeClient.session.update({
@@ -79,7 +81,7 @@ export async function handleRenameFlowSetup(
   titleArg?: string,
 ): Promise<string> {
   const nextTitle = titleArg?.trim();
-  
+
   if (nextTitle) {
     return renameSessionTitle(
       routeKey,

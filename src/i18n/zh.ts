@@ -8,6 +8,8 @@ export const zh: I18nDictionary = {
   "cmd.description.session_number": "按序号选择会话",
   "cmd.description.projects": "列出项目",
   "cmd.description.project_number": "按序号选择项目",
+  "cmd.description.models": "列出模型",
+  "cmd.description.model_number": "按序号选择模型",
   "cmd.description.task": "创建定时任务",
   "cmd.description.tasks": "查看定时任务",
   "cmd.description.commands": "自定义命令",
@@ -76,7 +78,7 @@ export const zh: I18nDictionary = {
   "rename.success": "✅ 会话已重命名为：{title}",
   "rename.error": "🔴 重命名会话失败。",
   "rename.cancelled": "❌ 重命名已取消。",
-  "rename.hint_abort": "输入“取消”、\"cancel\" 或 /cancel 取消重命名。",
+  "rename.hint_abort": '输入“取消”、"cancel" 或 /cancel 取消重命名。',
 
   "task.prompt.schedule":
     "⏰ 请用自然语言发送任务的时间安排。\n\n示例：\n- 每 5 分钟\n- 每天 17:00\n- 明天 12:00",
@@ -86,7 +88,7 @@ export const zh: I18nDictionary = {
     "✅ 时间安排已解析\n\n理解为：{summary}\n{cronLine}时区：{timezone}\n类型：{kind}\n下次运行：{nextRunAt}",
   "task.schedule_preview.cron": "Cron: {cron}",
   "task.prompt.body": "📝 现在发送机器人按此时间安排需要执行的内容。",
-  "task.hint_cancel": "输入“取消”、\"cancel\" 或 /cancel 可退出。",
+  "task.hint_cancel": '输入“取消”、"cancel" 或 /cancel 可退出。',
   "task.prompt_empty": "⚠️ 任务文本不能为空。",
   "task.created":
     "✅ 定时任务已创建\n\n任务：{description}\n项目：{project}\n模型：{model}\n时间安排：{schedule}\n{cronLine}下次运行：{nextRunAt}",
@@ -100,14 +102,12 @@ export const zh: I18nDictionary = {
   "task.model.default": "默认",
   "task.run.success": "⏰ 定时任务已完成: {description}",
   "task.run.error": "🔴 定时任务执行失败: {description}\n\n错误: {error}",
-  "task.run.error.interactive_question":
-    "定时任务请求了交互式问题，无法在无人值守时继续。",
-  "task.run.error.interactive_permission":
-    "定时任务请求了交互式权限，无法在无人值守时继续。",
+  "task.run.error.interactive_question": "定时任务请求了交互式问题，无法在无人值守时继续。",
+  "task.run.error.interactive_permission": "定时任务请求了交互式权限，无法在无人值守时继续。",
 
   "tasklist.empty": "📭 还没有定时任务。",
   "tasklist.select": "请选择一个定时任务：",
-  "tasklist.select_hint": "输入任务编号查看详情，或输入“取消”、\"cancel\" 或 /cancel 退出。",
+  "tasklist.select_hint": '输入任务编号查看详情，或输入“取消”、"cancel" 或 /cancel 退出。',
   "tasklist.details":
     "⏰ 定时任务\n\n任务：{prompt}\n项目：{project}\n计划：{schedule}\n模型：{model}\n{cronLine}时区：{timezone}\n下次运行：{nextRunAt}\n上次运行：{lastRunAt}\n运行次数：{runCount}",
   "tasklist.details.cron": "Cron: {cron}",
@@ -115,9 +115,10 @@ export const zh: I18nDictionary = {
   "tasklist.cancelled_callback": "已取消",
   "tasklist.inactive_callback": "此定时任务菜单已失效",
   "tasklist.load_error": "🔴 无法加载定时任务。",
-  "tasklist.invalid_number": "⚠️ 请输入有效的任务编号，或输入“取消”、\"cancel\" 或 /cancel 退出。",
+  "tasklist.invalid_number": '⚠️ 请输入有效的任务编号，或输入“取消”、"cancel" 或 /cancel 退出。',
   "tasklist.not_found": "⚠️ 任务 #{number} 不存在。当前共有 {count} 个任务。",
-  "tasklist.hint_detail": "输入“删除”或 \"delete\" 删除此任务，或输入“取消”、\"cancel\" 或 /cancel 返回。",
+  "tasklist.hint_detail":
+    '输入“删除”或 "delete" 删除此任务，或输入“取消”、"cancel" 或 /cancel 返回。',
   "tasklist.delete_error": "❌ 删除任务失败。",
 
   "commands.empty": "📭 当前项目没有可用的 OpenCode 命令。",
@@ -126,7 +127,8 @@ export const zh: I18nDictionary = {
   "commands.cancelled_callback": "已取消",
   "commands.executing_prefix": "⚡ 执行命令:",
   "commands.execute_error": "🔴 执行 OpenCode 命令失败。",
-  "commands.hint_select": "💡 使用 `/command <编号>` 执行命令，或使用 `/command <编号> [参数]` 携带参数执行。",
+  "commands.hint_select":
+    "💡 使用 `/command <编号>` 执行命令，或使用 `/command <编号> [参数]` 携带参数执行。",
   "commands.invalid_number": "请输入有效的命令编号（{min}-{max}）。",
 
   "cli.usage":
@@ -138,11 +140,9 @@ export const zh: I18nDictionary = {
   "cli.args.unknown_option": "未知选项：{value}",
   "cli.args.mode_only_start": "选项 --mode 仅支持 start 命令",
 
-  "openclaw.processing":
-    "⚙️ 处理中...\n\n💡 您正处于 OpenCode 拦截模式，输入 /exit 退出。",
+  "openclaw.processing": "⚙️ 处理中...\n\n💡 您正处于 OpenCode 拦截模式，输入 /exit 退出。",
 
-  "openclaw.permission_hint":
-    "🔐 **权限请求**\n\n请回复:\n/1 - 允许一次\n/2 - 总是允许\n/3 - 拒绝",
+  "openclaw.permission_hint": "🔐 **权限请求**\n\n请回复:\n/1 - 允许一次\n/2 - 总是允许\n/3 - 拒绝",
 
   "auto_lock.success": "✅ Bot 已锁定到您的账号 ({userId})。其他用户无法访问。",
   "auto_lock.race_rejected": "❌ Bot 已被其他用户锁定。拒绝访问。",

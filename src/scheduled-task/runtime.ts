@@ -93,13 +93,11 @@ function calculateElapsedMs(startedAt: string, finishedAt: string): number {
   return finishedAtMs - startedAtMs;
 }
 
-function formatTaskFooter(
-  model: ScheduledTask["model"],
-  elapsedMs: number,
-): string {
+function formatTaskFooter(model: ScheduledTask["model"], elapsedMs: number): string {
   const modelId = model.modelID;
   const provider = model.providerID;
-  const modelLabel = provider && modelId ? `${provider}/${modelId}` : modelId || provider || "unknown";
+  const modelLabel =
+    provider && modelId ? `${provider}/${modelId}` : modelId || provider || "unknown";
 
   const elapsedSec = elapsedMs / 1000;
   const elapsedLabel = elapsedSec >= 60 ? `${elapsedSec.toFixed(1)}s` : `${elapsedSec.toFixed(1)}s`;

@@ -12,7 +12,9 @@ import {
   handlePermissionRequest,
 } from "../text-interactions/permission.js";
 
-export interface SharedEventHandlersConfig<TTarget extends PlatformEventTarget = PlatformEventTarget> {
+export interface SharedEventHandlersConfig<
+  TTarget extends PlatformEventTarget = PlatformEventTarget,
+> {
   platformName: string;
   getActiveTarget: () => TTarget | null;
   clearActiveTarget: () => void;
@@ -49,7 +51,9 @@ export function createSharedEventHandlers<TTarget extends PlatformEventTarget>(
             return;
           }
           await config.sendParts(target, parts);
-          logger.info(`[${config.platformName}] Completion message sent successfully (${parts.length} parts)`);
+          logger.info(
+            `[${config.platformName}] Completion message sent successfully (${parts.length} parts)`,
+          );
         } else {
           await config.sendMessage(target, messageText);
           logger.info(`[${config.platformName}] Completion message sent successfully`);
@@ -79,7 +83,7 @@ export function createSharedEventHandlers<TTarget extends PlatformEventTarget>(
     void config.sendMessage(target, t("bot.thinking"));
   };
 
-  const handleTokens = (_tokens: import("../../summary/aggregator.js").TokensInfo): void => {}
+  const handleTokens = (_tokens: import("../../summary/aggregator.js").TokensInfo): void => {};
 
   const handleSessionError = (sessionId: string, message: string): void => {
     const target = config.getActiveTarget();
@@ -87,7 +91,9 @@ export function createSharedEventHandlers<TTarget extends PlatformEventTarget>(
 
     const normalizedMessage = message.trim() || t("common.unknown_error");
     const truncatedMessage =
-      normalizedMessage.length > 19000 ? `${normalizedMessage.slice(0, 18997)}...` : normalizedMessage;
+      normalizedMessage.length > 19000
+        ? `${normalizedMessage.slice(0, 18997)}...`
+        : normalizedMessage;
 
     void config.sendMessage(target, t("bot.session_error", { message: truncatedMessage }));
     config.clearActiveTarget();
@@ -99,7 +105,9 @@ export function createSharedEventHandlers<TTarget extends PlatformEventTarget>(
 
     const normalizedMessage = retryInfo.message.trim() || t("common.unknown_error");
     const truncatedMessage =
-      normalizedMessage.length > 19000 ? `${normalizedMessage.slice(0, 18997)}...` : normalizedMessage;
+      normalizedMessage.length > 19000
+        ? `${normalizedMessage.slice(0, 18997)}...`
+        : normalizedMessage;
 
     void config.sendMessage(target, t("bot.session_retry", { message: truncatedMessage }));
   };
@@ -157,7 +165,9 @@ export function createSharedEventHandlers<TTarget extends PlatformEventTarget>(
           `[${config.platformName}] Auto-approved permission: ${request.permission} for session ${request.sessionID}`,
         );
       } else {
-        logger.warn(`[${config.platformName}] Auto-confirm permission failed: ${result.autoConfirmResult?.label}`);
+        logger.warn(
+          `[${config.platformName}] Auto-confirm permission failed: ${result.autoConfirmResult?.label}`,
+        );
       }
       return;
     }
@@ -193,7 +203,9 @@ export function createSharedEventHandlers<TTarget extends PlatformEventTarget>(
       return;
     }
 
-    logger.info(`[${config.platformName}] Question received: ${questions.length} questions, requestID=${requestID}`);
+    logger.info(
+      `[${config.platformName}] Question received: ${questions.length} questions, requestID=${requestID}`,
+    );
 
     questionManager.startQuestions(questions, requestID);
 

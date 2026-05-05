@@ -33,7 +33,10 @@ export async function executeAgentListCommand(route: ConversationRoute): Promise
   }
 }
 
-export async function executeAgentSwitchCommand(route: ConversationRoute, arg: string): Promise<string> {
+export async function executeAgentSwitchCommand(
+  route: ConversationRoute,
+  arg: string,
+): Promise<string> {
   try {
     const index = Number.parseInt(arg, 10);
     if (Number.isNaN(index) || index < 1) {
@@ -55,7 +58,10 @@ export async function executeAgentSwitchCommand(route: ConversationRoute, arg: s
   }
 }
 
-export async function executeAutoConfirmCommand(route: ConversationRoute, arg: string): Promise<string> {
+export async function executeAutoConfirmCommand(
+  route: ConversationRoute,
+  arg: string,
+): Promise<string> {
   try {
     const state = await settingsConversationRuntime.get(route);
     if (!state.currentSession) {

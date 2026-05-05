@@ -3,11 +3,7 @@ import { ensureOpenCodeEventSubscription } from "../core/execution/event-subscri
 import { clearAllInteractionState } from "../interaction/cleanup.js";
 import { stopEventListening } from "../opencode/events.js";
 import { logger } from "../utils/logger.js";
-import {
-  clearDingTalkActive,
-  installDingTalkEventRouting,
-  setDingTalkActive,
-} from "./events.js";
+import { clearDingTalkActive, installDingTalkEventRouting, setDingTalkActive } from "./events.js";
 
 export function createDingTalkTextPromptPlatform(params: {
   userId: string;

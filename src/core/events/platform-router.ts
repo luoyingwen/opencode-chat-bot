@@ -46,7 +46,11 @@ export class PlatformEventRouter {
     this.patchCallback("setOnSessionIdle", "onSessionIdle", this.config.handlers.onSessionIdle);
     this.patchCallback("setOnPermission", "onPermission", this.config.handlers.onPermission);
     this.patchCallback("setOnQuestion", "onQuestion", this.config.handlers.onQuestion);
-    this.patchCallback("setOnQuestionError", "onQuestionError", this.config.handlers.onQuestionError);
+    this.patchCallback(
+      "setOnQuestionError",
+      "onQuestionError",
+      this.config.handlers.onQuestionError,
+    );
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const aggregator = summaryAggregator as any;

@@ -2,11 +2,7 @@ import type { TextPromptExecutionPlatform } from "../core/execution/platform-ada
 import { ensureOpenCodeEventSubscription } from "../core/execution/event-subscription.js";
 import { clearAllInteractionState } from "../interaction/cleanup.js";
 import { stopEventListening } from "../opencode/events.js";
-import {
-  clearFeishuActive,
-  installFeishuEventRouting,
-  setFeishuActive,
-} from "./events.js";
+import { clearFeishuActive, installFeishuEventRouting, setFeishuActive } from "./events.js";
 import { getFeishuClient } from "./client.js";
 
 export function createFeishuTextPromptPlatform(params: {

@@ -35,7 +35,10 @@ export class SettingsConversationRuntime implements ConversationRuntime {
     };
   }
 
-  async update(route: ConversationRoute, patch: ConversationStatePatch): Promise<ConversationState> {
+  async update(
+    route: ConversationRoute,
+    patch: ConversationStatePatch,
+  ): Promise<ConversationState> {
     updateConversationState(this.getRouteKey(route), patch);
     return this.get(route);
   }

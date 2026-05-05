@@ -1,7 +1,6 @@
 import { fetchCurrentAgent } from "../../agent/manager.js";
 import { getAgentDisplayName } from "../../agent/types.js";
 import { fetchCurrentModel } from "../../model/manager.js";
-import { getSessionModel, formatModelDisplay } from "../../model/session-model.js";
 import { formatModelForDisplay } from "../../model/types.js";
 import { isAutoConfirmEnabled } from "../../permission/auto-confirm.js";
 import { logger } from "../../utils/logger.js";
@@ -38,25 +37,12 @@ export class StatusCommandHandler implements CommandHandler {
 
       const state = await context.runtime.get(context.route);
 
-      if (state.currentSession) {
-        const sessionModelResult = await getSessionModel(state.currentSession.id);
-        if (sessionModelResult) {
-          const modelDisplay = formatModelDisplay(sessionModelResult.model);
-          const defaultFlag = sessionModelResult.isExplicit ? "" : " (default)";
-          lines.push(`**Model:** ${modelDisplay}${defaultFlag}`);
-        } else {
-          const fallbackDisplay =
-            storedModel.providerID && storedModel.modelID
-              ? formatModelForDisplay(storedModel.providerID, storedModel.modelID)
-              : "Not configured";
-          lines.push(`**Model:** ${fallbackDisplay} (stored)`);
-        }
+      if (storedModel.providerID && storedModel.modelID) {
+        lines.push(
+          `**Model:** ${formatModelForDisplay(storedModel.providerID, storedModel.modelID)}`,
+        );
       } else {
-        if (storedModel.providerID && storedModel.modelID) {
-          lines.push(`**Model:** ${formatModelForDisplay(storedModel.providerID, storedModel.modelID)}`);
-        } else {
-          lines.push("**Model:** Not configured");
-        }
+        lines.push("**Model:** Not configured");
       }
 
       lines.push("");
@@ -71,7 +57,9 @@ export class StatusCommandHandler implements CommandHandler {
         const autoConfirmStatus = isAutoConfirmEnabled(state.currentSession.id);
         lines.push(`**Auto_confirm:** ${autoConfirmStatus ? "✅ ON" : "❌ OFF"}`);
 
-        const statusData = await context.gateway.getSessionStatus(state.currentProject?.worktree || "");
+        const statusData = await context.gateway.getSessionStatus(
+          state.currentProject?.worktree || "",
+        );
         const sessionStatus = statusData?.[state.currentSession.id];
         if (sessionStatus?.type === "busy") {
           lines.push("**Status:** 🔄 Busy (processing)");

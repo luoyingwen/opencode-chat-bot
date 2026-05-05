@@ -71,7 +71,7 @@ export const fr: I18nDictionary = {
   "rename.success": "✅ Session renommée en : {title}",
   "rename.error": "🔴 Impossible de renommer la session.",
   "rename.cancelled": "❌ Renommage annulé.",
-  "rename.hint_abort": "Saisissez \"cancel\", \"取消\" ou /cancel pour annuler le renommage.",
+  "rename.hint_abort": 'Saisissez "cancel", "取消" ou /cancel pour annuler le renommage.',
 
   "task.prompt.schedule":
     "⏰ Envoyez le planning de la tâche en langage naturel.\n\nExemples :\n- toutes les 5 minutes\n- chaque jour à 17:00\n- demain à 12:00",
@@ -82,7 +82,7 @@ export const fr: I18nDictionary = {
     "✅ Planning interprété\n\nCompris comme : {summary}\n{cronLine}Fuseau horaire : {timezone}\nType : {kind}\nProchaine exécution : {nextRunAt}",
   "task.schedule_preview.cron": "Cron : {cron}",
   "task.prompt.body": "📝 Envoyez maintenant ce que le bot doit faire selon ce planning.",
-  "task.hint_cancel": "Saisissez \"cancel\", \"取消\" ou /cancel pour annuler.",
+  "task.hint_cancel": 'Saisissez "cancel", "取消" ou /cancel pour annuler.',
   "task.prompt_empty": "⚠️ Le texte de la tâche ne peut pas être vide.",
   "task.created":
     "✅ Tâche planifiée créée\n\nTâche : {description}\nProjet : {project}\nModèle : {model}\nPlanning : {schedule}\n{cronLine}Prochaine exécution : {nextRunAt}",
@@ -105,7 +105,8 @@ export const fr: I18nDictionary = {
 
   "tasklist.empty": "📭 Aucune tâche planifiée pour le moment.",
   "tasklist.select": "Sélectionnez une tâche planifiée :",
-  "tasklist.select_hint": "Saisissez le numéro de la tâche pour voir les détails, ou \"cancel\", \"取消\" ou /cancel pour quitter.",
+  "tasklist.select_hint":
+    'Saisissez le numéro de la tâche pour voir les détails, ou "cancel", "取消" ou /cancel pour quitter.',
   "tasklist.details":
     "⏰ Tâche planifiée\n\nTâche : {prompt}\nProjet : {project}\nPlanning : {schedule}\nModèle : {model}\n{cronLine}Fuseau horaire : {timezone}\nProchaine exécution : {nextRunAt}\nDernière exécution : {lastRunAt}\nNombre d'exécutions : {runCount}",
   "tasklist.details.cron": "Cron : {cron}",
@@ -113,9 +114,11 @@ export const fr: I18nDictionary = {
   "tasklist.cancelled_callback": "Annulé",
   "tasklist.inactive_callback": "Ce menu des tâches planifiées est inactif",
   "tasklist.load_error": "🔴 Impossible de charger les tâches planifiées.",
-  "tasklist.invalid_number": "⚠️ Saisissez un numéro de tâche valide, ou \"cancel\", \"取消\" ou /cancel pour quitter.",
+  "tasklist.invalid_number":
+    '⚠️ Saisissez un numéro de tâche valide, ou "cancel", "取消" ou /cancel pour quitter.',
   "tasklist.not_found": "⚠️ La tâche #{number} n'existe pas. Il y a {count} tâches au total.",
-  "tasklist.hint_detail": "Saisissez \"delete\" ou \"删除\" pour supprimer cette tâche, ou \"cancel\", \"取消\" ou /cancel pour revenir.",
+  "tasklist.hint_detail":
+    'Saisissez "delete" ou "删除" pour supprimer cette tâche, ou "cancel", "取消" ou /cancel pour revenir.',
   "tasklist.delete_error": "❌ Impossible de supprimer la tâche.",
 
   "commands.empty": "📭 Aucune commande OpenCode n'est disponible pour ce projet.",
@@ -124,7 +127,8 @@ export const fr: I18nDictionary = {
   "commands.cancelled_callback": "Annulé",
   "commands.executing_prefix": "⚡ Exécution de la commande :",
   "commands.execute_error": "🔴 Impossible d'exécuter la commande OpenCode.",
-  "commands.hint_select": '💡 Utilisez `/command <numéro>` pour exécuter une commande, ou `/command <numéro> [args]` avec arguments.',
+  "commands.hint_select":
+    "💡 Utilisez `/command <numéro>` pour exécuter une commande, ou `/command <numéro> [args]` avec arguments.",
   "commands.invalid_number": "Entrez numéro valide ({min}-{max}).",
 
   "cli.usage":
@@ -143,7 +147,8 @@ export const fr: I18nDictionary = {
   "openclaw.permission_hint":
     "🔐 **Demande de permission**\n\nVeuillez répondre:\n/1 - Autoriser une fois\n/2 - Autoriser toujours\n/3 - Refuser",
 
-  "auto_lock.success": "✅ Bot verrouillé sur votre compte ({userId}). Les autres utilisateurs ne peuvent pas accéder.",
+  "auto_lock.success":
+    "✅ Bot verrouillé sur votre compte ({userId}). Les autres utilisateurs ne peuvent pas accéder.",
   "auto_lock.race_rejected": "❌ Bot verrouillé par un autre utilisateur. Accès refusé.",
   "permission.denied": "❌ Accès refusé.",
 };

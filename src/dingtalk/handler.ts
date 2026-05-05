@@ -12,11 +12,7 @@ import { settingsConversationRuntime } from "../core/runtime/settings-runtime.js
 import type { ConversationRoute } from "../core/runtime/types.js";
 import { handleRenameTextInput, handleRenameFlowSetup } from "../core/text-interactions/rename.js";
 import { updateEnvValue } from "../runtime/env-updater.js";
-import {
-  initDingTalkClient,
-  getDingTalkClient,
-  formatDingTalkNetworkError,
-} from "./client.js";
+import { initDingTalkClient, getDingTalkClient, formatDingTalkNetworkError } from "./client.js";
 import {
   clearDingTalkActive,
   handleDingTalkPermissionReply,
@@ -40,10 +36,7 @@ import {
 } from "./tasklist.js";
 import { setDingTalkNotificationCallback } from "../scheduled-task/runtime.js";
 import { exitApplication } from "../app/exit-app.js";
-import {
-  handleCommandsCommand,
-  handleCommandByIndex,
-} from "./commands.js";
+import { handleCommandsCommand, handleCommandByIndex } from "./commands.js";
 import { createDingTalkTextPromptPlatform } from "./prompt-platform.js";
 import { getSharedCommands, getValidCommands } from "../bot/commands/definitions.js";
 
@@ -92,9 +85,7 @@ async function sendDingTalkMessage(userId: string, text: string): Promise<void> 
   }
 
   if (client.hasProactiveRisk(userId)) {
-    logger.warn(
-      `[DingTalk] Skipping proactive send to ${userId} due to recent permission error`,
-    );
+    logger.warn(`[DingTalk] Skipping proactive send to ${userId} due to recent permission error`);
     return;
   }
 
@@ -181,6 +172,42 @@ async function handleProjectCommand(userId: string, arg: string): Promise<void> 
   if (result.effects?.projectChanged) {
     summaryAggregator.clear();
     clearAllInteractionState("dingtalk_project_switch");
+  }
+
+  for (const output of result.outputs) {
+    await sendDingTalkMessage(userId, output.text);
+  }
+}
+
+async function handleModelsCommand(userId: string): Promise<void> {
+  const result = await executeOpenCodeCommand({
+    route: { channelId: "dingtalk", accountId: userId },
+    userId,
+    name: "models",
+  });
+
+  if (!result) {
+    await sendDingTalkMessage(userId, "❌ Failed to load models.");
+    return;
+  }
+
+  for (const output of result.outputs) {
+    await sendDingTalkMessage(userId, output.text);
+  }
+}
+
+async function handleModelCommand(userId: string, arg: string): Promise<void> {
+  const result = await executeOpenCodeCommand({
+    route: { channelId: "dingtalk", accountId: userId },
+    userId,
+    name: "model",
+    args: arg,
+    rawText: `/model ${arg}`,
+  });
+
+  if (!result) {
+    await sendDingTalkMessage(userId, "❌ Failed to select model.");
+    return;
   }
 
   for (const output of result.outputs) {
@@ -418,6 +445,11 @@ async function processMessage(userId: string, text: string, sessionWebhook: stri
   } else if (text.startsWith("/project ")) {
     const arg = text.slice(9).trim();
     void handleProjectCommand(userId, arg);
+  } else if (text.startsWith("/models")) {
+    void handleModelsCommand(userId);
+  } else if (text.startsWith("/model ")) {
+    const arg = text.slice(7).trim();
+    void handleModelCommand(userId, arg);
   } else if (text.startsWith("/sessions")) {
     void handleSessionsCommand(userId);
   } else if (text.startsWith("/session ")) {

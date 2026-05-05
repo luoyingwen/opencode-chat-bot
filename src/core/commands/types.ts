@@ -11,6 +11,7 @@ export interface OutputItem {
 export interface CommandEffects {
   projectChanged?: boolean;
   sessionChanged?: boolean;
+  modelChanged?: boolean;
 }
 
 export interface CommandResult {

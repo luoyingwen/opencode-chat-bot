@@ -27,9 +27,7 @@ export class StopCommandHandler implements CommandHandler {
 
         if (error) {
           return {
-            outputs: [
-              { text: "⚠️ Stop signal sent, but server did not confirm abort." },
-            ],
+            outputs: [{ text: "⚠️ Stop signal sent, but server did not confirm abort." }],
           };
         }
 

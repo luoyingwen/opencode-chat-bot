@@ -41,9 +41,7 @@ export async function startBotApp(): Promise<void> {
   if (logFilePath) {
     logger.info(`Logs are written to ${logFilePath}`);
   }
-  logger.info(
-    `Allowed User ID: DingTalk=${config.dingtalk.allowedUserId ?? "disabled"}`,
-  );
+  logger.info(`Allowed User ID: DingTalk=${config.dingtalk.allowedUserId ?? "disabled"}`);
   logger.debug(`[Runtime] Application start mode: ${mode}`);
   logger.info(`[App] OpenCode API: ${config.opencode.apiUrl}`);
   logger.info(

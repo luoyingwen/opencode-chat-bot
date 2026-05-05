@@ -74,7 +74,9 @@ async function sendMessage(userId: string, text: string): Promise<void> {
         errorMessage.includes("expired") ||
         errorMessage.includes("invalid")
       ) {
-        logger.warn(`[DingTalk] Webhook expired for user ${userId}, falling back to proactive API...`);
+        logger.warn(
+          `[DingTalk] Webhook expired for user ${userId}, falling back to proactive API...`,
+        );
         userSessionWebhooks.delete(userId);
       } else {
         logger.error("[DingTalk] Failed to send message via webhook:", err);

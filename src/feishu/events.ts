@@ -140,12 +140,18 @@ function handleFeishuSessionError(sessionId: string, message: string): void {
 
   const normalizedMessage = message.trim() || t("common.unknown_error");
   const truncatedMessage =
-    normalizedMessage.length > 19000 ? `${normalizedMessage.slice(0, 18997)}...` : normalizedMessage;
+    normalizedMessage.length > 19000
+      ? `${normalizedMessage.slice(0, 18997)}...`
+      : normalizedMessage;
 
   if (feishuClient.hasActiveCard(target.chatId)) {
     void feishuClient.finalizeCard(target.chatId, "error", truncatedMessage);
   } else {
-    void sendMessage(target.chatId, target.userId, t("bot.session_error", { message: truncatedMessage }));
+    void sendMessage(
+      target.chatId,
+      target.userId,
+      t("bot.session_error", { message: truncatedMessage }),
+    );
   }
   activeTarget = null;
 }
@@ -158,9 +164,15 @@ function handleFeishuSessionRetry(retryInfo: SessionRetryInfo): void {
 
   const normalizedMessage = retryInfo.message.trim() || t("common.unknown_error");
   const truncatedMessage =
-    normalizedMessage.length > 19000 ? `${normalizedMessage.slice(0, 18997)}...` : normalizedMessage;
+    normalizedMessage.length > 19000
+      ? `${normalizedMessage.slice(0, 18997)}...`
+      : normalizedMessage;
 
-  void sendMessage(target.chatId, target.userId, t("bot.session_retry", { message: truncatedMessage }));
+  void sendMessage(
+    target.chatId,
+    target.userId,
+    t("bot.session_retry", { message: truncatedMessage }),
+  );
 }
 
 function handleFeishuIdle(sessionId: string): void {
@@ -206,7 +218,9 @@ async function handleFeishuPermission(request: PermissionRequest): Promise<void>
       const emoji = getPermissionEmoji(request.permission);
       const notification = `✅ Auto-approved: ${emoji} ${request.permission} permission`;
       await sendMessage(target.chatId, target.userId, notification);
-      logger.info(`[Feishu] Auto-approved permission: ${request.permission} for session ${request.sessionID}`);
+      logger.info(
+        `[Feishu] Auto-approved permission: ${request.permission} for session ${request.sessionID}`,
+      );
     } else {
       logger.warn(`[Feishu] Auto-confirm permission failed: ${result.autoConfirmResult?.label}`);
     }

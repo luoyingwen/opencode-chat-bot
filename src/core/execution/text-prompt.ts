@@ -84,7 +84,9 @@ export async function executeTextPrompt(params: ExecuteTextPromptParams): Promis
     try {
       const session = await gateway.createSession(currentProject.worktree);
 
-      logger.info(`[${platform.name}] Auto-created session: id=${session.id}, title="${session.title}"`);
+      logger.info(
+        `[${platform.name}] Auto-created session: id=${session.id}, title="${session.title}"`,
+      );
 
       currentSession = {
         id: session.id,
@@ -153,7 +155,9 @@ export async function executeTextPrompt(params: ExecuteTextPromptParams): Promis
       if (error) {
         const details = formatErrorDetails(error, 1500);
         logger.error(`[${platform.name}] session.prompt API error:`, details);
-        void platform.sendMessage(`❌ Failed to send prompt.\n\nError details:\n\`\`\`\n${details}\n\`\`\``);
+        void platform.sendMessage(
+          `❌ Failed to send prompt.\n\nError details:\n\`\`\`\n${details}\n\`\`\``,
+        );
         return;
       }
 
@@ -163,7 +167,10 @@ export async function executeTextPrompt(params: ExecuteTextPromptParams): Promis
       const details = formatErrorDetails(error, 1500);
 
       if (isPromptTransportTermination(error)) {
-        logger.warn(`[${platform.name}] session.prompt connection terminated (network issue):`, details);
+        logger.warn(
+          `[${platform.name}] session.prompt connection terminated (network issue):`,
+          details,
+        );
         return;
       }
 

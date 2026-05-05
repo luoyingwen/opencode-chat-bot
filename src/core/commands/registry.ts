@@ -1,5 +1,7 @@
 import { ProjectCommandHandler } from "./project.js";
 import { ProjectsCommandHandler } from "./projects.js";
+import { ModelCommandHandler } from "./model.js";
+import { ModelsCommandHandler } from "./models.js";
 import { SessionCommandHandler } from "./session.js";
 import { SessionsCommandHandler } from "./sessions.js";
 import { StatusCommandHandler } from "./status.js";
@@ -31,5 +33,7 @@ export function createDefaultCommandRegistry(): CommandRegistry {
   registry.register(new SessionCommandHandler());
   registry.register(new ProjectsCommandHandler());
   registry.register(new ProjectCommandHandler());
+  registry.register(new ModelsCommandHandler());
+  registry.register(new ModelCommandHandler());
   return registry;
 }

@@ -165,7 +165,8 @@ function validateCronMinutesFrequency(cron: string): void {
   let minGap = 60;
   for (let index = 0; index < minuteValues.length; index++) {
     const currentValue = minuteValues[index];
-    const nextValue = index === minuteValues.length - 1 ? minuteValues[0] + 60 : minuteValues[index + 1];
+    const nextValue =
+      index === minuteValues.length - 1 ? minuteValues[0] + 60 : minuteValues[index + 1];
     minGap = Math.min(minGap, nextValue - currentValue);
   }
 

@@ -4,6 +4,7 @@ const mocked = vi.hoisted(() => {
   return {
     fetchCurrentAgentMock: vi.fn(),
     fetchCurrentModelMock: vi.fn(),
+    getModelSelectionListsMock: vi.fn(),
     ingestSessionInfoForCacheMock: vi.fn(async () => undefined),
     isAutoConfirmEnabledMock: vi.fn(),
     loggerErrorMock: vi.fn(),
@@ -16,6 +17,7 @@ vi.mock("../../src/agent/manager.js", () => ({
 
 vi.mock("../../src/model/manager.js", () => ({
   fetchCurrentModel: mocked.fetchCurrentModelMock,
+  getModelSelectionLists: mocked.getModelSelectionListsMock,
 }));
 
 vi.mock("../../src/session/cache-manager.js", async (importOriginal) => {
@@ -38,6 +40,8 @@ vi.mock("../../src/utils/logger.js", () => ({
 
 import { ProjectCommandHandler } from "../../src/core/commands/project.js";
 import { ProjectsCommandHandler } from "../../src/core/commands/projects.js";
+import { ModelCommandHandler } from "../../src/core/commands/model.js";
+import { ModelsCommandHandler } from "../../src/core/commands/models.js";
 import { SessionCommandHandler } from "../../src/core/commands/session.js";
 import { SessionsCommandHandler } from "../../src/core/commands/sessions.js";
 import { StatusCommandHandler } from "../../src/core/commands/status.js";
@@ -83,6 +87,7 @@ describe("core commands", () => {
   beforeEach(() => {
     mocked.fetchCurrentAgentMock.mockReset();
     mocked.fetchCurrentModelMock.mockReset();
+    mocked.getModelSelectionListsMock.mockReset();
     mocked.ingestSessionInfoForCacheMock.mockReset();
     mocked.isAutoConfirmEnabledMock.mockReset();
     mocked.loggerErrorMock.mockReset();
@@ -111,6 +116,20 @@ describe("core commands", () => {
       accountId: "user-1",
     });
     expect(mocked.isAutoConfirmEnabledMock).toHaveBeenCalledWith("session-1");
+  });
+
+  it("shows the selected route model in status even when a session is active", async () => {
+    mocked.fetchCurrentAgentMock.mockResolvedValue("build");
+    mocked.fetchCurrentModelMock.mockReturnValue({
+      providerID: "deepseek",
+      modelID: "deepseek-v4-flash",
+    });
+    mocked.isAutoConfirmEnabledMock.mockReturnValue(false);
+
+    const handler = new StatusCommandHandler();
+    const result = await handler.handle(createContext());
+
+    expect(result.outputs[0].text).toContain("**Model:** deepseek / deepseek-v4-flash");
   });
 
   it("formats project list with active project marker", async () => {
@@ -167,6 +186,60 @@ describe("core commands", () => {
     expect(result.outputs[0].text).toContain("✅ Project selected");
   });
 
+  it("formats model list with active model marker", async () => {
+    mocked.fetchCurrentModelMock.mockReturnValue({ providerID: "openai", modelID: "gpt-5" });
+    mocked.getModelSelectionListsMock.mockResolvedValue({
+      favorites: [
+        { providerID: "openai", modelID: "gpt-5" },
+        { providerID: "anthropic", modelID: "claude-sonnet" },
+      ],
+      recent: [{ providerID: "google", modelID: "gemini-pro" }],
+    });
+
+    const handler = new ModelsCommandHandler();
+    const result = await handler.handle(
+      createContext({ command: { name: "models", args: "", rawText: "/models" } }),
+    );
+
+    expect(result.outputs[0].text).toContain("# Models (3)");
+    expect(result.outputs[0].text).toContain("1. **openai/gpt-5** ✅");
+    expect(result.outputs[0].text).toContain("3. **google/gemini-pro**");
+    expect(result.outputs[0].text).toContain("Use `/model <number>` to select a model.");
+  });
+
+  it("selects model by index", async () => {
+    const update = vi.fn(async () => ({ routeKey: "test:user-1" }));
+    mocked.getModelSelectionListsMock.mockResolvedValue({
+      favorites: [{ providerID: "openai", modelID: "gpt-5" }],
+      recent: [{ providerID: "anthropic", modelID: "claude-sonnet" }],
+    });
+
+    const handler = new ModelCommandHandler();
+    const result = await handler.handle({
+      ...createContext(),
+      command: { name: "model", args: "2", rawText: "/model 2" },
+      runtime: {
+        getRouteKey: vi.fn(() => "test:user-1"),
+        get: vi.fn(async () => ({ routeKey: "test:user-1" })),
+        update,
+        clear: vi.fn(async () => undefined),
+      },
+    });
+
+    expect(update).toHaveBeenCalledWith(
+      { channelId: "test", accountId: "user-1" },
+      {
+        currentModel: {
+          providerID: "anthropic",
+          modelID: "claude-sonnet",
+          variant: "default",
+        },
+      },
+    );
+    expect(result.effects).toEqual({ modelChanged: true });
+    expect(result.outputs[0].text).toContain("✅ Model selected");
+  });
+
   it("creates a session through the shared session new command", async () => {
     const update = vi.fn(async () => ({ routeKey: "test:user-1" }));
     const baseContext = createContext();
@@ -216,7 +289,12 @@ describe("core commands", () => {
         ...baseContext.gateway,
         listSessions: vi.fn(async () => [
           { id: "session-2", title: "Older", directory: "/workspace/demo", time: { updated: 10 } },
-          { id: "session-1", title: "Current Session", directory: "/workspace/demo", time: { updated: 20 } },
+          {
+            id: "session-1",
+            title: "Current Session",
+            directory: "/workspace/demo",
+            time: { updated: 20 },
+          },
         ]),
       },
     });

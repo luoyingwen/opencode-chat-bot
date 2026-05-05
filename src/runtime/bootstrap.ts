@@ -41,20 +41,13 @@ function isValidHttpUrl(value: string): boolean {
 }
 
 export function validateRuntimeEnvValues(values: Record<string, string>): EnvValidationResult {
-  const hasDingTalk = !!(
-    values.DINGTALK_APP_KEY?.trim() &&
-    values.DINGTALK_APP_SECRET?.trim()
-  );
-  const hasFeishu = !!(
-    values.FEISHU_APP_ID?.trim() &&
-    values.FEISHU_APP_SECRET?.trim()
-  );
+  const hasDingTalk = !!(values.DINGTALK_APP_KEY?.trim() && values.DINGTALK_APP_SECRET?.trim());
+  const hasFeishu = !!(values.FEISHU_APP_ID?.trim() && values.FEISHU_APP_SECRET?.trim());
 
   if (!hasDingTalk && !hasFeishu) {
     return {
       isValid: false,
-      reason:
-        "Missing supported platform credentials. Configure DingTalk or Feishu credentials.",
+      reason: "Missing supported platform credentials. Configure DingTalk or Feishu credentials.",
     };
   }
 
@@ -89,10 +82,7 @@ function finalizeEnvContent(lines: string[]): string {
   return `${lines.join("\n")}\n`;
 }
 
-const STRIPPED_KEYS = [
-  "OPENCODE_MODEL_PROVIDER",
-  "OPENCODE_MODEL_ID",
-];
+const STRIPPED_KEYS = ["OPENCODE_MODEL_PROVIDER", "OPENCODE_MODEL_ID"];
 
 export function buildEnvFileContent(existingContent: string, values: WizardEnvValues): string {
   let lines = normalizeEnvLineEndings(existingContent);
@@ -239,7 +229,15 @@ async function validateExistingEnv(envFilePath: string): Promise<EnvValidationRe
 async function initializeConfigTemplate(
   runtimePaths: RuntimePaths,
   locale: Locale,
-  platformValues: Pick<WizardEnvValues, "FEISHU_APP_ID" | "FEISHU_APP_SECRET" | "FEISHU_ALLOWED_USER_ID" | "DINGTALK_APP_KEY" | "DINGTALK_APP_SECRET" | "DINGTALK_ALLOWED_USER_ID">,
+  platformValues: Pick<
+    WizardEnvValues,
+    | "FEISHU_APP_ID"
+    | "FEISHU_APP_SECRET"
+    | "FEISHU_ALLOWED_USER_ID"
+    | "DINGTALK_APP_KEY"
+    | "DINGTALK_APP_SECRET"
+    | "DINGTALK_ALLOWED_USER_ID"
+  >,
 ): Promise<void> {
   const existingContent = await readEnvFileIfExists(runtimePaths.envFilePath);
   const baseContent = existingContent ?? (await loadEnvExampleContent());
@@ -248,10 +246,12 @@ async function initializeConfigTemplate(
     BOT_LOCALE: locale,
     FEISHU_APP_ID: platformValues.FEISHU_APP_ID || existingParsed.FEISHU_APP_ID,
     FEISHU_APP_SECRET: platformValues.FEISHU_APP_SECRET || existingParsed.FEISHU_APP_SECRET,
-    FEISHU_ALLOWED_USER_ID: platformValues.FEISHU_ALLOWED_USER_ID || existingParsed.FEISHU_ALLOWED_USER_ID,
+    FEISHU_ALLOWED_USER_ID:
+      platformValues.FEISHU_ALLOWED_USER_ID || existingParsed.FEISHU_ALLOWED_USER_ID,
     DINGTALK_APP_KEY: platformValues.DINGTALK_APP_KEY || existingParsed.DINGTALK_APP_KEY,
     DINGTALK_APP_SECRET: platformValues.DINGTALK_APP_SECRET || existingParsed.DINGTALK_APP_SECRET,
-    DINGTALK_ALLOWED_USER_ID: platformValues.DINGTALK_ALLOWED_USER_ID || existingParsed.DINGTALK_ALLOWED_USER_ID,
+    DINGTALK_ALLOWED_USER_ID:
+      platformValues.DINGTALK_ALLOWED_USER_ID || existingParsed.DINGTALK_ALLOWED_USER_ID,
     OPENCODE_API_URL: existingParsed.OPENCODE_API_URL,
     OPENCODE_SERVER_USERNAME: existingParsed.OPENCODE_SERVER_USERNAME,
     OPENCODE_SERVER_PASSWORD: existingParsed.OPENCODE_SERVER_PASSWORD,
@@ -302,8 +302,26 @@ async function askYesNo(prompt: string): Promise<boolean> {
   return answer === "y" || answer === "yes";
 }
 
-async function askPlatformCredentials(): Promise<Pick<WizardEnvValues, "FEISHU_APP_ID" | "FEISHU_APP_SECRET" | "FEISHU_ALLOWED_USER_ID" | "DINGTALK_APP_KEY" | "DINGTALK_APP_SECRET" | "DINGTALK_ALLOWED_USER_ID">> {
-  const values: Pick<WizardEnvValues, "FEISHU_APP_ID" | "FEISHU_APP_SECRET" | "FEISHU_ALLOWED_USER_ID" | "DINGTALK_APP_KEY" | "DINGTALK_APP_SECRET" | "DINGTALK_ALLOWED_USER_ID"> = {};
+async function askPlatformCredentials(): Promise<
+  Pick<
+    WizardEnvValues,
+    | "FEISHU_APP_ID"
+    | "FEISHU_APP_SECRET"
+    | "FEISHU_ALLOWED_USER_ID"
+    | "DINGTALK_APP_KEY"
+    | "DINGTALK_APP_SECRET"
+    | "DINGTALK_ALLOWED_USER_ID"
+  >
+> {
+  const values: Pick<
+    WizardEnvValues,
+    | "FEISHU_APP_ID"
+    | "FEISHU_APP_SECRET"
+    | "FEISHU_ALLOWED_USER_ID"
+    | "DINGTALK_APP_KEY"
+    | "DINGTALK_APP_SECRET"
+    | "DINGTALK_ALLOWED_USER_ID"
+  > = {};
 
   process.stdout.write("\n");
   const configureFeishu = await askYesNo(t("runtime.wizard.ask_feishu"));

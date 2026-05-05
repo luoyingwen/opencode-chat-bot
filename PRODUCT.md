@@ -101,6 +101,8 @@ Current shared command set (DingTalk, Feishu, and OpenClaw):
 - `/session rename [title]` - rename current session
 - `/projects` - show and switch projects
 - `/project <number>` - select a project by number
+- `/models` - show and switch models
+- `/model <number>` - select a model by number
 - `/agents` - show and select agents
 - `/agent <number>` - select an agent by number
 - `/commands` - browse and run custom commands (plus built-ins like `init` and `review`)
@@ -135,7 +137,7 @@ Model picker behavior:
 ### Main features already implemented
 
 - [x] Single-user access control by allowed platform user ID
-- [x] Project and session management from chat (`/projects`, `/sessions`, `/session new`)
+- [x] Project, model, and session management from chat (`/projects`, `/models`, `/sessions`, `/session new`)
 - [x] Remote task execution and interruption support (`/stop`)
 - [x] Chat-friendly result delivery, including sending generated code/files when needed
 - [x] Interactive question and permission handling directly in chat with text-first replies
@@ -176,4 +178,3 @@ Optional or longer-term enhancements:
 - [ ] Add a bot settings command with in-chat UI
 - [ ] Image, PDF, and text file attachments support
 - [ ] Voice/audio transcription and TTS reply support
-

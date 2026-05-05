@@ -71,7 +71,7 @@ export const de: I18nDictionary = {
   "rename.success": "✅ Sitzung umbenannt in: {title}",
   "rename.error": "🔴 Sitzung konnte nicht umbenannt werden.",
   "rename.cancelled": "❌ Umbenennen abgebrochen.",
-  "rename.hint_abort": "Gib \"cancel\", \"取消\" oder /cancel ein, um das Umbenennen abzubrechen.",
+  "rename.hint_abort": 'Gib "cancel", "取消" oder /cancel ein, um das Umbenennen abzubrechen.',
 
   "task.prompt.schedule":
     "⏰ Sende den Zeitplan der Aufgabe in natürlicher Sprache.\n\nBeispiele:\n- alle 5 Minuten\n- jeden Tag um 17:00\n- morgen um 12:00",
@@ -82,7 +82,7 @@ export const de: I18nDictionary = {
     "✅ Zeitplan erkannt\n\nVerstanden als: {summary}\n{cronLine}Zeitzone: {timezone}\nTyp: {kind}\nNächster Lauf: {nextRunAt}",
   "task.schedule_preview.cron": "Cron: {cron}",
   "task.prompt.body": "📝 Sende jetzt, was der Bot nach Zeitplan tun soll.",
-  "task.hint_cancel": "Gib \"cancel\", \"取消\" oder /cancel ein, um abzubrechen.",
+  "task.hint_cancel": 'Gib "cancel", "取消" oder /cancel ein, um abzubrechen.',
   "task.prompt_empty": "⚠️ Der Aufgabentext darf nicht leer sein.",
   "task.created":
     "✅ Geplante Aufgabe erstellt\n\nAufgabe: {description}\nProjekt: {project}\nModell: {model}\nZeitplan: {schedule}\n{cronLine}Nächster Lauf: {nextRunAt}",
@@ -105,7 +105,8 @@ export const de: I18nDictionary = {
 
   "tasklist.empty": "📭 Noch keine geplanten Aufgaben.",
   "tasklist.select": "Wähle eine geplante Aufgabe:",
-  "tasklist.select_hint": "Gib eine Aufgabennummer ein, um Details zu sehen, oder \"cancel\", \"取消\" bzw. /cancel zum Beenden.",
+  "tasklist.select_hint":
+    'Gib eine Aufgabennummer ein, um Details zu sehen, oder "cancel", "取消" bzw. /cancel zum Beenden.',
   "tasklist.details":
     "⏰ Geplante Aufgabe\n\nAufgabe: {prompt}\nProjekt: {project}\nZeitplan: {schedule}\nModell: {model}\n{cronLine}Zeitzone: {timezone}\nNächster Lauf: {nextRunAt}\nLetzter Lauf: {lastRunAt}\nAnzahl Läufe: {runCount}",
   "tasklist.details.cron": "Cron: {cron}",
@@ -113,9 +114,11 @@ export const de: I18nDictionary = {
   "tasklist.cancelled_callback": "Abgebrochen",
   "tasklist.inactive_callback": "Dieses Menü für geplante Aufgaben ist inaktiv",
   "tasklist.load_error": "🔴 Geplante Aufgaben konnten nicht geladen werden.",
-  "tasklist.invalid_number": "⚠️ Gib eine gültige Aufgabennummer ein oder \"cancel\", \"取消\" bzw. /cancel zum Beenden.",
+  "tasklist.invalid_number":
+    '⚠️ Gib eine gültige Aufgabennummer ein oder "cancel", "取消" bzw. /cancel zum Beenden.',
   "tasklist.not_found": "⚠️ Aufgabe #{number} existiert nicht. Es gibt insgesamt {count} Aufgaben.",
-  "tasklist.hint_detail": "Gib \"delete\" oder \"删除\" ein, um diese Aufgabe zu löschen, oder \"cancel\", \"取消\" bzw. /cancel zum Zurückgehen.",
+  "tasklist.hint_detail":
+    'Gib "delete" oder "删除" ein, um diese Aufgabe zu löschen, oder "cancel", "取消" bzw. /cancel zum Zurückgehen.',
   "tasklist.delete_error": "❌ Aufgabe konnte nicht gelöscht werden.",
 
   "commands.empty": "📭 Für dieses Projekt sind keine OpenCode-Befehle verfügbar.",
@@ -124,7 +127,8 @@ export const de: I18nDictionary = {
   "commands.cancelled_callback": "Abgebrochen",
   "commands.executing_prefix": "⚡ Befehl wird ausgeführt:",
   "commands.execute_error": "🔴 OpenCode-Befehl konnte nicht ausgeführt werden.",
-  "commands.hint_select": '💡 Verwende `/command <Nummer>` zum Ausführen oder `/command <Nummer> [Argumente]` für Ausführung mit Argumenten.',
+  "commands.hint_select":
+    "💡 Verwende `/command <Nummer>` zum Ausführen oder `/command <Nummer> [Argumente]` für Ausführung mit Argumenten.",
   "commands.invalid_number": "Bitte gültige Befehlsnummer eingeben ({min}-{max}).",
 
   "cli.usage":
@@ -142,8 +146,8 @@ export const de: I18nDictionary = {
   "openclaw.permission_hint":
     "🔐 **Berechtigungsanfrage**\n\nBitte antworten:\n/1 - Einmal erlauben\n/2 - Immer erlauben\n/3 - Ablehnen",
 
-  "auto_lock.success": "✅ Bot auf Ihr Konto ({userId}) gesperrt. Andere Benutzer können nicht zugreifen.",
+  "auto_lock.success":
+    "✅ Bot auf Ihr Konto ({userId}) gesperrt. Andere Benutzer können nicht zugreifen.",
   "auto_lock.race_rejected": "❌ Bot von anderem Benutzer gesperrt. Zugriff verweigert.",
   "permission.denied": "❌ Zugriff verweigert.",
 };
-

@@ -281,13 +281,19 @@ function formatMarkdownForChat(text: string): string {
     return store.add(`*${escapePlainTextForMarkdownV2(content)}*`);
   });
 
-  formatted = formatted.replace(/(^|[^*])\*([^*\n]+?)\*(?!\*)/g, (_match, prefix: string, content: string) => {
-    return `${prefix}${store.add(`_${escapePlainTextForMarkdownV2(content)}_`)}`;
-  });
+  formatted = formatted.replace(
+    /(^|[^*])\*([^*\n]+?)\*(?!\*)/g,
+    (_match, prefix: string, content: string) => {
+      return `${prefix}${store.add(`_${escapePlainTextForMarkdownV2(content)}_`)}`;
+    },
+  );
 
-  formatted = formatted.replace(/(^|[^_])_([^_\n]+?)_(?!_)/g, (_match, prefix: string, content: string) => {
-    return `${prefix}${store.add(`_${escapePlainTextForMarkdownV2(content)}_`)}`;
-  });
+  formatted = formatted.replace(
+    /(^|[^_])_([^_\n]+?)_(?!_)/g,
+    (_match, prefix: string, content: string) => {
+      return `${prefix}${store.add(`_${escapePlainTextForMarkdownV2(content)}_`)}`;
+    },
+  );
 
   formatted = formatted
     .split("\n")
@@ -355,7 +361,9 @@ export function formatSummaryWithMode(
     }
 
     if (mode === "markdown") {
-      const converted = escapeMarkdownV2PipesOutsideCode(formatMarkdownForChat(preprocessMarkdownForChat(trimmed)));
+      const converted = escapeMarkdownV2PipesOutsideCode(
+        formatMarkdownForChat(preprocessMarkdownForChat(trimmed)),
+      );
       const convertedParts = splitText(converted, normalizedMaxLength, {
         avoidTrailingMarkdownEscape: true,
       });

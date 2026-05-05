@@ -7,10 +7,7 @@
 import { ensureOpenCodeEventSubscription } from "../core/execution/event-subscription.js";
 import { buildConversationRouteKey } from "../core/runtime/route-key.js";
 import { getConversationState } from "../settings/manager.js";
-import {
-  listCommandsForRoute,
-  executeCommandByIndexForRoute,
-} from "../shared/commands-flow.js";
+import { listCommandsForRoute, executeCommandByIndexForRoute } from "../shared/commands-flow.js";
 import { summaryAggregator } from "../summary/aggregator.js";
 import { installFeishuEventRouting, setFeishuActive } from "./events.js";
 
@@ -65,4 +62,3 @@ async function prepareFeishuCommandExecution(
     directory: currentSession.directory,
   });
 }
-

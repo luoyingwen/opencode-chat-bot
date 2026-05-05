@@ -36,10 +36,7 @@ import {
 import { setFeishuNotificationCallback } from "../scheduled-task/runtime.js";
 import { initUserChatStore, storeUserChatMapping, getChatIdForUser } from "./user-chat-store.js";
 import { exitApplication } from "../app/exit-app.js";
-import {
-  handleCommandsCommand,
-  handleCommandByIndex,
-} from "./commands.js";
+import { handleCommandsCommand, handleCommandByIndex } from "./commands.js";
 import { createFeishuTextPromptPlatform } from "./prompt-platform.js";
 import { getSharedCommands, getValidCommands } from "../bot/commands/definitions.js";
 
@@ -155,6 +152,42 @@ async function handleProjectCommand(chatId: string, userId: string, arg: string)
   }
 }
 
+async function handleModelsCommand(chatId: string, userId: string): Promise<void> {
+  const result = await executeOpenCodeCommand({
+    route: { channelId: "feishu", accountId: userId, conversationId: chatId },
+    userId,
+    name: "models",
+  });
+
+  if (!result) {
+    await sendFeishuMessage(chatId, userId, "❌ Failed to load models.");
+    return;
+  }
+
+  for (const output of result.outputs) {
+    await sendFeishuMessage(chatId, userId, output.text);
+  }
+}
+
+async function handleModelCommand(chatId: string, userId: string, arg: string): Promise<void> {
+  const result = await executeOpenCodeCommand({
+    route: { channelId: "feishu", accountId: userId, conversationId: chatId },
+    userId,
+    name: "model",
+    args: arg,
+    rawText: `/model ${arg}`,
+  });
+
+  if (!result) {
+    await sendFeishuMessage(chatId, userId, "❌ Failed to select model.");
+    return;
+  }
+
+  for (const output of result.outputs) {
+    await sendFeishuMessage(chatId, userId, output.text);
+  }
+}
+
 async function handleSessionsCommand(chatId: string, userId: string): Promise<void> {
   const result = await executeOpenCodeCommand({
     route: { channelId: "feishu", accountId: userId, conversationId: chatId },
@@ -235,7 +268,11 @@ async function handleAgentListCommand(chatId: string, userId: string): Promise<v
   await sendFeishuMessage(chatId, userId, message);
 }
 
-async function handleAgentSwitchCommand(chatId: string, userId: string, arg: string): Promise<void> {
+async function handleAgentSwitchCommand(
+  chatId: string,
+  userId: string,
+  arg: string,
+): Promise<void> {
   const route = getFeishuRoute(chatId, userId);
   const message = await executeAgentSwitchCommand(route, arg);
   await sendFeishuMessage(chatId, userId, message);
@@ -326,7 +363,12 @@ async function handleTextMessage(chatId: string, userId: string, text: string): 
   }
 }
 
-async function processMessage(userId: string, chatId: string, text: string, _messageId: string): Promise<void> {
+async function processMessage(
+  userId: string,
+  chatId: string,
+  text: string,
+  _messageId: string,
+): Promise<void> {
   const allowedUserId = config.feishu.allowedUserId;
 
   if (!allowedUserId?.trim()) {
@@ -397,6 +439,11 @@ async function processMessage(userId: string, chatId: string, text: string, _mes
   } else if (text.startsWith("/project ")) {
     const arg = text.slice(9).trim();
     void handleProjectCommand(chatId, userId, arg);
+  } else if (text.startsWith("/models")) {
+    void handleModelsCommand(chatId, userId);
+  } else if (text.startsWith("/model ")) {
+    const arg = text.slice(7).trim();
+    void handleModelCommand(chatId, userId, arg);
   } else if (text.startsWith("/sessions")) {
     void handleSessionsCommand(chatId, userId);
   } else if (text.startsWith("/session ")) {
@@ -473,7 +520,7 @@ export async function initializeFeishuHandler(): Promise<void> {
   setFeishuNotificationCallback(async (text: string, targetUserId?: string) => {
     // Try to find target user
     const allowedUserId = config.feishu.allowedUserId;
-    
+
     let userId = targetUserId;
     if (!userId && allowedUserId?.trim()) {
       userId = allowedUserId.trim();

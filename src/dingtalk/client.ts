@@ -13,10 +13,7 @@ const DINGTALK_PROACTIVE_API = "https://api.dingtalk.com/v1.0/robot/oToMessages/
 const RETRY_MAX_ATTEMPTS = 3;
 const RETRY_BASE_DELAY_MS = 500;
 
-async function retryWithBackoff<T>(
-  fn: () => Promise<T>,
-  context: string,
-): Promise<T> {
+async function retryWithBackoff<T>(fn: () => Promise<T>, context: string): Promise<T> {
   let lastError: unknown = null;
 
   for (let attempt = 1; attempt <= RETRY_MAX_ATTEMPTS; attempt++) {
@@ -33,7 +30,9 @@ async function retryWithBackoff<T>(
         );
         await new Promise((resolve) => setTimeout(resolve, delay));
       } else {
-        logger.error(`[DingTalk] ${context} failed after ${RETRY_MAX_ATTEMPTS} attempts:\n${details}`);
+        logger.error(
+          `[DingTalk] ${context} failed after ${RETRY_MAX_ATTEMPTS} attempts:\n${details}`,
+        );
       }
     }
   }

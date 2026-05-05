@@ -67,7 +67,7 @@ export const zhTW: I18nDictionary = {
   "rename.success": "✅ 工作階段已重新命名為：{title}",
   "rename.error": "🔴 重新命名工作階段失敗。",
   "rename.cancelled": "❌ 重新命名已取消。",
-  "rename.hint_abort": "輸入「取消」、\"cancel\" 或 /cancel 取消重新命名。",
+  "rename.hint_abort": '輸入「取消」、"cancel" 或 /cancel 取消重新命名。',
 
   "task.prompt.schedule":
     "⏰ 以自然語言傳送任務排程。\n\n範例：\n- 每 5 分鐘\n- 每天 17:00\n- 明天 12:00",
@@ -77,7 +77,7 @@ export const zhTW: I18nDictionary = {
     "✅ 排程已解析\n\n我的理解：{summary}\n{cronLine}時區：{timezone}\n類型：{kind}\n下次執行：{nextRunAt}",
   "task.schedule_preview.cron": "Cron：{cron}",
   "task.prompt.body": "📝 現在傳送排程時機器人應該執行的內容。",
-  "task.hint_cancel": "輸入「取消」、\"cancel\" 或 /cancel 可退出。",
+  "task.hint_cancel": '輸入「取消」、"cancel" 或 /cancel 可退出。',
   "task.prompt_empty": "⚠️ 任務文字不可為空。",
   "task.created":
     "✅ 排程任務已建立\n\n任務：{description}\n專案：{project}\n模型：{model}\n排程：{schedule}\n{cronLine}下次執行：{nextRunAt}",
@@ -91,14 +91,12 @@ export const zhTW: I18nDictionary = {
   "task.model.default": "預設",
   "task.run.success": "⏰ 排程任務完成：{description}",
   "task.run.error": "🔴 排程任務失敗：{description}\n\n錯誤：{error}",
-  "task.run.error.interactive_question":
-    "排程任務請求了互動式問題，無法在無人值守時繼續。",
-  "task.run.error.interactive_permission":
-    "排程任務請求了互動式權限，無法在無人值守時繼續。",
+  "task.run.error.interactive_question": "排程任務請求了互動式問題，無法在無人值守時繼續。",
+  "task.run.error.interactive_permission": "排程任務請求了互動式權限，無法在無人值守時繼續。",
 
   "tasklist.empty": "📭 目前沒有排程任務。",
   "tasklist.select": "請選擇一個排程任務：",
-  "tasklist.select_hint": "輸入任務編號查看詳情，或輸入「取消」、\"cancel\" 或 /cancel 退出。",
+  "tasklist.select_hint": '輸入任務編號查看詳情，或輸入「取消」、"cancel" 或 /cancel 退出。',
   "tasklist.details":
     "⏰ 排程任務\n\n任務：{prompt}\n專案：{project}\n排程：{schedule}\n模型：{model}\n{cronLine}時區：{timezone}\n下次執行：{nextRunAt}\n上次執行：{lastRunAt}\n執行次數：{runCount}",
   "tasklist.details.cron": "Cron：{cron}",
@@ -106,9 +104,10 @@ export const zhTW: I18nDictionary = {
   "tasklist.cancelled_callback": "已取消",
   "tasklist.inactive_callback": "此排程任務選單已失效",
   "tasklist.load_error": "🔴 載入排程任務失敗。",
-  "tasklist.invalid_number": "⚠️ 請輸入有效的任務編號，或輸入「取消」、\"cancel\" 或 /cancel 退出。",
+  "tasklist.invalid_number": '⚠️ 請輸入有效的任務編號，或輸入「取消」、"cancel" 或 /cancel 退出。',
   "tasklist.not_found": "⚠️ 任務 #{number} 不存在。目前共有 {count} 個任務。",
-  "tasklist.hint_detail": "輸入「刪除」或 \"delete\" 刪除此任務，或輸入「取消」、\"cancel\" 或 /cancel 返回。",
+  "tasklist.hint_detail":
+    '輸入「刪除」或 "delete" 刪除此任務，或輸入「取消」、"cancel" 或 /cancel 返回。',
   "tasklist.delete_error": "❌ 刪除任務失敗。",
 
   "commands.empty": "📭 目前專案沒有可用的 OpenCode 命令。",
@@ -117,7 +116,8 @@ export const zhTW: I18nDictionary = {
   "commands.cancelled_callback": "已取消",
   "commands.executing_prefix": "⚡ 執行命令：",
   "commands.execute_error": "🔴 執行 OpenCode 命令失敗。",
-  "commands.hint_select": "💡 使用 `/command <編號>` 執行命令，或使用 `/command <編號> [參數]` 攜帶參數執行。",
+  "commands.hint_select":
+    "💡 使用 `/command <編號>` 執行命令，或使用 `/command <編號> [參數]` 攜帶參數執行。",
   "commands.invalid_number": "請輸入有效的命令編號（{min}-{max}）。",
 
   "cli.usage":
@@ -129,11 +129,9 @@ export const zhTW: I18nDictionary = {
   "cli.args.unknown_option": "未知選項：{value}",
   "cli.args.mode_only_start": "選項 --mode 僅支援 start 命令",
 
-"openclaw.processing":
-    "⚙️ 處理中...\n\n💡 您正處於 OpenCode 拦截模式，輸入 /exit 退出。",
+  "openclaw.processing": "⚙️ 處理中...\n\n💡 您正處於 OpenCode 拦截模式，輸入 /exit 退出。",
 
-  "openclaw.permission_hint":
-    "🔐 **权限请求**\n\n请回复:\n/1 - 允许一次\n/2 - 总是允许\n/3 - 拒绝",
+  "openclaw.permission_hint": "🔐 **权限请求**\n\n请回复:\n/1 - 允许一次\n/2 - 总是允许\n/3 - 拒绝",
 
   "auto_lock.success": "✅ Bot 已锁定到您的账号 ({userId})。其他使用者无法存取。",
   "auto_lock.race_rejected": "❌ Bot 已被其他使用者锁定。拒绝存取。",

@@ -85,7 +85,9 @@ class RenameManager {
     return this.states.size > 0;
   }
 
-  getSessionInfo(flowKey?: string): { sessionId: string; directory: string; currentTitle: string } | null {
+  getSessionInfo(
+    flowKey?: string,
+  ): { sessionId: string; directory: string; currentTitle: string } | null {
     const key = this.resolveKey(flowKey);
     if (!key) {
       return null;

@@ -133,7 +133,10 @@ export async function handleTextTaskListCommand(flowKey: string): Promise<string
   }
 }
 
-export async function handleTextTaskListInput(flowKey: string, text: string): Promise<string | null> {
+export async function handleTextTaskListInput(
+  flowKey: string,
+  text: string,
+): Promise<string | null> {
   const state = getTaskListState(flowKey);
   if (!state) {
     return null;

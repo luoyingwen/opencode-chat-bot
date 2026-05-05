@@ -1,7 +1,10 @@
 import { permissionManager } from "../permission/manager.js";
 import { questionManager } from "../question/manager.js";
 import { renameManager } from "../rename/manager.js";
-import { clearPendingTextPermission, hasAnyPendingTextPermission } from "../core/text-interactions/permission.js";
+import {
+  clearPendingTextPermission,
+  hasAnyPendingTextPermission,
+} from "../core/text-interactions/permission.js";
 import { clearAllTextTaskFlows } from "../core/text-interactions/task-flow.js";
 import { clearAllTextTaskListFlows } from "../core/text-interactions/tasklist-flow.js";
 import { taskCreationManager } from "../scheduled-task/creation-manager.js";
