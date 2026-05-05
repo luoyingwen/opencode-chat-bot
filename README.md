@@ -180,6 +180,8 @@ All platforms support the same core command set:
 | `/projects`               | Browse available projects                               |
 | `/project <n>`            | Select a project by number                              |
 | `/project <path>`         | Create/select a project by absolute path                |
+| `/models`                 | Browse favorite and recent models                       |
+| `/model <n>`              | Select a model by number                                |
 | `/agents`                 | Browse available agents                                 |
 | `/agent <n>`              | Select an agent by number                               |
 | `/commands`               | Browse and run custom commands                          |
@@ -396,6 +398,8 @@ The model picker uses OpenCode local model state (`favorite` + `recent`):
 - Models already in favorites are not duplicated in recent
 - Current model is marked with `✅`
 - Default model from `OPENCODE_MODEL_PROVIDER` + `OPENCODE_MODEL_ID` is always included in favorites
+- Use `/models` to list available models and `/model <n>` to select one
+- Model selection is route-scoped and affects future prompts; in-flight responses are not interrupted
 
 To add a model to favorites, open OpenCode TUI (`opencode`), go to model selection, and press **Cmd+F/Ctrl+F** on the model.
 
