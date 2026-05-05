@@ -57,7 +57,7 @@ export const en = {
   "runtime.wizard.language_invalid":
     "Enter a language number from the list or a supported locale code.\n",
   "runtime.wizard.language_selected": "Selected language: {language}\n",
-  "runtime.wizard.start": "OpenCode Bot setup.\n",
+  "runtime.wizard.start": "OpenCode Chat Bot setup.\n",
   "runtime.wizard.saved": "Configuration saved:\n- {envPath}\n- {settingsPath}\n",
   "runtime.wizard.not_configured_starting":
     "Application is not configured yet. Starting wizard...\n",
@@ -156,7 +156,7 @@ export const en = {
   "openclaw.model.selected": "✅ Model selected: {model}",
   "openclaw.prompt_error": "❌ An error occurred. Please try again.",
   "openclaw.help":
-    "📖 **OpenCode Bot Commands**\n\n/opencode - Enter OpenCode mode for this conversation\n/exit - Leave OpenCode mode\n/status - Show OpenCode status\n/stop - Stop current action or cancel active flow\n/sessions - List sessions\n/session <number> - Select a session\n/session new - Create a new session\n/session rename [title] - Rename the current session\n/projects - List projects\n/project <number> - Select a project\n/agents - List available agents\n/agent <number> - Switch to agent by number\n/commands - List custom commands\n/command <number> - Execute a custom command\n/auto_confirm [on|off] - Toggle auto-confirmation for current session\n/task - Create a scheduled task\n/tasks - List scheduled tasks\n/permission - Show pending permission request status\n/help - Show this help\n\nPermission replies: /1 allow once, /2 always allow, /3 reject.",
+    "📖 **OpenCode Chat Bot Commands**\n\n/opencode - Enter OpenCode mode for this conversation\n/exit - Leave OpenCode mode\n/status - Show OpenCode status\n/stop - Stop current action or cancel active flow\n/sessions - List sessions\n/session <number> - Select a session\n/session new - Create a new session\n/session rename [title] - Rename the current session\n/projects - List projects\n/project <number> - Select a project\n/agents - List available agents\n/agent <number> - Switch to agent by number\n/commands - List custom commands\n/command <number> - Execute a custom command\n/auto_confirm [on|off] - Toggle auto-confirmation for current session\n/task - Create a scheduled task\n/tasks - List scheduled tasks\n/permission - Show pending permission request status\n/help - Show this help\n\nPermission replies: /1 allow once, /2 always allow, /3 reject.",
   "openclaw.unknown_command": "⚠️ Unknown command: /{command}\n\n{help}",
 
   "cli.usage":

@@ -1,6 +1,6 @@
 # Linux systemd setup
 
-This guide covers setting up the OpenCode Bot with systemd on Linux.
+This guide covers setting up the OpenCode Chat Bot with systemd on Linux.
 
 **Supported Platforms:** This setup works for all supported platforms (DingTalk, Feishu). Make sure you have configured at least one platform in your `.env` file before starting the service.
 
@@ -32,7 +32,7 @@ Create `/etc/systemd/system/opencode-chat-bot.service`:
 
 ```ini
 [Unit]
-Description=OpenCode Bot
+Description=OpenCode Chat Bot
 After=network.target
 
 [Service]
@@ -72,7 +72,7 @@ This is a working example for an `nvm`-based setup:
 
 ```ini
 [Unit]
-Description=OpenCode Bot
+Description=OpenCode Chat Bot
 After=network.target
 
 [Service]

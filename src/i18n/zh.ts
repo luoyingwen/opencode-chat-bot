@@ -56,7 +56,7 @@ export const zh: I18nDictionary = {
     "请选择界面语言。\n输入列表中的语言编号或 locale code。\n按 Enter 保持默认语言：{defaultLocale}\n{options}\n> ",
   "runtime.wizard.language_invalid": "请输入列表中的语言编号或受支持的 locale code。\n",
   "runtime.wizard.language_selected": "已选择语言：{language}\n",
-  "runtime.wizard.start": "OpenCode Bot 设置。\n",
+  "runtime.wizard.start": "OpenCode Chat Bot 设置。\n",
   "runtime.wizard.saved": "配置已保存：\n- {envPath}\n- {settingsPath}\n",
   "runtime.wizard.not_configured_starting": "应用尚未配置。正在启动向导...\n",
   "runtime.wizard.tty_required":

@@ -57,7 +57,7 @@ export const ru: I18nDictionary = {
   "runtime.wizard.language_invalid":
     "Введите номер языка из списка или поддерживаемый код локали.\n",
   "runtime.wizard.language_selected": "Выбран язык: {language}\n",
-  "runtime.wizard.start": "Настройка OpenCode Bot.\n",
+  "runtime.wizard.start": "Настройка OpenCode Chat Bot.\n",
   "runtime.wizard.saved": "Конфигурация сохранена:\n- {envPath}\n- {settingsPath}\n",
   "runtime.wizard.not_configured_starting":
     "Приложение еще не сконфигурировано. Запускаю wizard...\n",

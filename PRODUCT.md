@@ -1,4 +1,4 @@
-# OpenCode Bot
+# OpenCode Chat Bot
 
 Multi-platform bot client for OpenCode that lets you run and monitor coding tasks on your local machine from DingTalk, Feishu, or OpenClaw.
 

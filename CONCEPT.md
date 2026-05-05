@@ -1,10 +1,10 @@
 # Concept
 
-This document defines the current product concept and boundaries for OpenCode Bot.
+This document defines the current product concept and boundaries for OpenCode Chat Bot.
 
 ## Vision
 
-OpenCode Bot is designed as a **single OpenCode CLI window in chat**.
+OpenCode Chat Bot is designed as a **single OpenCode CLI window in chat**.
 
 The goal is to provide a simple, reliable, mobile-friendly way to run and monitor OpenCode workflows from DingTalk or Feishu while keeping behavior predictable.
 

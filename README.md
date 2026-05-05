@@ -1,11 +1,18 @@
 # OpenCode Chat Bot
 
-fork from <https://github.com/grinev/opencode-chat-bot>
+fork from <https://github.com/grinev/opencode-telegram-bot>
+
+
+This project differs from the original project in the following ways:
+
+It can run as an OpenClaw plugin, deeply integrates with the OpenClaw ecosystem, and leverages OpenClaw message Channels to support almost all major IM platforms.
+For standalone use, this project supports both Feishu and DingTalk as independent platforms.
+Because this project differs significantly from the original and cannot verify Telegram app operation, support for Telegram has been removed. If you need Telegram support, please use the original project directly. <https://github.com/grinev/opencode-telegram-bot>
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 [![Node.js](https://img.shields.io/badge/node-%3E%3D20-brightgreen)](https://nodejs.org)
 
-OpenCode Bot is a secure multi-platform client for [OpenCode](https://opencode.ai) CLI that runs on your local machine. It supports **DingTalk** and **Feishu** as standalone chat bots, and **OpenClaw** through a plugin entrypoint.
+OpenCode Chat Bot is a secure multi-platform client for [OpenCode](https://opencode.ai) CLI that runs on your local machine. It supports **DingTalk** and **Feishu** as standalone chat bots, and **OpenClaw** through a plugin entrypoint.
 
 Run AI coding tasks, monitor progress, switch models, and manage sessions from your phone.
 

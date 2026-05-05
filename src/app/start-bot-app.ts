@@ -36,7 +36,7 @@ export async function startBotApp(): Promise<void> {
     );
   }
 
-  logger.info(`Starting OpenCode Bot v${version}...`);
+  logger.info(`Starting OpenCode Chat Bot v${version}...`);
   logger.info(`Config loaded from ${runtimePaths.envFilePath}`);
   if (logFilePath) {
     logger.info(`Logs are written to ${logFilePath}`);

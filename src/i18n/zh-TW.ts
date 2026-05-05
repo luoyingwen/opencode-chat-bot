@@ -55,7 +55,7 @@ export const zhTW: I18nDictionary = {
     "請選擇介面語言。\n輸入清單中的語言編號或 locale code。\n按 Enter 保持預設語言：{defaultLocale}\n{options}\n> ",
   "runtime.wizard.language_invalid": "請輸入清單中的語言編號或受支援的 locale code。\n",
   "runtime.wizard.language_selected": "已選擇語言：{language}\n",
-  "runtime.wizard.start": "OpenCode Bot 設定。\n",
+  "runtime.wizard.start": "OpenCode Chat Bot 設定。\n",
   "runtime.wizard.saved": "設定已儲存：\n- {envPath}\n- {settingsPath}\n",
   "runtime.wizard.not_configured_starting": "應用程式尚未設定。正在啟動精靈...\n",
   "runtime.wizard.tty_required":

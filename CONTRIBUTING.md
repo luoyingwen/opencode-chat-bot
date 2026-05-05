@@ -1,6 +1,6 @@
 # Contributing
 
-Thanks for contributing to OpenCode Bot.
+Thanks for contributing to OpenCode Chat Bot.
 
 ## Before You Start Work
 

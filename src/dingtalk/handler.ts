@@ -596,7 +596,7 @@ export async function sendDingTalkStartupMessage(): Promise<void> {
   try {
     await sendDingTalkMessage(
       userId,
-      "🚀 **OpenCode Bot started!**\n\nUse `/status` to check status, or send a message to begin.",
+      "🚀 **OpenCode Chat Bot started!**\n\nUse `/status` to check status, or send a message to begin.",
     );
     logger.info(`[DingTalk] Startup message sent to user ${userId}`);
   } catch (err) {
