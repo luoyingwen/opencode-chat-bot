@@ -102,6 +102,10 @@ Send `/opencode` in the conversation to enter OpenCode mode, then send prompts o
 
 #### Option B: Standalone Bot (recommended for DingTalk/Feishu users)
 
+Advantages over the OpenClaw plugin mode:
+- Remote coding from your mobile device — send prompts, monitor progress, and manage sessions without sitting at your computer
+- No OpenClaw plugin runtime required — works with just DingTalk or Feishu
+
 ```bash
 npm install -g @luoyingwen/opencode-chat-bot
 opencode-chat-bot config
