@@ -5,9 +5,9 @@ fork from <https://github.com/grinev/opencode-telegram-bot>
 
 This project differs from the original project in the following ways:
 
-It can run as an OpenClaw plugin, deeply integrates with the OpenClaw ecosystem, and leverages OpenClaw message Channels to support almost all major IM platforms.
-For standalone use, this project supports both Feishu and DingTalk as independent platforms.
-Because this project differs significantly from the original and cannot verify Telegram app operation, support for Telegram has been removed. If you need Telegram support, please use the original project directly. <https://github.com/grinev/opencode-telegram-bot>
+1. **OpenClaw plugin** — can run as an OpenClaw plugin, leveraging OpenClaw message Channels to support almost all major IM platforms.
+2. **DingTalk & Feishu standalone** — supports both Feishu and DingTalk as independent bot platforms.
+3. **Telegram removed** — Telegram support has been removed. If you need Telegram, use the [original project](https://github.com/grinev/opencode-telegram-bot) directly.
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 [![Node.js](https://img.shields.io/badge/node-%3E%3D20-brightgreen)](https://nodejs.org)
@@ -86,6 +86,11 @@ The bot connects to the OpenCode API at `http://localhost:4096` by default. Over
 The package is published on npm as `@luoyingwen/opencode-chat-bot`. Choose **one** of the two modes below — they cannot be used together.
 
 #### Option A: OpenClaw Plugin (recommended for OpenClaw users)
+
+Advantages over the standalone mode:
+- Supports all major IM platforms supported by OpenClaw Channels (Feishu, DingTalk, WeChat, Slack, Discord, Telegram, etc.)
+- After entering OpenCode mode via `/opencode`, all messages are sent directly to OpenCode, bypassing the OpenClaw Agent — faster response, lower cost, and no routing errors
+- Exiting OpenCode mode with `/exit` restores the original OpenClaw conversation flow
 
 ```bash
 openclaw plugins install @luoyingwen/opencode-chat-bot
