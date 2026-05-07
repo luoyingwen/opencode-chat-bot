@@ -16,6 +16,14 @@
     "extensions": [
       "./dist/openclaw-plugin.js"
     ],
+    "compat": {
+      "pluginApi": ">=2026.4.27",
+      "minGatewayVersion": "2026.4.27"
+    },
+    "build": {
+      "openclawVersion": "2026.4.27",
+      "pluginSdkVersion": "2026.4.27"
+    },
     "plugin": {
       "id": "opencode-chat-bot",
       "enabledByDefault": false
