@@ -234,7 +234,14 @@ npm run openclaw:install -- local
 npm run openclaw:install -- link
 ```
 
-After building, OpenClaw can discover the plugin from `package.json` under `openclaw.extensions`, from the `./openclaw-plugin` export, or from `openclaw.plugin.json` for runtimes that read plugin metadata files.
+After building, OpenClaw can discover the plugin from `package.json` under `openclaw.runtimeExtensions`, from the `./openclaw-plugin` export, or from `openclaw.plugin.json` for runtimes that read plugin metadata files. The source entry remains under `openclaw.extensions` for Git checkout and ClawHub package build flows.
+
+For ClawHub publishing, use the package flow so ClawHub uploads a ClawPack instead of a legacy ZIP:
+
+```bash
+clawhub package publish luoyingwen/opencode-chat-bot --dry-run
+clawhub package publish luoyingwen/opencode-chat-bot
+```
 
 Example OpenClaw configuration:
 

@@ -14,6 +14,9 @@
   },
   "openclaw": {
     "extensions": [
+      "./src/openclaw-plugin.ts"
+    ],
+    "runtimeExtensions": [
       "./dist/openclaw-plugin.js"
     ],
     "compat": {
